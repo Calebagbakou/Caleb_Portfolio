@@ -39,7 +39,7 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
           <path d="M15 6l-6 6 6 6" />
         </svg>
       </button>
-      <div className="lightbox-inner">
+      <div className={`lightbox-inner${item?.video ? ' video' : ''}`}>
         <div className="lightbox-thumb" style={item && !item.video ? { background: item.gradient } : { background: '#000' }}>
           {item?.video && (
             <iframe

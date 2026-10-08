@@ -488,8 +488,13 @@
     border-radius:18px; overflow:hidden;
     transform: perspective(1000px) scale(.92) rotateX(4deg); transition: transform .4s cubic-bezier(.16,.8,.24,1);
   }
+  .lightbox-inner.video{
+    width:min(100%, 420px, calc((100dvh - 140px) * 9 / 16));
+    max-width:none;
+  }
   .lightbox.open .lightbox-inner{ transform:perspective(1000px) scale(1) rotateX(0); }
   .lightbox-thumb{ aspect-ratio:16/9; width:100%; position:relative; overflow:hidden; }
+  .lightbox-inner.video .lightbox-thumb{ aspect-ratio:9/16; }
   .lightbox-body{ padding:20px 24px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
   .lightbox-cat{ font-family:'Poppins', monospace; font-size:11px; color:var(--teal); letter-spacing:0.04em; margin-bottom:6px; }
   .lightbox-title{ font-family:'Montserrat', sans-serif; font-weight:700; font-size:19px; color:var(--paper); margin:0; }
