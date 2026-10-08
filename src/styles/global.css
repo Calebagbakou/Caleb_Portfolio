@@ -502,6 +502,8 @@
   .lightbox-cat{ font-family:'Poppins', monospace; font-size:11px; color:var(--teal); letter-spacing:0.04em; margin-bottom:6px; }
   .lightbox-title{ font-family:'Montserrat', sans-serif; font-weight:700; font-size:19px; color:var(--paper); margin:0; }
   .lightbox-description{ color:var(--paper-dim); font-size:13px; line-height:1.55; margin:8px 0 0; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .lightbox-watch-link{ display:inline-block; margin-top:10px; color:var(--teal); font-size:12px; font-weight:600; }
+  .lightbox-watch-link:hover{ text-decoration:underline; }
   .lightbox-close{
     position:absolute; top:18px; right:18px; width:40px; height:40px; border-radius:50%;
     background:var(--panel); border:1px solid var(--panel-line); color:var(--paper);

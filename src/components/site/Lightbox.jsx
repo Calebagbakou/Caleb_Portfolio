@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { getYouTubeEmbedUrl } from '../../data/projectMedia';
+import { getYouTubeEmbedUrl, normalizeYouTubeUrl } from '../../data/projectMedia';
 
 /**
  * items: liste à plat de toutes les cartes portfolio (toutes rangées confondues)
@@ -74,8 +74,9 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
               width="100%"
               height="100%"
               frameBorder="0"
-              allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+              allow="autoplay; encrypted-media; picture-in-picture"
               allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
               style={{ position: 'absolute', inset: 0 }}
               title={item.title}
             />
@@ -106,6 +107,16 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
             <div className="lightbox-cat">{item?.catLabel}</div>
             <h3 className="lightbox-title">{item?.title}</h3>
             {item?.description && <p className="lightbox-description">{item.description}</p>}
+            {item?.media_type === 'youtube' && (
+              <a
+                className="lightbox-watch-link"
+                href={normalizeYouTubeUrl(item.media_url)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Ouvrir sur YouTube
+              </a>
+            )}
           </div>
         </div>
       </div>

@@ -37,5 +37,7 @@ export function normalizeYouTubeUrl(value) {
 
 export function getYouTubeEmbedUrl(value) {
   const id = extractYouTubeVideoId(value);
-  return id ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0` : null;
+  return id
+    ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&playsinline=1&rel=0`
+    : null;
 }
