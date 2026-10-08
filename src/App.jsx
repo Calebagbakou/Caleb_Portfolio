@@ -14,12 +14,12 @@ import Panier from './pages/Boutique/Panier';
 import Commande from './pages/Boutique/Commande';
 import Confirmation from './pages/Boutique/Confirmation';
 
-import Login from './pages/Admin/Login';
-import ForgotPassword from './pages/Admin/ForgotPassword';
-import ResetPassword from './pages/Admin/ResetPassword';
-import Dashboard from './pages/Admin/Dashboard';
-import Messages from './pages/Admin/Messages';
-import Parametres from './pages/Admin/Parametres';
+import Login from './pages/admin/Login';
+import ForgotPassword from './pages/admin/ForgotPassword';
+import ResetPassword from './pages/admin/ResetPassword';
+import Dashboard from './pages/admin/Dashboard';
+import Messages from './pages/admin/Messages';
+import Parametres from './pages/admin/Parametres';
 
 import NotFound from './pages/NotFound';
 
