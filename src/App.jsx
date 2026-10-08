@@ -20,6 +20,7 @@ import ResetPassword from './pages/admin/ResetPassword';
 import Dashboard from './pages/admin/Dashboard';
 import Messages from './pages/admin/Messages';
 import Parametres from './pages/admin/Parametres';
+import Projects from './pages/admin/Projects';
 
 import NotFound from './pages/NotFound';
 
@@ -61,6 +62,7 @@ export default function App() {
         }
       >
         <Route index element={<Dashboard />} />
+        <Route path="projects" element={<Projects />} />
         <Route path="messages" element={<Messages />} />
         <Route path="parametres" element={<Parametres />} />
       </Route>

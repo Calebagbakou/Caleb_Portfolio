@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { getDashboardStats } from '../../services/dashboard';
 
 const CARD_LABELS = [
@@ -46,16 +47,14 @@ export default function Dashboard() {
       )}
 
       <div className="panel">
-        <h2>Connexion et base de données opérationnelles ✅</h2>
-        <p>
-          L'authentification admin et le schéma de base de données (Supabase) sont en place. Les
-          compteurs ci-dessus sont lus en direct depuis tes tables.
-        </p>
+        <h2>Gère ton portfolio sans modifier le code</h2>
+        <p>Ajoute tes projets, colle directement une URL YouTube, et choisis lesquels afficher en public.</p>
         <div className="placeholder-note">
-          Écrans déjà construits : <strong>Messages</strong> et <strong>Paramètres</strong>. Le reste
-          (Projets, Compétences, Services, Médias, Produits, Commandes, Clients) reste marqué
-          « bientôt » — dis-moi par lequel continuer.
+          La gestion des projets est disponible. Les autres espaces seront ajoutés progressivement.
         </div>
+        <p style={{ marginTop: 16 }}>
+          <Link className="btn btn-primary" to="/admin/projects">Gérer les projets</Link>
+        </p>
       </div>
     </>
   );

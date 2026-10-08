@@ -2,10 +2,10 @@ import { NavLink } from 'react-router-dom';
 
 /**
  * Port direct de la sidebar admin (identique sur index.html, messages.html,
- * parametres.html dans l'ancien projet). Les sections Projets, Compétences,
+ * parametres.html dans l'ancien projet). Les sections Compétences,
  * Services, Images, Vidéos, Produits, Commandes, Clients restent marquées
- * "bientôt" — leurs écrans n'existent pas encore côté admin (identique à
- * avant la migration), seuls Messages et Paramètres sont fonctionnels.
+ * "bientôt" — leurs écrans n'existent pas encore côté admin, seuls Projets,
+ * Messages et Paramètres sont fonctionnels.
  */
 export default function AdminSidebar({ onLogout }) {
   return (
@@ -27,13 +27,13 @@ export default function AdminSidebar({ onLogout }) {
         </NavLink>
 
         <div className="admin-nav-label">Portfolio</div>
-        <a href="#soon-projets" onClick={(e) => e.preventDefault()}>
+        <NavLink to="/admin/projects">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <rect x="3" y="3" width="18" height="14" rx="2" />
             <path d="M3 13l5-4 4 3 5-5 4 3" />
           </svg>
-          Projets<span className="soon">bientôt</span>
-        </a>
+          Projets
+        </NavLink>
         <a href="#soon-competences" onClick={(e) => e.preventDefault()}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path d="M12 2l2.5 6.5H21l-5.3 4 2 6.5-5.7-4-5.7 4 2-6.5L3 8.5h6.5z" />

@@ -51,22 +51,25 @@ src/
   `localStorage`, commande qui génère une référence et redirige vers
   WhatsApp — **aucun vrai paiement ni back-end**, exactement comme avant.
 - **Admin** : authentification Supabase + vérification dans la table
-  `admins`, **Messages** et **Paramètres** sont pleinement fonctionnels.
+  `admins`, avec gestion des **Projets**, **Messages** et **Paramètres**.
+  Les projets sont lus depuis Supabase côté public; publier ou modifier un
+  projet ne nécessite pas de nouveau déploiement.
 
 ## Ce qui n'a pas été construit (et pourquoi)
 
-Le cahier des charges de migration listait des écrans admin
-(Projets, Compétences, Services, Médias, Produits, Commandes, Clients) et
+Le cahier des charges de migration liste encore des écrans admin
+(Compétences, Services, Médias, Produits, Commandes, Clients) et
 un catalogue boutique branché sur Supabase. **Ces écrans n'existaient pas
 dans le projet d'origine** — seuls Auth/Messages/Paramètres étaient
 fonctionnels côté admin, et la boutique était entièrement statique. Pour
 respecter la consigne « ne rien perdre / ne pas refaire une refonte
-fonctionnelle », je n'ai pas inventé ces écrans : la sidebar admin les
-affiche toujours comme « bientôt », identique à avant.
+fonctionnelle », ils restent marqués « bientôt » dans la sidebar.
 
-Le schéma Supabase (`supabase/schema.sql` dans l'ancien projet) contient
-déjà les tables `projects`, `products`, `orders`, `customers`, etc. — le
-terrain est donc prêt le jour où tu veux construire ces écrans.
+La migration additive pour `projects`, son import des cartes historiques et
+la compatibilité avec les politiques RLS déjà en place sont dans
+[`supabase/migrations/001_projects_admin.sql`](./supabase/migrations/001_projects_admin.sql).
+Avant de l'exécuter, vérifie la structure et les politiques déjà présentes
+dans ton projet Supabase en suivant [`ADMIN_SETUP.md`](./ADMIN_SETUP.md).
 
 ## Sécurité — variables d'environnement
 

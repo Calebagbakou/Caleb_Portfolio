@@ -27,6 +27,11 @@ jobs:
         run: npm ci
       - name: Build site
         run: npm run build -- --base=/Caleb_Portfolio/
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: Add GitHub Pages SPA fallback
+        run: cp dist/index.html dist/404.html
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:

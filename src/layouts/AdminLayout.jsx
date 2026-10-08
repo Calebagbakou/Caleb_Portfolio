@@ -5,6 +5,7 @@ import '../styles/admin.css';
 
 const TITLES = {
   '/admin': 'Dashboard',
+  '/admin/projects': 'Projets',
   '/admin/messages': 'Messages',
   '/admin/parametres': 'Paramètres',
 };

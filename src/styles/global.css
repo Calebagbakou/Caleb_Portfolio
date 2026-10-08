@@ -446,6 +446,7 @@
   .p-card{
     flex:0 0 240px; scroll-snap-align:start; position:relative; cursor:pointer;
     border-radius:14px; overflow:hidden; border:1px solid var(--panel-line); background:var(--panel);
+    padding:0; color:inherit; font:inherit; text-align:left;
   }
   .p-thumb{
     aspect-ratio: 9/16; position:relative;
@@ -455,6 +456,7 @@
     font-family:'Poppins', monospace; font-size:11px; color:rgba(18,24,26,0.7);
     background:rgba(255,255,255,0.65); padding:4px 9px; border-radius:999px;
   }
+  .p-thumb img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .p-play{
     position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0.92);
     width:52px; height:52px; border-radius:50%;
@@ -495,9 +497,11 @@
   .lightbox.open .lightbox-inner{ transform:perspective(1000px) scale(1) rotateX(0); }
   .lightbox-thumb{ aspect-ratio:16/9; width:100%; position:relative; overflow:hidden; }
   .lightbox-inner.video .lightbox-thumb{ aspect-ratio:9/16; }
+  .lightbox-image{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
   .lightbox-body{ padding:20px 24px 24px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; }
   .lightbox-cat{ font-family:'Poppins', monospace; font-size:11px; color:var(--teal); letter-spacing:0.04em; margin-bottom:6px; }
   .lightbox-title{ font-family:'Montserrat', sans-serif; font-weight:700; font-size:19px; color:var(--paper); margin:0; }
+  .lightbox-description{ color:var(--paper-dim); font-size:13px; line-height:1.55; margin:8px 0 0; white-space:pre-wrap; overflow-wrap:anywhere; }
   .lightbox-close{
     position:absolute; top:18px; right:18px; width:40px; height:40px; border-radius:50%;
     background:var(--panel); border:1px solid var(--panel-line); color:var(--paper);

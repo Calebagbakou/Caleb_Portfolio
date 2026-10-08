@@ -1,11 +1,9 @@
 /* =========================================================================
    PORTFOLIO — CALEB CREATIVE
    -------------------------------------------------------------------------
-   Port direct des cartes codées en dur dans l'ancien index.html. Reste
-   statique pour l'instant : l'écran admin "Projets" n'existe pas encore
-   (identique à avant la migration). Structurer ces données ici (plutôt que
-   directement dans le JSX) rend le futur branchement à Supabase plus simple
-   le jour où cet écran sera construit.
+   Port direct des cartes codées en dur dans l'ancien index.html. Ces entrées
+   servent de décorations pour les lignes migrées et de repli si Supabase est
+   temporairement indisponible. La migration SQL les importe dans projects.
    ========================================================================= */
 
 export const PORTFOLIO_FILTERS = [
