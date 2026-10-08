@@ -17,16 +17,81 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const env = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env : {};
+const supabaseUrl = env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = env.VITE_SUPABASE_ANON_KEY || '';
+const configError = new Error(
+  'Configuration Supabase manquante. Ajoute VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY dans ton fichier .env.'
+);
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  // On avertit plutôt que de planter : certaines pages (aucune ne devrait
-  // exister sans Supabase, mais on reste défensif) pourraient sinon
-  // provoquer un écran blanc au lieu d'un message clair.
-  console.error(
+function createFallbackQuery() {
+  const result = {
+    data: [],
+    count: null,
+    error: configError,
+    select() {
+      return this;
+    },
+    eq() {
+      return this;
+    },
+    order() {
+      return this;
+    },
+    maybeSingle() {
+      return Promise.resolve({ data: null, error: configError });
+    },
+    insert() {
+      return Promise.resolve({ data: null, error: configError });
+    },
+    update() {
+      return this;
+    },
+    delete() {
+      return this;
+    },
+    upsert() {
+      return Promise.resolve({ data: null, error: configError });
+    },
+    then(resolve, reject) {
+      return Promise.resolve({ data: [], count: null, error: configError }).then(resolve, reject);
+    },
+    catch(onRejected) {
+      return Promise.resolve({ data: [], count: null, error: configError }).catch(onRejected);
+    },
+  };
+
+  return result;
+}
+
+const hasSupabaseConfig = Boolean(supabaseUrl && supabaseAnonKey);
+
+if (!hasSupabaseConfig) {
+  console.warn(
     'Configuration Supabase manquante. Vérifie ton fichier .env (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY).'
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = hasSupabaseConfig
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : {
+      auth: {
+        getSession: async () => ({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({
+          data: {
+            subscription: {
+              unsubscribe() {},
+            },
+          },
+          error: null,
+        }),
+        signInWithPassword: async () => ({ data: null, error: configError }),
+        signOut: async () => ({ error: null }),
+        resetPasswordForEmail: async () => ({ data: null, error: configError }),
+        updateUser: async () => ({ data: { user: null }, error: null }),
+      },
+      from: () => createFallbackQuery(),
+      functions: {
+        invoke: async () => ({ data: null, error: configError }),
+      },
+    };
