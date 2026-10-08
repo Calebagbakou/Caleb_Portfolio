@@ -49,7 +49,7 @@ export default function About() {
       </div>
       <p className="about-body">
         Depuis près de deux ans, <strong>Caleb Jesugnon AGBAKOU</strong> met la puissance de
-        l'intelligence artificielle au service de la créativité — transformant des idées en
+        l'intelligence artificielle au service de la créativité, transformant des idées en
         réalisations concrètes : images, vidéos, designs, identités visuelles. Attentif au détail,
         il accompagne particuliers, entreprises et organisations dans la conception de contenus
         visuels qui marquent.

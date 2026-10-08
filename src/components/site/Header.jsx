@@ -25,7 +25,7 @@ export default function Header() {
   const [theme, setTheme] = useState('dark');
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [tc, setTc] = useState('00:00:24:07');
+  const timecodeRef = useRef(null);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -56,7 +56,9 @@ export default function Header() {
       const totalSec = Math.floor(framesRef.current / 30);
       const s = totalSec % 60;
       const m = Math.floor(totalSec / 60);
-      setTc(`00:${fmt(m)}:${fmt(s)}:${fmt(f)}`);
+      if (timecodeRef.current) {
+        timecodeRef.current.textContent = `00:${fmt(m)}:${fmt(s)}:${fmt(f)}`;
+      }
     }, 1000 / 30);
     return () => clearInterval(id);
   }, []);
@@ -73,7 +75,7 @@ export default function Header() {
             </span>
           </div>
           <div className="top-actions">
-            <span className="timecode">{tc}</span>
+            <span className="timecode" ref={timecodeRef}>00:00:24:07</span>
             <Link className="icon-btn" to={SHOP_URL} aria-label="Accéder à la boutique" title="Boutique">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="M3 3h2l2.4 12.4a2 2 0 002 1.6h8.2a2 2 0 002-1.6L21 8H6" />
@@ -83,7 +85,8 @@ export default function Header() {
             </Link>
             <button
               className="icon-btn"
-              aria-label="Changer de thème"
+              aria-label={theme === 'dark' ? 'Passer au thème clair' : 'Passer au thème sombre'}
+              aria-pressed={theme === 'light'}
               onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">

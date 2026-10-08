@@ -17,6 +17,10 @@
     --brand-grad: linear-gradient(120deg, #ccff00, #99cc00);
   }
 
+  html[data-theme="dark"]{
+    --ink:#080808;
+  }
+
   html[data-theme="light"]{
     --ink:#F9F9F9;
     --ink-alt:#EEEEEE;
@@ -31,6 +35,11 @@
     --paper:#080808;
     --paper-dim: rgba(8,8,8,0.7);
     --paper-faint: rgba(8,8,8,0.4);
+  }
+
+  html[data-theme] body{
+    background:var(--ink);
+    color:var(--paper);
   }
 
   html, html[data-theme]{
@@ -439,7 +448,7 @@
     border-radius:14px; overflow:hidden; border:1px solid var(--panel-line); background:var(--panel);
   }
   .p-thumb{
-    aspect-ratio: 16/10; position:relative;
+    aspect-ratio: 9/16; position:relative;
     display:flex; align-items:flex-end; padding:14px;
   }
   .p-thumb span{
