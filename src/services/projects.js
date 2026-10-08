@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-const PROJECT_COLUMNS = 'id, slug, title, description, category, media_type, media_url, thumbnail_url, published, status, category_id, cover_media_id, video_media_id, created_at, updated_at';
+const PROJECT_COLUMNS = 'id, slug, title, description, category, media_type, media_url, thumbnail_url, published, autoplay_preview, status, category_id, cover_media_id, video_media_id, created_at, updated_at';
 
 function getStoredMediaUrl(media) {
   if (!media) return null;
@@ -47,6 +47,7 @@ async function fetchProjects({ publishedOnly = false } = {}) {
       return {
         ...project,
         media_type: mediaTypeFromMedia(videoMedia, project.media_type),
+        autoplay_preview: Boolean(project.autoplay_preview),
         media_url: project.media_url || getStoredMediaUrl(videoMedia) || getStoredMediaUrl(coverMedia),
         thumbnail_url: project.thumbnail_url
           || coverMedia?.thumbnail_url
@@ -87,6 +88,7 @@ export async function createProject(project) {
       ...project,
       slug: slugForTitle(project.title),
       status: project.published ? 'published' : 'draft',
+      autoplay_preview: Boolean(project.autoplay_preview),
     })
     .select()
     .single();

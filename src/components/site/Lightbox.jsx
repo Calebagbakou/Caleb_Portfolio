@@ -1,11 +1,12 @@
-import { useEffect } from 'react';
-import { getYouTubeEmbedUrl, normalizeYouTubeUrl } from '../../data/projectMedia';
+import { useEffect, useState } from 'react';
+import { getYouTubeEmbedUrl } from '../../data/projectMedia';
 
 /**
  * items: liste à plat de toutes les cartes portfolio (toutes rangées confondues)
  * index: index actuellement ouvert, ou null si fermé
  */
 export default function Lightbox({ items, index, onClose, onNavigate }) {
+  const [youtubeLoaded, setYoutubeLoaded] = useState(false);
   const open = index !== null && index !== undefined;
   const item = open ? items[index] : null;
   const isVideo = item?.media_type === 'youtube' || item?.media_type === 'external_video';
@@ -31,6 +32,10 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
 
   const youtubeEmbed = item?.media_type === 'youtube' ? getYouTubeEmbedUrl(item.media_url) : null;
   const externalSource = item?.media_type === 'external_video' ? externalVideoSource(item.media_url) : null;
+
+  useEffect(() => {
+    setYoutubeLoaded(false);
+  }, [youtubeEmbed]);
 
   useEffect(() => {
     if (!open) return;
@@ -69,17 +74,21 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
             <img className="lightbox-image" src={item.media_url} alt={item.title} />
           )}
           {youtubeEmbed && (
-            <iframe
-              src={youtubeEmbed}
-              width="100%"
-              height="100%"
-              frameBorder="0"
-              allow="autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-              referrerPolicy="strict-origin-when-cross-origin"
-              style={{ position: 'absolute', inset: 0 }}
-              title={item.title}
-            />
+            <>
+              {!youtubeLoaded && <div className="video-loading" role="status">Chargement du lecteur…</div>}
+              <iframe
+                src={youtubeEmbed}
+                width="100%"
+                height="100%"
+                frameBorder="0"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+                referrerPolicy="strict-origin-when-cross-origin"
+                onLoad={() => setYoutubeLoaded(true)}
+                style={{ position: 'absolute', inset: 0 }}
+                title={`Lecteur vidéo : ${item.title}`}
+              />
+            </>
           )}
           {externalSource?.kind === 'embed' && (
             <iframe
@@ -107,16 +116,6 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
             <div className="lightbox-cat">{item?.catLabel}</div>
             <h3 className="lightbox-title">{item?.title}</h3>
             {item?.description && <p className="lightbox-description">{item.description}</p>}
-            {item?.media_type === 'youtube' && (
-              <a
-                className="lightbox-watch-link"
-                href={normalizeYouTubeUrl(item.media_url)}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Ouvrir sur YouTube
-              </a>
-            )}
           </div>
         </div>
       </div>

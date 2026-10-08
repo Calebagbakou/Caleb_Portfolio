@@ -37,7 +37,25 @@ export function normalizeYouTubeUrl(value) {
 
 export function getYouTubeEmbedUrl(value) {
   const id = extractYouTubeVideoId(value);
-  return id
-    ? `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&mute=1&playsinline=1&rel=0`
-    : null;
+  if (!id) return null;
+
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const params = new URLSearchParams({
+    enablejsapi: '1',
+    autoplay: '1',
+    controls: '1',
+    playsinline: '1',
+    rel: '0',
+  });
+  if (origin) params.set('origin', origin);
+  return `https://www.youtube.com/embed/${id}?${params}`;
+}
+
+export function getYouTubePreviewUrl(value) {
+  const playerUrl = getYouTubeEmbedUrl(value);
+  if (!playerUrl) return null;
+  const url = new URL(playerUrl);
+  url.searchParams.set('autoplay', '0');
+  url.searchParams.set('controls', '0');
+  return url.href;
 }

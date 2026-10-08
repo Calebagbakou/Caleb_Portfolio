@@ -35,6 +35,11 @@ lecture publique avec `status = 'published'` et l'écriture par `is_admin()`.
 Le nouveau champ `published` reste synchronisé avec `status`, de sorte que le
 filtre public et les règles de sécurité continuent de fonctionner ensemble.
 
+Pour activer les aperçus vidéo YouTube, exécute également
+[`supabase/migrations/002_project_autoplay_preview.sql`](./supabase/migrations/002_project_autoplay_preview.sql).
+Cette migration ajoute `autoplay_preview`, désactivé par défaut pour chaque
+projet existant.
+
 ## 2. Vérifier le compte administrateur
 
 Le compte doit exister dans **Authentication → Users**, et son UUID doit
@@ -77,6 +82,11 @@ Les catégories sont saisies librement.
 
 - **YouTube** : colle une URL `youtube.com/watch`, `youtu.be` ou `youtube.com/shorts`.
   L'identifiant est extrait automatiquement et le lecteur intégré est généré.
+  Dans le formulaire, coche **Prévisualisation automatique silencieuse** pour
+  autoriser un aperçu muet limité à 8 secondes quand la carte est visible. Le
+  lecteur officiel YouTube s'ouvre dans la lightbox; le site ne redirige pas
+  l'utilisateur vers YouTube. YouTube peut toutefois imposer ses propres
+  éléments de marque, restrictions d'intégration ou vérifications anti-abus.
 - **Image** : renseigne une URL d'image accessible publiquement.
 - **Vidéo externe** : renseigne une URL MP4/WebM directe ou un lecteur Vimeo.
 - **Miniature** : optionnelle. Les liens d'image sont enregistrés dans

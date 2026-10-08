@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PORTFOLIO_ROWS } from '../../../data/portfolio';
-import { getYouTubeEmbedUrl, extractYouTubeVideoId } from '../../../data/projectMedia';
+import { getYouTubePreviewUrl, extractYouTubeVideoId } from '../../../data/projectMedia';
 import { listPublishedProjects } from '../../../services/projects';
 import { useReveal } from '../../../hooks/useReveal';
 import { useTilt } from '../../../hooks/useTilt';
 import { useDragScroll } from '../../../hooks/useDragScroll';
 import Lightbox from '../../../components/site/Lightbox';
+import YouTubePreview from '../../../components/site/YouTubePreview';
 
 const LEGACY_ITEMS = PORTFOLIO_ROWS.flatMap((row) => row.items.map((item) => ({
   id: `legacy-${item.cat}-${item.title}`,
@@ -16,6 +17,7 @@ const LEGACY_ITEMS = PORTFOLIO_ROWS.flatMap((row) => row.items.map((item) => ({
   media_url: item.video || null,
   thumbnail_url: null,
   published: true,
+  autoplay_preview: false,
   ...item,
 })));
 const LEGACY_DECORATIONS = new Map(LEGACY_ITEMS.map((item) => [item.title.trim().toLowerCase(), item]));
@@ -44,7 +46,7 @@ function prepareProject(project) {
     gradient: legacy?.gradient || 'linear-gradient(135deg,#1F3350,#4ADE80)',
     thumbLabel: legacy?.thumbLabel || categoryLabel(project.category).toUpperCase(),
     youtubeId: videoId,
-    youtubeEmbed: videoId ? getYouTubeEmbedUrl(project.media_url) : null,
+    autoplay_preview: Boolean(project.autoplay_preview),
     youtubeThumbnail: videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null,
   };
 }
@@ -65,22 +67,50 @@ function groupProjects(projects) {
   }));
 }
 
-function PortfolioCard({ item, globalIndex, onOpen }) {
+function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisibility }) {
   const [revealRef, visible] = useReveal();
   const tiltRef = useTilt();
   const image = item.thumbnail_url || item.youtubeThumbnail || (item.media_type === 'image' ? item.media_url : null);
+  const videoPreviewEnabled = item.media_type === 'youtube' && item.autoplay_preview;
+  const finishPreview = useCallback(() => onPreviewVisibility(item.id, 0), [item.id, onPreviewVisibility]);
 
   function mergeRefs(el) {
     revealRef.current = el;
     tiltRef.current = el;
   }
 
+  useEffect(() => {
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const saveData = navigator.connection?.saveData;
+    if (!videoPreviewEnabled || reducedMotion || saveData || !('IntersectionObserver' in window)) {
+      onPreviewVisibility(item.id, 0);
+      return undefined;
+    }
+    const card = revealRef.current;
+    if (!card) return undefined;
+    const observer = new IntersectionObserver(([entry]) => {
+      onPreviewVisibility(item.id, entry.isIntersecting ? entry.intersectionRatio : 0);
+    }, { threshold: [0, 0.25, 0.5, 0.75] });
+    observer.observe(card);
+    return () => {
+      observer.disconnect();
+      onPreviewVisibility(item.id, 0);
+    };
+  }, [item.id, onPreviewVisibility, videoPreviewEnabled]);
+
   return (
-    <button
-      type="button"
+    <div
       className={`p-card reveal${visible ? ' in' : ''}`}
       ref={mergeRefs}
       onClick={() => onOpen(globalIndex)}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onOpen(globalIndex);
+        }
+      }}
+      role="button"
+      tabIndex={0}
       aria-label={`Ouvrir le projet ${item.title}`}
     >
       <span className="p-expand" aria-hidden="true">
@@ -89,26 +119,36 @@ function PortfolioCard({ item, globalIndex, onOpen }) {
         </svg>
       </span>
       <div className="p-thumb" style={{ background: item.gradient }}>
-        {image
+        {previewActive && (
+          <YouTubePreview
+            src={getYouTubePreviewUrl(item.media_url)}
+            title={item.title}
+            onFinished={finishPreview}
+          />
+        )}
+        {!previewActive && image
           ? <img src={image} alt="" loading="lazy" />
-          : <span>{item.thumbLabel}</span>}
+          : !previewActive && <span>{item.thumbLabel}</span>}
         {(item.media_type === 'youtube' || item.media_type === 'external_video') && (
-          <span className="p-play" aria-hidden="true">
+          <span className={`p-play${previewActive ? ' preview-playing' : ''}`} aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z" />
+              {previewActive
+                ? <path d="M7 5h4v14H7zm6 0h4v14h-4z" />
+                : <path d="M8 5v14l11-7z" />}
             </svg>
           </span>
         )}
+        {videoPreviewEnabled && <span className="p-preview-label">APERÇU MUET</span>}
       </div>
       <div className="p-body">
         <div className="p-cat">{item.catLabel}</div>
         <h3 className="p-title">{item.title}</h3>
       </div>
-    </button>
+    </div>
   );
 }
 
-function PortfolioRow({ row, indexOffset, onOpen }) {
+function PortfolioRow({ row, indexOffset, onOpen, activePreviewId, lightboxOpen, onPreviewVisibility }) {
   const dragRef = useDragScroll();
   return (
     <div className="p-row" id={row.id}>
@@ -118,7 +158,14 @@ function PortfolioRow({ row, indexOffset, onOpen }) {
       </div>
       <div className="p-row-scroll" ref={dragRef}>
         {row.items.map((item, i) => (
-          <PortfolioCard item={item} globalIndex={indexOffset + i} onOpen={onOpen} key={item.id || item.title} />
+          <PortfolioCard
+            item={item}
+            globalIndex={indexOffset + i}
+            onOpen={onOpen}
+            previewActive={!lightboxOpen && activePreviewId === item.id}
+            onPreviewVisibility={onPreviewVisibility}
+            key={item.id || item.title}
+          />
         ))}
       </div>
     </div>
@@ -129,6 +176,16 @@ export default function PortfolioSection() {
   const [projects, setProjects] = useState(LEGACY_ITEMS);
   const [activeFilter, setActiveFilter] = useState(null);
   const [lightboxIndex, setLightboxIndex] = useState(null);
+  const [activePreviewId, setActivePreviewId] = useState(null);
+  const visiblePreviews = useRef(new Map());
+
+  const reportPreviewVisibility = useCallback((id, ratio) => {
+    if (ratio > 0) visiblePreviews.current.set(id, ratio);
+    else visiblePreviews.current.delete(id);
+    const nextPreview = [...visiblePreviews.current.entries()]
+      .sort((left, right) => right[1] - left[1])[0]?.[0] || null;
+    setActivePreviewId((current) => current === nextPreview ? current : nextPreview);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -171,7 +228,14 @@ export default function PortfolioSection() {
     document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  const resumeVisiblePreview = useCallback(() => {
+    const nextPreview = [...visiblePreviews.current.entries()]
+      .sort((left, right) => right[1] - left[1])[0]?.[0] || null;
+    setActivePreviewId(nextPreview);
+  }, []);
+
   function openLightbox(index) {
+    setActivePreviewId(null);
     if (flatItems.length) setLightboxIndex((index + flatItems.length) % flatItems.length);
   }
 
@@ -203,7 +267,15 @@ export default function PortfolioSection() {
       {rows.length > 0
         ? <div className="portfolio-rows" id="grid">
           {rows.map((row) => (
-            <PortfolioRow row={row} indexOffset={offsets[row.id]} onOpen={openLightbox} key={row.id} />
+            <PortfolioRow
+              row={row}
+              indexOffset={offsets[row.id]}
+              onOpen={openLightbox}
+              activePreviewId={activePreviewId}
+              lightboxOpen={lightboxIndex !== null}
+              onPreviewVisibility={reportPreviewVisibility}
+              key={row.id}
+            />
           ))}
         </div>
         : <p className="portfolio-empty">Les prochaines réalisations arrivent bientôt.</p>}
@@ -211,7 +283,10 @@ export default function PortfolioSection() {
       <Lightbox
         items={flatItems}
         index={lightboxIndex}
-        onClose={() => setLightboxIndex(null)}
+        onClose={() => {
+          setLightboxIndex(null);
+          resumeVisiblePreview();
+        }}
         onNavigate={navigateLightbox}
       />
     </section>

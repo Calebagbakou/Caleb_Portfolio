@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   extractYouTubeVideoId,
   getYouTubeEmbedUrl,
+  getYouTubePreviewUrl,
   normalizeYouTubeUrl,
 } from './projectMedia.js';
 
@@ -20,5 +21,17 @@ test('rejects invalid or non-YouTube URLs and produces safe normalized URLs', ()
   assert.equal(extractYouTubeVideoId('https://youtube.com.evil.example/watch?v=' + videoId), null);
   assert.equal(extractYouTubeVideoId('https://youtube.com/watch?v=short'), null);
   assert.equal(normalizeYouTubeUrl(`https://youtu.be/${videoId}`), `https://www.youtube.com/watch?v=${videoId}`);
-  assert.equal(getYouTubeEmbedUrl(`https://youtube.com/shorts/${videoId}`), `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1&rel=0`);
+  const embed = new URL(getYouTubeEmbedUrl(`https://youtube.com/shorts/${videoId}`));
+  assert.equal(embed.origin, 'https://www.youtube.com');
+  assert.equal(embed.pathname, `/embed/${videoId}`);
+  assert.equal(embed.searchParams.get('autoplay'), '1');
+  assert.equal(embed.searchParams.get('playsinline'), '1');
+  assert.equal(embed.searchParams.get('enablejsapi'), '1');
+  assert.equal(embed.searchParams.get('controls'), '1');
+
+  const preview = new URL(getYouTubePreviewUrl(`https://youtu.be/${videoId}`));
+  assert.equal(preview.searchParams.get('autoplay'), '0');
+  assert.equal(preview.searchParams.has('mute'), false);
+  assert.equal(preview.searchParams.get('controls'), '0');
+  assert.equal(preview.searchParams.get('enablejsapi'), '1');
 });

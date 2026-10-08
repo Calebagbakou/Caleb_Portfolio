@@ -10,6 +10,7 @@ const EMPTY_FORM = {
   media_url: '',
   thumbnail_url: '',
   published: false,
+  autoplay_preview: false,
 };
 
 const MEDIA_TYPES = [
@@ -81,6 +82,7 @@ export default function Projects() {
       media_url: project.media_url || '',
       thumbnail_url: project.thumbnail_url || '',
       published: Boolean(project.published),
+      autoplay_preview: Boolean(project.autoplay_preview),
     });
     setError('');
     setNotice('');
@@ -135,6 +137,7 @@ export default function Projects() {
         media_url: normalizedMediaUrl,
         thumbnail_url: thumbnailUrl || null,
         published: form.published,
+        autoplay_preview: form.autoplay_preview,
       },
     };
   }
@@ -285,6 +288,20 @@ export default function Projects() {
             <input type="checkbox" name="published" checked={form.published} onChange={updateField} />
             <span>Publier sur le portfolio</span>
           </label>
+          {form.media_type === 'youtube' && (
+            <label className="project-publish project-preview-setting">
+              <input
+                type="checkbox"
+                name="autoplay_preview"
+                checked={form.autoplay_preview}
+                onChange={updateField}
+              />
+              <span>
+                Prévisualisation automatique silencieuse
+                <small>Lecture muette limitée à 8 secondes quand cette carte est visible. Une seule vidéo à la fois.</small>
+              </span>
+            </label>
+          )}
 
           <div className="row-actions project-form-actions">
             <button className="btn btn-primary" type="submit" disabled={saving}>
@@ -325,6 +342,9 @@ export default function Projects() {
                     <span className={`badge ${project.published ? 'badge-ok' : 'badge-off'}`}>
                       {project.published ? 'Publié' : 'Brouillon'}
                     </span>
+                    {project.media_type === 'youtube' && project.autoplay_preview && (
+                      <span className="badge badge-unread">Aperçu auto</span>
+                    )}
                     <span className="project-admin-category">{project.category}</span>
                     <span className="project-admin-category">{mediaLabel(project.media_type)}</span>
                   </div>
