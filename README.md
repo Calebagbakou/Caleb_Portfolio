@@ -94,8 +94,10 @@ et vérifié la commande dans `/admin/orders`.
 ### Bibliothèque de médias
 
 La section **Admin → Médias → Images** permet d’importer la photo principale
-du profil, le logo de chaque produit et son affiche/visuel principal. Les
-fichiers sont stockés dans le bucket public `site-media`; seuls les comptes
+du profil, les logos et affiches des produits, ainsi que les logos des
+logiciels et outils d’IA affichés dans la section Outils. Les fichiers sont
+stockés dans le bucket public `site-media`; les URLs des logos d’outils sont
+enregistrées dans `settings` sous la clé `site_tool_logos`. Seuls les comptes
 présents dans `admins` peuvent importer ou modifier des fichiers. Exécute
 [`supabase/migrations/009_admin_media_library.sql`](./supabase/migrations/009_admin_media_library.sql)
 sur Supabase avant d’utiliser l’import. Les formats acceptés sont JPG, PNG,

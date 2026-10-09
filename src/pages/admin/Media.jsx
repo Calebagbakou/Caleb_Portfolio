@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { listShopAdminData } from '../../services/shop';
 import { getSettings, saveSettings } from '../../services/settings';
 import { supabase } from '../../services/supabase';
+import { TOOL_GROUPS } from '../../data/tools';
 
 const BUCKET = 'site-media';
 const MAX_IMAGE_SIZE = 8 * 1024 * 1024;
+const TOOL_LOGOS_SETTING = 'site_tool_logos';
 const IMAGE_EXTENSIONS = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
@@ -12,10 +14,10 @@ const IMAGE_EXTENSIONS = {
   'image/avif': 'avif',
 };
 
-function UploadField({ id, label, currentUrl, busy, onChange }) {
+function UploadField({ id, label, currentUrl, busy, disabled, onChange, onRemove, previewClassName = '' }) {
   return (
     <div className="media-upload-field">
-      <div className="media-upload-preview">
+      <div className={`media-upload-preview${previewClassName ? ` ${previewClassName}` : ''}`}>
         {currentUrl
           ? <img src={currentUrl} alt={label} />
           : <span>Aucune image</span>}
@@ -26,8 +28,13 @@ function UploadField({ id, label, currentUrl, busy, onChange }) {
         type="file"
         accept="image/jpeg,image/png,image/webp,image/avif"
         onChange={onChange}
-        disabled={busy}
+        disabled={busy || disabled}
       />
+      {currentUrl && onRemove && (
+        <button className="btn btn-secondary btn-sm" type="button" onClick={onRemove} disabled={busy || disabled}>
+          Retirer le logo
+        </button>
+      )}
       <small className="project-form-hint">JPG, PNG, WebP ou AVIF · 8 Mo maximum. L’image est publiée sur le site.</small>
       {busy && <small className="media-upload-status">Importation en cours…</small>}
     </div>
@@ -36,6 +43,7 @@ function UploadField({ id, label, currentUrl, busy, onChange }) {
 
 export default function Media() {
   const [products, setProducts] = useState([]);
+  const [toolLogos, setToolLogos] = useState({});
   const [profileUrl, setProfileUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState('');
@@ -54,6 +62,22 @@ export default function Media() {
       setProducts(shopResult.data.products);
       const profileSetting = settingsResult.data?.find((setting) => setting.key === 'site_profile_image_url');
       setProfileUrl(profileSetting?.value || '');
+      const toolLogosSetting = settingsResult.data?.find((setting) => setting.key === TOOL_LOGOS_SETTING);
+      try {
+        const parsedToolLogos = toolLogosSetting?.value ? JSON.parse(toolLogosSetting.value) : {};
+        if (
+          !parsedToolLogos
+          || typeof parsedToolLogos !== 'object'
+          || Array.isArray(parsedToolLogos)
+          || Object.values(parsedToolLogos).some((url) => typeof url !== 'string')
+        ) {
+          throw new Error('Le paramètre des logos d’outils doit contenir un objet JSON avec des URLs textuelles.');
+        }
+        setToolLogos(parsedToolLogos);
+      } catch (parseError) {
+        console.error('Impossible de lire les logos des outils enregistrés :', parseError);
+        setError('Chargement impossible : le paramètre des logos des outils est invalide.');
+      }
     }
     setLoading(false);
   }
@@ -82,7 +106,7 @@ export default function Media() {
 
     setUploading(key);
     try {
-      const scope = product ? `products/${product.id}` : 'site';
+      const scope = product ? `products/${product.id}` : field === 'tool_logo' ? 'tools' : 'site';
       const path = `${scope}/${field}-${crypto.randomUUID()}.${IMAGE_EXTENSIONS[file.type]}`;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, {
         cacheControl: '3600',
@@ -104,6 +128,13 @@ export default function Media() {
         setProducts((current) => current.map((item) => (
           item.id === product.id ? { ...item, [field]: publicUrl } : item
         )));
+      } else if (field === 'tool_logo') {
+        const nextLogos = { ...toolLogos, [key]: publicUrl };
+        const { error: saveError } = await saveSettings([
+          { key: TOOL_LOGOS_SETTING, value: JSON.stringify(nextLogos) },
+        ]);
+        if (saveError) throw saveError;
+        setToolLogos(nextLogos);
       } else {
         const { error: saveError } = await saveSettings([
           { key: 'site_profile_image_url', value: publicUrl },
@@ -118,6 +149,27 @@ export default function Media() {
     } finally {
       setUploading('');
       input.value = '';
+    }
+  }
+
+  async function removeToolLogo(toolName) {
+    setError('');
+    setNotice('');
+    setUploading(toolName);
+    try {
+      const nextLogos = { ...toolLogos };
+      delete nextLogos[toolName];
+      const { error: saveError } = await saveSettings([
+        { key: TOOL_LOGOS_SETTING, value: JSON.stringify(nextLogos) },
+      ]);
+      if (saveError) throw saveError;
+      setToolLogos(nextLogos);
+      setNotice(`Logo de ${toolName} retiré.`);
+    } catch (removeError) {
+      console.error('Impossible de retirer ce logo d’outil :', removeError);
+      setError(`Suppression impossible : ${removeError instanceof Error ? removeError.message : String(removeError)}`);
+    } finally {
+      setUploading('');
     }
   }
 
@@ -141,8 +193,45 @@ export default function Media() {
               label="Importer ou remplacer la photo de profil"
               currentUrl={profileUrl}
               busy={uploading === 'profile'}
+              disabled={Boolean(uploading)}
               onChange={(event) => handleUpload(event, { key: 'profile', field: 'site_profile_image_url' })}
             />
+          </section>
+
+          <section className="panel">
+            <div className="projects-heading">
+              <div>
+                <h2>Logos des logiciels et des IA</h2>
+                <p>Importe ou remplace les logos affichés dans la section Outils du portfolio. Sans logo, les initiales restent affichées.</p>
+              </div>
+            </div>
+            {TOOL_GROUPS.map((group) => (
+              <div className="media-tool-group" key={group.label}>
+                <h3>{group.label}</h3>
+                <div className="media-tool-list">
+                  {group.tools.map((tool) => {
+                    const key = tool.name;
+                    return (
+                      <div className="media-tool-card" key={tool.name}>
+                        <UploadField
+                          id={`media-tool-logo-${tool.name}`}
+                          label={tool.name}
+                          currentUrl={toolLogos[tool.name] || ''}
+                          busy={uploading === key}
+                          disabled={Boolean(uploading)}
+                          previewClassName="media-tool-logo-preview"
+                          onChange={(event) => handleUpload(event, {
+                            key: tool.name,
+                            field: 'tool_logo',
+                          })}
+                          onRemove={() => removeToolLogo(tool.name)}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </section>
 
           <section className="panel">
@@ -171,6 +260,7 @@ export default function Media() {
                       label="Logo du produit"
                       currentUrl={product.logo_url}
                       busy={uploading === `${product.id}-logo_url`}
+                      disabled={Boolean(uploading)}
                       onChange={(event) => handleUpload(event, {
                         key: `${product.id}-logo_url`,
                         product,
@@ -182,6 +272,7 @@ export default function Media() {
                       label="Affiche / visuel principal"
                       currentUrl={product.image_url}
                       busy={uploading === `${product.id}-image_url`}
+                      disabled={Boolean(uploading)}
                       onChange={(event) => handleUpload(event, {
                         key: `${product.id}-image_url`,
                         product,

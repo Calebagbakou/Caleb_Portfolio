@@ -469,6 +469,7 @@
     display:flex; align-items:center; justify-content:center;
     font-family:'Montserrat', sans-serif; font-size:11px; font-weight:600; flex-shrink:0;
   }
+  .tool-avatar.tool-logo{ border-radius:7px; object-fit:contain; background:var(--panel); }
   .tool-chip:nth-child(3n+2) .tool-avatar{ background:var(--orange-dim); color:var(--orange); }
   .tool-chip:nth-child(3n+3) .tool-avatar{ background:var(--violet-dim); color:var(--violet); }
 
