@@ -38,7 +38,7 @@ function renderTyped(n) {
 }
 
 export default function Hero() {
-  const [profileImage, setProfileImage] = useState(profileJpg);
+  const [profileImage, setProfileImage] = useState(null);
   const [typedCount, setTypedCount] = useState(prefersReducedMotion ? FULL_TEXT.length : 0);
   const [activeChapter, setActiveChapter] = useState(0);
   const [scrubPct, setScrubPct] = useState(0);
@@ -50,11 +50,13 @@ export default function Hero() {
     getSettingValue('site_profile_image_url').then(({ data, error }) => {
       if (error) {
         console.error('Impossible de charger la photo principale depuis les paramètres :', error);
+        if (active) setProfileImage(profileJpg);
         return;
       }
-      if (active && data) setProfileImage(data);
+      if (active) setProfileImage(data || profileJpg);
     }).catch((error) => {
       console.error('Échec du chargement de la photo principale :', error);
+      if (active) setProfileImage(profileJpg);
     });
     return () => {
       active = false;
@@ -150,7 +152,14 @@ export default function Hero() {
         <div className="hero-photo">
           <div className="hero-photo-ring">
             <div className="hero-photo-frame">
-              <img src={profileImage} alt="Photo de profil de Caleb Jesugnon AGBAKOU" loading="lazy" />
+              {profileImage && (
+                <img
+                  src={profileImage}
+                  alt="Photo de profil de Caleb Jesugnon AGBAKOU"
+                  loading="eager"
+                  fetchPriority="high"
+                />
+              )}
             </div>
           </div>
           <div className="hero-photo-info">
