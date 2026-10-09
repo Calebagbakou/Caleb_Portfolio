@@ -23,13 +23,14 @@ export default function ProductCard({ product }) {
     <Link className="product-card product-card-link" to={`/boutique/produit/${product.slug}`}>
       <div className="product-thumb" style={{ background: product.gradient }}>
         {product.badge && <span className="product-badge">{product.badge}</span>}
-        {product.image_url
-          ? <img className="product-thumb-artwork" src={product.image_url} alt="" loading="lazy" />
-          : product.logo_url
-            ? <img className="product-thumb-logo standalone" src={product.logo_url} alt="" loading="lazy" />
-            : <span className="product-thumb-avatar">{product.avatar}</span>}
-        {product.image_url && product.logo_url && (
+        {product.image_url && (
+          <img className="product-thumb-artwork" src={product.image_url} alt="" loading="lazy" />
+        )}
+        {product.logo_url && (
           <img className="product-thumb-logo" src={product.logo_url} alt={`${product.name} logo`} loading="lazy" />
+        )}
+        {!product.image_url && !product.logo_url && (
+          <span className="product-thumb-avatar">{product.avatar}</span>
         )}
       </div>
       <div className="product-body">

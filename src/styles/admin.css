@@ -192,9 +192,9 @@ h1,h2,h3,.brand{ font-family:'Unbounded',sans-serif; letter-spacing:-0.01em; }
 .shop-admin-list-heading h2{ margin-bottom:6px; }
 .shop-admin-product-list,.shop-admin-orders{ display:grid; gap:12px; margin-top:16px; }
 .shop-admin-product{ display:grid; grid-template-columns:76px minmax(0,1fr) auto; align-items:center; gap:14px; padding:12px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface-alt); }
-.shop-admin-product-visual{ width:76px; aspect-ratio:1; border-radius:9px; display:flex; align-items:center; justify-content:center; font-weight:700; overflow:hidden; }
-.shop-admin-product-visual img{ width:100%; height:100%; object-fit:cover; }
-.shop-admin-product-visual img.shop-admin-product-logo{ width:72%; height:72%; object-fit:contain; padding:5px; border-radius:8px; background:rgba(255,255,255,.94); }
+.shop-admin-product-visual{ width:76px; aspect-ratio:1; border-radius:9px; position:relative; display:flex; align-items:center; justify-content:center; font-weight:700; overflow:hidden; }
+.shop-admin-product-visual img.shop-admin-product-artwork{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.shop-admin-product-visual img.shop-admin-product-logo{ position:absolute; left:4px; bottom:4px; z-index:1; width:30px; height:30px; object-fit:contain; padding:3px; border:1px solid rgba(255,255,255,.7); border-radius:6px; background:rgba(255,255,255,.96); }
 .shop-admin-product-info{ min-width:0; }
 .shop-admin-product-info h3{ font-size:14px; margin:8px 0 4px; }
 .shop-admin-product-info p{ font-size:12px; overflow-wrap:anywhere; }

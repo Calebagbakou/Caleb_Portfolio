@@ -56,11 +56,15 @@ export default function Produit() {
     <main className="wrap" style={{ position: 'relative' }}>
       <div className="product-detail">
         <div className="product-visual reveal in" style={{ background: product.gradient }}>
-          {product.image_url
-            ? <img className="product-visual-artwork" src={product.image_url} alt={product.name} />
-            : product.logo_url
-              ? <img className="product-visual-logo" src={product.logo_url} alt={`${product.name} logo`} />
-              : <span className="product-visual-avatar">{product.avatar}</span>}
+          {product.image_url && (
+            <img className="product-visual-artwork" src={product.image_url} alt={product.name} />
+          )}
+          {product.logo_url && (
+            <img className="product-visual-logo" src={product.logo_url} alt={`${product.name} logo`} />
+          )}
+          {!product.image_url && !product.logo_url && (
+            <span className="product-visual-avatar">{product.avatar}</span>
+          )}
         </div>
         <div className="product-info reveal in">
           <div className="eyebrow">{product.categoryLabel}</div>

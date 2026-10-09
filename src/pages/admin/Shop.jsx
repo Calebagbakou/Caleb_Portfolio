@@ -450,11 +450,11 @@ export default function Shop() {
             {products.map((product) => (
               <article className="shop-admin-product" key={product.id}>
                 <div className="shop-admin-product-visual" style={{ background: product.gradient }}>
-                  {product.image_url
-                    ? <img src={product.image_url} alt="" />
-                    : product.logo_url
-                      ? <img className="shop-admin-product-logo" src={product.logo_url} alt="" />
-                      : product.avatar}
+                  {product.image_url && <img className="shop-admin-product-artwork" src={product.image_url} alt="" />}
+                  {product.logo_url && (
+                    <img className="shop-admin-product-logo" src={product.logo_url} alt={`${product.name} logo`} />
+                  )}
+                  {!product.image_url && !product.logo_url && product.avatar}
                 </div>
                 <div className="shop-admin-product-info">
                   <div className="project-admin-meta">

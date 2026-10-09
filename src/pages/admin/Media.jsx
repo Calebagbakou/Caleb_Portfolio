@@ -149,7 +149,7 @@ export default function Media() {
             <div className="projects-heading">
               <div>
                 <h2>Logos et affiches des produits</h2>
-                <p>Le logo remplace les initiales (Ge, Cc, Ca); l’affiche apparaît dans le cadre principal de la fiche produit.</p>
+                <p>L’affiche occupe le cadre carré; le logo apparaît en petit, en bas à gauche, dans un carré aux coins légèrement arrondis.</p>
               </div>
               <button className="btn btn-secondary btn-sm" type="button" onClick={loadMedia} disabled={loading || Boolean(uploading)}>
                 Actualiser
