@@ -227,7 +227,7 @@ export default function ExternalVideoPreview({ src, title, onFinished }) {
   const provider = isWistia ? 'wistia' : 'vimeo';
 
   return (
-    <div className={`p-video-preview${isWistia ? ' wistia-preview' : ''}`}>
+    <div className="p-video-preview">
       <iframe
         ref={iframeRef}
         src={addAutoplayOptions(source.src, provider)}
