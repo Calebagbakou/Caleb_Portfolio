@@ -29,7 +29,7 @@ body{
   font-family:'Inter', sans-serif; font-size:15.5px; line-height:1.55;
   -webkit-font-smoothing:antialiased;
 }
-html[data-theme] body.shop-theme{
+body.shop-theme{
   --bg:#FAFAF8;
   --surface:#FFFFFF;
   --surface-alt:#F3F2EE;
