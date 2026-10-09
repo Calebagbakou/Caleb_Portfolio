@@ -130,10 +130,6 @@ export default function Projects() {
       return { error: 'La miniature doit être une URL complète commençant par https:// ou http://.' };
     }
 
-    if (form.media_type === 'external_video' && !thumbnailUrl) {
-      return { error: 'Ajoute une miniature pour cette vidéo externe afin qu’elle soit visible dans le portfolio.' };
-    }
-
     if (form.media_type === 'image' && thumbnailUrl && !validHttpUrl(thumbnailUrl)) {
       return { error: "L'URL de miniature n'est pas valide." };
     }
@@ -294,7 +290,7 @@ export default function Projects() {
             </div>
             <div className="form-group project-form-wide">
               <label htmlFor="project-thumbnail">
-                URL de la miniature{form.media_type === 'external_video' ? ' (obligatoire)' : ' (facultative)'}
+                URL de la miniature (facultative)
               </label>
               <input
                 id="project-thumbnail"
@@ -303,14 +299,13 @@ export default function Projects() {
                 value={form.thumbnail_url}
                 onChange={updateField}
                 placeholder="https://…"
-                required={form.media_type === 'external_video'}
               />
               <small className="project-form-hint">
                 {form.media_type === 'image'
                   ? "L’image du projet sert de miniature si tu ne fournis pas de lien séparé."
                   : form.media_type === 'youtube'
                     ? 'YouTube fournit automatiquement la miniature si tu ne fournis pas de lien séparé.'
-                    : 'Obligatoire : colle un lien direct et public vers un fichier image (JPG, PNG ou WebP), pas une page de partage. La vidéo seule ne fournit pas de miniature fiable.'}
+                    : 'Tu peux ajouter un lien direct vers une image si tu veux choisir une miniature. Sinon, le site utilisera l’aperçu vidéo automatique lorsque cette option est activée.'}
                 {' '}Aucun fichier vidéo n’est stocké dans Supabase.
               </small>
               {getProjectThumbnailUrl(form) && (
