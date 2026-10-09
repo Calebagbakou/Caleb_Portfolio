@@ -45,6 +45,10 @@ body.shop-theme{
   background:var(--bg);
   color:var(--ink);
 }
+html[data-theme] body.shop-theme{
+  background:var(--bg);
+  color:var(--ink);
+}
 img{ max-width:100%; display:block; }
 a{ color:inherit; text-decoration:none; }
 button{ font-family:inherit; }
