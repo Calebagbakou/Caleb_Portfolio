@@ -127,8 +127,9 @@ export default function Produit() {
             </Link>
           </div>
           <p className="product-note">
-            Livraison numérique : les identifiants ou instructions d'activation te sont envoyés directement par
-            Caleb après validation de la commande.
+            {product.slug === 'gemini-pro'
+              ? 'Formule disponible : 18 mois. Après confirmation du paiement, ton lien d’activation est généré automatiquement par PixVerify.'
+              : 'Livraison numérique : les identifiants ou instructions d’activation te sont envoyés directement par Caleb après validation de la commande.'}
           </p>
         </div>
       </div>

@@ -9,6 +9,7 @@ import {
   updateShopCategory,
 } from '../../services/shop';
 import { DEFAULT_SHOP_CONTENT } from '../../context/ShopContext';
+import { supabase } from '../../services/supabase';
 
 const EMPTY_PRODUCT = {
   id: null,
@@ -71,6 +72,9 @@ export default function Shop() {
   const [contentSaving, setContentSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [pixverifyCategories, setPixverifyCategories] = useState(null);
+  const [pixverifyLoading, setPixverifyLoading] = useState(false);
+  const [pixverifyError, setPixverifyError] = useState('');
 
   async function load() {
     setLoading(true);
@@ -228,10 +232,54 @@ export default function Shop() {
     setContentSaving(false);
   }
 
+  async function loadPixverifyCategories() {
+    setPixverifyLoading(true);
+    setPixverifyError('');
+    const { data, error: invokeError } = await supabase.functions.invoke('gemini-pro-activate', {
+      body: { action: 'categories' },
+    });
+    if (invokeError || data?.error) {
+      console.error('Impossible de charger les catégories PixVerify :', invokeError || data.error);
+      setPixverifyError(data?.error || invokeError.message);
+      setPixverifyCategories(null);
+    } else {
+      setPixverifyCategories(data.categories || []);
+    }
+    setPixverifyLoading(false);
+  }
+
   return (
     <>
       {error && <div className="shop-admin-alert error" role="alert">{error}</div>}
       {notice && <div className="shop-admin-alert success" role="status">{notice}</div>}
+
+      <section className="panel">
+        <h2>Catalogue API PixVerify</h2>
+        <p>
+          Consulte les catégories disponibles sur PixVerify pour identifier l’ID exact du lien Gemini AI Pro 18 mois.
+          Cette action ne lance aucun achat et ne dépense aucun crédit.
+        </p>
+        <button className="btn btn-secondary" type="button" onClick={loadPixverifyCategories} disabled={pixverifyLoading}>
+          {pixverifyLoading ? 'Chargement…' : 'Charger les catégories PixVerify'}
+        </button>
+        {pixverifyError && <div className="shop-admin-alert error" role="alert">{pixverifyError}</div>}
+        {pixverifyCategories && (
+          <div className="shop-admin-list" style={{ marginTop: 16 }}>
+            {pixverifyCategories.length === 0 && <p>Aucune catégorie disponible.</p>}
+            {pixverifyCategories.map((category) => (
+              <div className="shop-admin-category" key={category.id}>
+                <div>
+                  <strong>{category.name}</strong>
+                  <div>ID : <code>{category.id}</code></div>
+                  {category.description && <small>{category.description}</small>}
+                  {category.price_per_unit !== undefined && <div>Prix : {category.price_per_unit}</div>}
+                  {category.stock && <div>Stock : {category.stock.available ?? 'voir PixVerify'}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="panel">
         <h2>Contenu de la boutique</h2>
