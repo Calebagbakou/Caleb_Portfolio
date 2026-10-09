@@ -144,8 +144,8 @@ export default function Hero() {
           <span className="type-cursor">|</span>
         </h1>
         <p className="sub">
-          Le visuel fait tout. Ne laisse plus tes idées au brouillon. Laisse l'IA et le design exploser ton
-          potentiel.
+          Vidéo IA, Design, montage vidéo et Visuels IA{' '}
+          <strong>au service de vos projets, au Bénin et au-delà.</strong>
         </p>
         <div className="hero-photo">
           <div className="hero-photo-ring">
