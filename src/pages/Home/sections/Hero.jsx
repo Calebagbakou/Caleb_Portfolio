@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import profileJpg from '../../../assets/profile.jpg';
+import { getSettingValue } from '../../../services/settings';
 
 const BR = '\u0001';
 const EM_S = '\u0002';
@@ -37,11 +38,28 @@ function renderTyped(n) {
 }
 
 export default function Hero() {
+  const [profileImage, setProfileImage] = useState(profileJpg);
   const [typedCount, setTypedCount] = useState(prefersReducedMotion ? FULL_TEXT.length : 0);
   const [activeChapter, setActiveChapter] = useState(0);
   const [scrubPct, setScrubPct] = useState(0);
   const scrubTrackRef = useRef(null);
   const draggingRef = useRef(false);
+
+  useEffect(() => {
+    let active = true;
+    getSettingValue('site_profile_image_url').then(({ data, error }) => {
+      if (error) {
+        console.error('Impossible de charger la photo principale depuis les paramètres :', error);
+        return;
+      }
+      if (active && data) setProfileImage(data);
+    }).catch((error) => {
+      console.error('Échec du chargement de la photo principale :', error);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Typewriter
   useEffect(() => {
@@ -132,7 +150,7 @@ export default function Hero() {
         <div className="hero-photo">
           <div className="hero-photo-ring">
             <div className="hero-photo-frame">
-              <img src={profileJpg} alt="Photo de profil de Caleb Jesugnon AGBAKOU" loading="lazy" />
+              <img src={profileImage} alt="Photo de profil de Caleb Jesugnon AGBAKOU" loading="lazy" />
             </div>
           </div>
           <div className="hero-photo-info">

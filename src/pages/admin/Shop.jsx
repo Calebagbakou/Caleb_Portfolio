@@ -24,6 +24,7 @@ const EMPTY_PRODUCT = {
   featured: false,
   avatar: '',
   gradient: 'linear-gradient(135deg,#4285F4,#34A853)',
+  logo_url: '',
   image_url: '',
   access_url: '',
   plans: [{ id: null, slug: '', label: '', price: '', old_price: '', currency: 'XOF', active: true }],
@@ -53,6 +54,7 @@ function productForm(product) {
     badge: product.badge || '',
     avatar: product.avatar || '',
     gradient: product.gradient || EMPTY_PRODUCT.gradient,
+    logo_url: product.logo_url || '',
     image_url: product.image_url || '',
     access_url: product.access_url || '',
     plans: product.plans.length
@@ -153,6 +155,7 @@ export default function Shop() {
       badge: form.badge.trim() || null,
       avatar: form.avatar.trim() || null,
       gradient: form.gradient.trim() || null,
+      logo_url: form.logo_url.trim() || null,
       image_url: form.image_url.trim() || null,
       access_url: form.access_url.trim() || null,
     };
@@ -363,6 +366,11 @@ export default function Shop() {
               <input id="shop-product-avatar" name="avatar" maxLength="4" value={form.avatar || ''} onChange={updateProductField} />
             </div>
             <div className="form-group">
+              <label htmlFor="shop-product-logo">URL du logo (facultative)</label>
+              <input id="shop-product-logo" type="url" name="logo_url" value={form.logo_url || ''} onChange={updateProductField} placeholder="https://…" />
+              <small className="project-form-hint">Tu peux aussi importer le logo depuis la section Médias.</small>
+            </div>
+            <div className="form-group">
               <label htmlFor="shop-product-gradient">Dégradé CSS</label>
               <input id="shop-product-gradient" name="gradient" value={form.gradient || ''} onChange={updateProductField} />
             </div>
@@ -442,7 +450,11 @@ export default function Shop() {
             {products.map((product) => (
               <article className="shop-admin-product" key={product.id}>
                 <div className="shop-admin-product-visual" style={{ background: product.gradient }}>
-                  {product.image_url ? <img src={product.image_url} alt="" /> : product.avatar}
+                  {product.image_url
+                    ? <img src={product.image_url} alt="" />
+                    : product.logo_url
+                      ? <img className="shop-admin-product-logo" src={product.logo_url} alt="" />
+                      : product.avatar}
                 </div>
                 <div className="shop-admin-product-info">
                   <div className="project-admin-meta">

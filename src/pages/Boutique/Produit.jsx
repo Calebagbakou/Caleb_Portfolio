@@ -57,8 +57,10 @@ export default function Produit() {
       <div className="product-detail">
         <div className="product-visual reveal in" style={{ background: product.gradient }}>
           {product.image_url
-            ? <img src={product.image_url} alt={product.name} />
-            : <span className="product-visual-avatar">{product.avatar}</span>}
+            ? <img className="product-visual-artwork" src={product.image_url} alt={product.name} />
+            : product.logo_url
+              ? <img className="product-visual-logo" src={product.logo_url} alt={`${product.name} logo`} />
+              : <span className="product-visual-avatar">{product.avatar}</span>}
         </div>
         <div className="product-info reveal in">
           <div className="eyebrow">{product.categoryLabel}</div>

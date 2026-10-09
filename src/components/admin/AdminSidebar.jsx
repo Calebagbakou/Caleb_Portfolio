@@ -48,14 +48,14 @@ export default function AdminSidebar({ onLogout }) {
         </a>
 
         <div className="admin-nav-label">Médias</div>
-        <a href="#soon-images" onClick={(e) => e.preventDefault()}>
+        <NavLink to="/admin/media">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <rect x="3" y="3" width="18" height="18" rx="2" />
             <circle cx="8.5" cy="8.5" r="1.5" />
             <path d="M21 15l-5-5L5 21" />
           </svg>
-          Images<span className="soon">bientôt</span>
-        </a>
+          Images
+        </NavLink>
         <a href="#soon-videos" onClick={(e) => e.preventDefault()}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <rect x="3" y="5" width="14" height="14" rx="2" />

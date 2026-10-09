@@ -91,6 +91,16 @@ dans ton projet Supabase en suivant [`ADMIN_SETUP.md`](./ADMIN_SETUP.md).
 Ne passe pas en production avant d'avoir effectué un paiement de test complet
 et vérifié la commande dans `/admin/orders`.
 
+### Bibliothèque de médias
+
+La section **Admin → Médias → Images** permet d’importer la photo principale
+du profil, le logo de chaque produit et son affiche/visuel principal. Les
+fichiers sont stockés dans le bucket public `site-media`; seuls les comptes
+présents dans `admins` peuvent importer ou modifier des fichiers. Exécute
+[`supabase/migrations/009_admin_media_library.sql`](./supabase/migrations/009_admin_media_library.sql)
+sur Supabase avant d’utiliser l’import. Les formats acceptés sont JPG, PNG,
+WebP et AVIF, jusqu’à 8 Mo.
+
 ## Sécurité — variables d'environnement
 
 Le fichier `.env` (gitignored) contient déjà l'URL et la clé **anon

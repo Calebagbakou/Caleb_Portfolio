@@ -10,6 +10,15 @@ export async function getSettings() {
   return supabase.from('settings').select('key, value');
 }
 
+export async function getSettingValue(key) {
+  const { data, error } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('key', key)
+    .maybeSingle();
+  return { data: data?.value || null, error };
+}
+
 export async function saveSettings(rows) {
   // rows: [{ key, value }, ...]
   return supabase.from('settings').upsert(rows, { onConflict: 'key' });
