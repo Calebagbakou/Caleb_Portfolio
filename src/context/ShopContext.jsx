@@ -24,18 +24,25 @@ export function ShopProvider({ children }) {
     let active = true;
 
     async function loadShop() {
-      const [catalogResult, contentResult] = await Promise.all([listShopCatalog(), getShopContent()]);
-      if (!active) return;
-      const loadError = catalogResult.error || contentResult.error;
-      if (loadError) {
-        console.error('Impossible de charger le catalogue de la boutique depuis Supabase :', loadError);
-        setError(loadError.message);
-      } else {
-        setCatalog(catalogResult.data);
-        setContent({ ...DEFAULT_SHOP_CONTENT, ...contentResult.data });
-        setError('');
+      try {
+        const [catalogResult, contentResult] = await Promise.all([listShopCatalog(), getShopContent()]);
+        if (!active) return;
+        const loadError = catalogResult.error || contentResult.error;
+        if (loadError) {
+          console.error('Impossible de charger le catalogue de la boutique depuis Supabase :', loadError);
+          setError(loadError.message);
+        } else {
+          setCatalog(catalogResult.data);
+          setContent({ ...DEFAULT_SHOP_CONTENT, ...contentResult.data });
+          setError('');
+        }
+      } catch (loadError) {
+        if (!active) return;
+        console.error('Erreur inattendue pendant le chargement de la boutique :', loadError);
+        setError(loadError instanceof Error ? loadError.message : String(loadError));
+      } finally {
+        if (active) setLoading(false);
       }
-      setLoading(false);
     }
 
     loadShop();
