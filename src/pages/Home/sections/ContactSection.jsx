@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { sendContactMessage } from '../../../services/messages';
+import RevealHeading from '../../../components/site/RevealHeading';
 
 const CONTACT_ITEMS = [
   {
@@ -93,10 +94,7 @@ export default function ContactSection() {
 
   return (
     <section className="wrap" id="contact">
-      <div className="sec-head">
-        <div className="sec-eyebrow">CONTACT</div>
-        <h2 className="sec-title">Parlons de votre projet.</h2>
-      </div>
+      <RevealHeading eyebrow="CONTACT">Parlons de votre projet.</RevealHeading>
 
       <div className="contact-grid">
         {CONTACT_ITEMS.map((item) => (

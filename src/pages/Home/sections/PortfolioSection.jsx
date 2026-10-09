@@ -8,6 +8,7 @@ import { useDragScroll } from '../../../hooks/useDragScroll';
 import Lightbox from '../../../components/site/Lightbox';
 import YouTubePreview from '../../../components/site/YouTubePreview';
 import ExternalVideoPreview from '../../../components/site/ExternalVideoPreview';
+import RevealHeading from '../../../components/site/RevealHeading';
 
 const LEGACY_ITEMS = PORTFOLIO_ROWS.flatMap((row) => row.items.map((item) => ({
   id: `legacy-${item.cat}-${item.title}`,
@@ -251,10 +252,7 @@ export default function PortfolioSection() {
 
   return (
     <section className="wrap" id="portfolio">
-      <div className="sec-head">
-        <div className="sec-eyebrow">PORTFOLIO</div>
-        <h2 className="sec-title">Quelques réalisations récentes.</h2>
-      </div>
+      <RevealHeading eyebrow="PORTFOLIO">Quelques réalisations récentes.</RevealHeading>
 
       {rows.length > 0 && (
         <div className="filters">

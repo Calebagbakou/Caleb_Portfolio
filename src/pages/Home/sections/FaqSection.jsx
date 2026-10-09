@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { FAQ_ITEMS } from '../../../data/faq';
+import RevealHeading from '../../../components/site/RevealHeading';
 
 function FaqItem({ item, isOpen, onToggle }) {
   const panelRef = useRef(null);
@@ -30,10 +31,7 @@ export default function FaqSection() {
   return (
     <section className="alt" id="faq">
       <div className="wrap">
-        <div className="sec-head">
-          <div className="sec-eyebrow">FAQ</div>
-          <h2 className="sec-title">Questions fréquentes.</h2>
-        </div>
+        <RevealHeading eyebrow="FAQ">Questions fréquentes.</RevealHeading>
         <div className="faq-list">
           {FAQ_ITEMS.map((item, i) => (
             <FaqItem

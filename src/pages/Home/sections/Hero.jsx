@@ -157,7 +157,7 @@ export default function Hero() {
                   src={profileImage}
                   alt="Photo de profil de Caleb Jesugnon AGBAKOU"
                   loading="eager"
-                  fetchPriority="high"
+                  fetchpriority="high"
                 />
               )}
             </div>
@@ -179,6 +179,37 @@ export default function Hero() {
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
           </a>
+        </div>
+        <div className="motion-sequence" aria-label="Le processus créatif : idée, design, mouvement et rendu">
+          <div className="motion-step idea-step">
+            <span className="motion-step-visual idea-visual" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className="motion-step-label">01 · IDÉE</span>
+          </div>
+          <div className="motion-step design-step">
+            <span className="motion-step-visual design-visual" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
+            <span className="motion-step-label">02 · DESIGN</span>
+          </div>
+          <div className="motion-step movement-step">
+            <span className="motion-step-visual movement-visual" aria-hidden="true">
+              <i />
+              <i />
+            </span>
+            <span className="motion-step-label">03 · MOUVEMENT</span>
+          </div>
+          <div className="motion-step result-step">
+            <span className="motion-step-visual result-visual" aria-hidden="true">
+              <i />
+            </span>
+            <span className="motion-step-label">04 · RENDU</span>
+          </div>
         </div>
       </main>
 

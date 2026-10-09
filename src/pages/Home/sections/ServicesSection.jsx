@@ -1,4 +1,5 @@
 import { useReveal } from '../../../hooks/useReveal';
+import RevealHeading from '../../../components/site/RevealHeading';
 
 const SERVICES = [
   {
@@ -99,10 +100,9 @@ export default function ServicesSection() {
   return (
     <section className="alt" id="services">
       <div className="wrap">
-        <div className="sec-head">
-          <div className="sec-eyebrow">SERVICES</div>
-          <h2 className="sec-title">Des solutions créatives complètes, propulsées par l'IA.</h2>
-        </div>
+        <RevealHeading eyebrow="SERVICES">
+          Des solutions créatives complètes, propulsées par l'IA.
+        </RevealHeading>
         <div className="services-grid">
           {SERVICES.map((s, i) => (
             <ServiceCard service={s} index={i} key={s.title} />

@@ -1,5 +1,6 @@
 import { useReveal } from '../../../hooks/useReveal';
 import { useTilt } from '../../../hooks/useTilt';
+import RevealHeading from '../../../components/site/RevealHeading';
 
 const AUDIENCE = [
   {
@@ -41,12 +42,9 @@ export default function About() {
 
   return (
     <section className="wrap" id="about">
-      <div className="sec-head">
-        <div className="sec-eyebrow">À PROPOS</div>
-        <h2 className="sec-title">
-          Passionné par la création visuelle, augmenté par l'intelligence artificielle.
-        </h2>
-      </div>
+      <RevealHeading eyebrow="À PROPOS">
+        Passionné par la création visuelle, augmenté par l'intelligence artificielle.
+      </RevealHeading>
       <p className="about-body">
         Depuis près de deux ans, <strong>Caleb Jesugnon AGBAKOU</strong> met la puissance de
         l'intelligence artificielle au service de la créativité, transformant des idées en

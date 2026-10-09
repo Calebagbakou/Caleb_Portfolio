@@ -17,6 +17,10 @@ export function useReveal() {
     if (prefersReducedMotion) return;
     const el = ref.current;
     if (!el) return;
+    if (!('IntersectionObserver' in window)) {
+      setVisible(true);
+      return;
+    }
 
     const io = new IntersectionObserver(
       (entries) => {

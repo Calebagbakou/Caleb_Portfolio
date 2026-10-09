@@ -1,11 +1,10 @@
+import RevealHeading from '../../../components/site/RevealHeading';
+
 export default function TestimonialsSection() {
   return (
     <section className="alt" id="testimonials">
       <div className="wrap">
-        <div className="sec-head">
-          <div className="sec-eyebrow">COMMENTAIRES</div>
-          <h2 className="sec-title">Ce qu'en disent les visiteurs.</h2>
-        </div>
+        <RevealHeading eyebrow="COMMENTAIRES">Ce qu'en disent les visiteurs.</RevealHeading>
 
         {/* Formulaire volontairement inerte (comme dans l'ancienne version : onsubmit="return false;") —
             aucun back-end de commentaires n'existe encore. */}
