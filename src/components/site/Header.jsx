@@ -78,18 +78,6 @@ export default function Header() {
           </div>
           <div className="top-actions">
             <span className="timecode" ref={timecodeRef}>00:00:24:07</span>
-            <button
-              className="presentation-toggle"
-              type="button"
-              aria-label={isProfessional ? 'Revenir à la présentation motion' : 'Passer à la présentation professionnelle'}
-              aria-pressed={isProfessional}
-              onClick={() => {
-                setMenuOpen(false);
-                togglePresentation();
-              }}
-            >
-              {isProfessional ? 'Motion' : 'Mode pro'}
-            </button>
             <Link className="icon-btn" to={SHOP_URL} aria-label="Accéder à la boutique" title="Boutique">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="M3 3h2l2.4 12.4a2 2 0 002 1.6h8.2a2 2 0 002-1.6L21 8H6" />
@@ -122,6 +110,26 @@ export default function Header() {
           </div>
         </div>
       </header>
+
+      <button
+        className={`presentation-switch${isProfessional ? ' is-on' : ''}`}
+        type="button"
+        role="switch"
+        aria-label="Bascule rendu"
+        aria-checked={isProfessional}
+        onClick={() => {
+          setMenuOpen(false);
+          togglePresentation();
+        }}
+      >
+        <svg className="presentation-switch-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4 7h14m0 0-3-3m3 3-3 3M20 17H6m0 0 3 3m-3-3 3-3" />
+        </svg>
+        <span className="presentation-switch-label">Bascule rendu</span>
+        <span className="presentation-switch-track" aria-hidden="true">
+          <span className="presentation-switch-thumb" />
+        </span>
+      </button>
 
       <nav className={`nav-overlay${menuOpen ? ' open' : ''}`}>
         <div className="nav-links">
