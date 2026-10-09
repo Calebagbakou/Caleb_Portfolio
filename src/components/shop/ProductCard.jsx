@@ -17,7 +17,7 @@ export default function ProductCard({ product }) {
       : formatPrice(firstPlan.price);
 
   return (
-    <Link className="product-card reveal product-card-link" to={`/boutique/produit/${product.slug}`}>
+    <Link className="product-card product-card-link" to={`/boutique/produit/${product.slug}`}>
       <div className="product-thumb" style={{ background: product.gradient }}>
         {product.badge && <span className="product-badge">{product.badge}</span>}
         {product.image_url
