@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getYouTubeEmbedUrl } from '../../data/projectMedia';
-import { getExternalVideoSource } from '../../data/externalVideo';
+import { resolveExternalVideoSource } from '../../data/externalVideo';
 
 /**
  * items: liste à plat de toutes les cartes portfolio (toutes rangées confondues)
@@ -8,14 +8,45 @@ import { getExternalVideoSource } from '../../data/externalVideo';
  */
 export default function Lightbox({ items, index, onClose, onNavigate }) {
   const [youtubeLoaded, setYoutubeLoaded] = useState(false);
+  const [externalSource, setExternalSource] = useState(null);
+  const [externalLoading, setExternalLoading] = useState(false);
+  const [externalError, setExternalError] = useState('');
   const open = index !== null && index !== undefined;
   const item = open ? items[index] : null;
   const isVideo = item?.media_type === 'youtube' || item?.media_type === 'external_video';
 
   const youtubeEmbed = item?.media_type === 'youtube' ? getYouTubeEmbedUrl(item.media_url) : null;
-  const externalSource = item?.media_type === 'external_video'
-    ? getExternalVideoSource(item.media_url)
-    : null;
+
+  useEffect(() => {
+    let active = true;
+    setExternalSource(null);
+    setExternalError('');
+
+    if (item?.media_type !== 'external_video' || !item.media_url) {
+      setExternalLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    setExternalLoading(true);
+    resolveExternalVideoSource(item.media_url)
+      .then((source) => {
+        if (!source) throw new Error('Ce lien vidéo externe n’est pas pris en charge.');
+        if (active) setExternalSource(source);
+      })
+      .catch((error) => {
+        console.error('Impossible de charger le lecteur vidéo externe :', error);
+        if (active) setExternalError(error.message || 'Impossible de résoudre le lien vidéo externe.');
+      })
+      .finally(() => {
+        if (active) setExternalLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [item?.media_type, item?.media_url]);
 
   useEffect(() => {
     setYoutubeLoaded(false);
@@ -53,7 +84,13 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
         </svg>
       </button>
       <div className={`lightbox-inner${isVideo ? ' video' : ''}`}>
-        <div className="lightbox-thumb" style={item && !isVideo ? { background: item.gradient } : { background: '#000' }}>
+        <div
+          className="lightbox-thumb"
+          style={{
+            background: item && !isVideo ? item.gradient : '#000',
+            ...(externalSource?.aspectRatio ? { aspectRatio: externalSource.aspectRatio } : {}),
+          }}
+        >
           {item?.media_type === 'image' && item.media_url && (
             <img className="lightbox-image" src={item.media_url} alt={item.title} />
           )}
@@ -80,8 +117,9 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
               width="100%"
               height="100%"
               frameBorder="0"
-              allow="autoplay; fullscreen; picture-in-picture"
+              allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
               allowFullScreen
+              referrerPolicy="strict-origin-when-cross-origin"
               style={{ position: 'absolute', inset: 0 }}
               title={item.title}
             />
@@ -93,6 +131,12 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
               playsInline
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }}
             />
+          )}
+          {item?.media_type === 'external_video' && externalLoading && (
+            <div className="video-loading" role="status">Chargement du lecteur…</div>
+          )}
+          {item?.media_type === 'external_video' && externalError && (
+            <div className="video-loading" role="alert">{externalError}</div>
           )}
         </div>
         <div className="lightbox-body">
