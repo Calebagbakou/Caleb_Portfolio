@@ -10,7 +10,7 @@ const EMPTY_FORM = {
   media_url: '',
   thumbnail_url: '',
   published: false,
-  autoplay_preview: false,
+  autoplay_preview: true,
 };
 
 const MEDIA_TYPES = [
@@ -147,7 +147,7 @@ export default function Projects() {
         media_url: normalizedMediaUrl,
         thumbnail_url: thumbnailUrl || null,
         published: form.published,
-        autoplay_preview: form.autoplay_preview,
+        autoplay_preview: form.media_type !== 'image' && form.autoplay_preview,
       },
     };
   }
@@ -301,7 +301,7 @@ export default function Projects() {
             <input type="checkbox" name="published" checked={form.published} onChange={updateField} />
             <span>Publier sur le portfolio</span>
           </label>
-          {form.media_type === 'youtube' && (
+          {form.media_type !== 'image' && (
             <label className="project-publish project-preview-setting">
               <input
                 type="checkbox"
@@ -311,7 +311,7 @@ export default function Projects() {
               />
               <span>
                 Prévisualisation automatique silencieuse
-                <small>Lecture muette limitée à 8 secondes quand cette carte est visible. Une seule vidéo à la fois.</small>
+                <small>Lecture muette limitée à 8 secondes quand cette carte apparaît à l’écran. Une seule vidéo à la fois. Le bouton son se trouve en bas à droite de l’aperçu.</small>
               </span>
             </label>
           )}
@@ -355,7 +355,7 @@ export default function Projects() {
                     <span className={`badge ${project.published ? 'badge-ok' : 'badge-off'}`}>
                       {project.published ? 'Publié' : 'Brouillon'}
                     </span>
-                    {project.media_type === 'youtube' && project.autoplay_preview && (
+                    {project.media_type !== 'image' && project.autoplay_preview && (
                       <span className="badge badge-unread">Aperçu auto</span>
                     )}
                     <span className="project-admin-category">{project.category}</span>

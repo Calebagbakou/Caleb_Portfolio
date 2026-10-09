@@ -33,7 +33,9 @@ export default function YouTubePreview({ src, title, onFinished }) {
   const iframeRef = useRef(null);
   const playerRef = useRef(null);
   const stopTimerRef = useRef(null);
+  const mutedRef = useRef(true);
   const [error, setError] = useState(false);
+  const [muted, setMuted] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -44,7 +46,8 @@ export default function YouTubePreview({ src, title, onFinished }) {
         playerRef.current = new youtube.Player(iframeRef.current, {
           events: {
             onReady: ({ target }) => {
-              target.mute();
+              if (mutedRef.current) target.mute();
+              else target.unMute();
               target.playVideo();
             },
             onStateChange: (event) => {
@@ -87,6 +90,30 @@ export default function YouTubePreview({ src, title, onFinished }) {
         referrerPolicy="strict-origin-when-cross-origin"
         tabIndex="-1"
       />
+      {!error && (
+        <button
+          className="p-preview-sound"
+          type="button"
+          aria-label={muted ? 'Activer le son' : 'Couper le son'}
+          title={muted ? 'Activer le son' : 'Couper le son'}
+          onClick={(event) => {
+            event.stopPropagation();
+            const nextMuted = !mutedRef.current;
+            mutedRef.current = nextMuted;
+            if (nextMuted) playerRef.current?.mute();
+            else playerRef.current?.unMute();
+            setMuted(nextMuted);
+          }}
+          onKeyDown={(event) => event.stopPropagation()}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path d="M11 5 6 9H3v6h3l5 4V5Z" />
+            {muted
+              ? <path d="m17 9 5 6m0-6-5 6" />
+              : <><path d="M15.5 8.5a5 5 0 0 1 0 7" /><path d="M19 5a10 10 0 0 1 0 14" /></>}
+          </svg>
+        </button>
+      )}
       {error && <span className="p-preview-error">APERÇU INDISPONIBLE</span>}
     </div>
   );

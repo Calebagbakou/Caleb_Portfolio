@@ -7,6 +7,7 @@ import { useTilt } from '../../../hooks/useTilt';
 import { useDragScroll } from '../../../hooks/useDragScroll';
 import Lightbox from '../../../components/site/Lightbox';
 import YouTubePreview from '../../../components/site/YouTubePreview';
+import ExternalVideoPreview from '../../../components/site/ExternalVideoPreview';
 
 const LEGACY_ITEMS = PORTFOLIO_ROWS.flatMap((row) => row.items.map((item) => ({
   id: `legacy-${item.cat}-${item.title}`,
@@ -71,7 +72,7 @@ function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisi
   const [revealRef, visible] = useReveal();
   const tiltRef = useTilt();
   const image = item.thumbnail_url || item.youtubeThumbnail || (item.media_type === 'image' ? item.media_url : null);
-  const videoPreviewEnabled = item.media_type === 'youtube' && item.autoplay_preview;
+  const videoPreviewEnabled = item.media_type !== 'image' && item.autoplay_preview;
   const finishPreview = useCallback(() => onPreviewVisibility(item.id, 0), [item.id, onPreviewVisibility]);
 
   function mergeRefs(el) {
@@ -120,11 +121,17 @@ function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisi
       </span>
       <div className="p-thumb" style={{ background: item.gradient }}>
         {previewActive && (
-          <YouTubePreview
-            src={getYouTubePreviewUrl(item.media_url)}
-            title={item.title}
-            onFinished={finishPreview}
-          />
+          item.media_type === 'youtube'
+            ? <YouTubePreview
+              src={getYouTubePreviewUrl(item.media_url)}
+              title={item.title}
+              onFinished={finishPreview}
+            />
+            : <ExternalVideoPreview
+              src={item.media_url}
+              title={item.title}
+              onFinished={finishPreview}
+            />
         )}
         {!previewActive && image
           ? <img src={image} alt="" loading="lazy" />
