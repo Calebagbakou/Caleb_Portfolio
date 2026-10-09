@@ -449,17 +449,20 @@
     padding:0; color:inherit; font:inherit; text-align:left;
   }
   .p-thumb{
-    aspect-ratio: 9/16; position:relative;
+    aspect-ratio: 4/3; position:relative;
     display:flex; align-items:flex-end; padding:14px;
   }
+  .p-thumb.video{ aspect-ratio:9/16; }
   .p-thumb span{
     font-family:'Poppins', monospace; font-size:11px; color:rgba(18,24,26,0.7);
     background:rgba(255,255,255,0.65); padding:4px 9px; border-radius:999px;
   }
   .p-thumb img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-  .p-thumb .p-video-preview{ position:absolute; inset:0; width:100%; height:100%; border:0; pointer-events:none; }
+  .p-thumb .p-video-preview{ position:absolute; inset:0; width:100%; height:100%; border:0; display:flex; align-items:center; justify-content:center; overflow:hidden; pointer-events:none; }
   .p-thumb .p-video-preview iframe,
   .p-thumb .p-video-preview video{ position:absolute; inset:0; width:100%; height:100%; border:0; object-fit:cover; }
+  .p-thumb .p-video-preview iframe{ display:block; margin:auto; }
+  .p-thumb .p-video-preview.wistia-preview iframe{ left:50%; top:50%; transform:translate(-50%,-50%); }
   .p-preview-sound{
     position:absolute; right:10px; bottom:10px; z-index:3;
     width:34px; height:34px; display:flex; align-items:center; justify-content:center;

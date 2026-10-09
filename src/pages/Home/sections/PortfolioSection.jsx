@@ -119,7 +119,7 @@ function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisi
           <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" />
         </svg>
       </span>
-      <div className="p-thumb" style={{ background: item.gradient }}>
+      <div className={`p-thumb${item.media_type !== 'image' ? ' video' : ''}`} style={{ background: item.gradient }}>
         {previewActive && (
           item.media_type === 'youtube'
             ? <YouTubePreview

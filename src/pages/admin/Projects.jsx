@@ -368,7 +368,7 @@ export default function Projects() {
           <div className="project-admin-list">
             {projects.map((project) => (
               <article className="project-admin-card" key={project.id}>
-                <div className="project-admin-thumb">
+                <div className={`project-admin-thumb${project.media_type !== 'image' ? ' video' : ''}`}>
                   {getProjectThumbnailUrl(project)
                     ? <img src={getProjectThumbnailUrl(project)} alt="" loading="lazy" />
                     : <span>{mediaLabel(project.media_type)} · miniature manquante</span>}
