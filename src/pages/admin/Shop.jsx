@@ -318,6 +318,7 @@ export default function Shop() {
             <div className="form-group">
               <label htmlFor="shop-product-image">URL d’image (facultative)</label>
               <input id="shop-product-image" type="url" name="image_url" value={form.image_url || ''} onChange={updateProductField} placeholder="https://…" />
+              <small className="project-form-hint">Lien direct et public vers le fichier image (.jpg, .png, .webp…). Les liens vers une page de partage ne s’affichent pas comme image.</small>
             </div>
             <div className="form-group">
               <label htmlFor="shop-product-status">Publication</label>

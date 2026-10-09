@@ -21,7 +21,10 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
       if (url.hostname === 'vimeo.com' || url.hostname === 'www.vimeo.com') {
         const videoId = url.pathname.split('/').filter(Boolean)[0];
         if (/^\d+$/.test(videoId || '')) {
-          return { kind: 'embed', src: `https://player.vimeo.com/video/${videoId}` };
+          const playerUrl = new URL(`https://player.vimeo.com/video/${videoId}`);
+          const unlistedHash = url.searchParams.get('h');
+          if (unlistedHash) playerUrl.searchParams.set('h', unlistedHash);
+          return { kind: 'embed', src: playerUrl.href };
         }
       }
       return { kind: 'file', src: url.href };

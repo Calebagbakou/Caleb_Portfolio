@@ -29,8 +29,18 @@ function validHttpUrl(value) {
 
 function mediaFieldLabel(type) {
   if (type === 'youtube') return 'URL YouTube';
-  if (type === 'image') return "URL de l'image";
-  return 'URL de la vidéo (MP4/WebM ou lecteur Vimeo)';
+  if (type === 'image') return "Lien direct vers l'image";
+  return 'Lien direct vidéo ou Vimeo';
+}
+
+function mediaFieldHint(type) {
+  if (type === 'youtube') {
+    return 'Liens YouTube watch, youtu.be et Shorts. Utilise ce type pour YouTube, pas « Vidéo externe ».';
+  }
+  if (type === 'image') {
+    return 'Colle le lien direct et public du fichier image (par ex. .jpg, .png, .webp). Les pages de partage/galerie ne sont pas des liens image.';
+  }
+  return 'Colle un lien direct vers un fichier vidéo MP4/WebM, ou un lien vidéo Vimeo. Les pages Google Drive, réseaux sociaux et autres pages web ne sont pas des fichiers vidéo.';
 }
 
 export default function Projects() {
@@ -270,6 +280,9 @@ export default function Projects() {
                     : 'Colle une URL YouTube valide pour détecter automatiquement la vidéo.'}
                 </small>
               )}
+              {form.media_type !== 'youtube' && (
+                <small className="project-form-hint">{mediaFieldHint(form.media_type)}</small>
+              )}
             </div>
             <div className="form-group project-form-wide">
               <label htmlFor="project-description">Description</label>
@@ -279,7 +292,7 @@ export default function Projects() {
               <label htmlFor="project-thumbnail">URL de la miniature (facultative)</label>
               <input id="project-thumbnail" name="thumbnail_url" type="url" value={form.thumbnail_url} onChange={updateField} placeholder="https://…" />
               <small className="project-form-hint">
-                Image hébergée ailleurs. Pour YouTube, sa miniature est utilisée automatiquement si ce champ est vide. Aucun fichier vidéo n'est stocké dans Supabase.
+                Lien direct et public vers un fichier image, pas une page de partage. Pour YouTube, la miniature est utilisée automatiquement si ce champ est vide. Aucun fichier vidéo n'est stocké dans Supabase.
               </small>
             </div>
           </div>
