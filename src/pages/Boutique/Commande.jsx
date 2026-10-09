@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LAST_ORDER_KEY, useCart } from '../../context/CartContext';
 import { formatPrice } from '../../data/products';
 import { createShopCheckout, verifyShopPayment } from '../../services/shop';
-import { isKkiaPayConfigured, startKkiaPayPayment } from '../../services/kkiapay';
+import { isKkiaPayConfigured, isKkiaPaySandbox, startKkiaPayPayment } from '../../services/kkiapay';
 
 export default function Commande() {
   const { details, total, clear } = useCart();
@@ -160,6 +160,13 @@ export default function Commande() {
             Le paiement ne sera marqué comme confirmé qu’après validation serveur de la transaction KKiaPay.
             Les moyens proposés par le widget dépendent des options activées sur ton compte marchand.
           </p>
+          {isKkiaPaySandbox() && (
+            <p className="pay-note" role="note">
+              Mode test KKiaPay : les vrais numéros Mobile Money sont refusés. Pour tester un paiement Moov réussi,
+              sélectionne Moov dans le widget et utilise <strong>68000000</strong> ou <strong>95000000</strong>.
+              Garde ton vrai numéro dans le champ téléphone ci-dessus pour être contacté.
+            </p>
+          )}
 
           <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 22 }} disabled={saving}>
             {saving ? 'Connexion sécurisée à KKiaPay…' : pendingOrder ? `Reprendre le paiement · ${pendingOrder.ref}` : 'Commander et payer avec KKiaPay'}

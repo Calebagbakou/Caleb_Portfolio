@@ -7,6 +7,10 @@ export function isKkiaPayConfigured() {
   return Boolean(PUBLIC_KEY);
 }
 
+export function isKkiaPaySandbox() {
+  return SANDBOX;
+}
+
 function loadKkiaPaySdk() {
   if (window.openKkiapayWidget && window.addSuccessListener && window.addFailedListener) {
     return Promise.resolve();
