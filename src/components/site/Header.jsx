@@ -22,12 +22,36 @@ const NAV_LINKS = [
 // La boutique vit dans le même dépôt/app, sous /boutique.
 const SHOP_URL = '/boutique';
 
+function PresentationSwitch({ isProfessional, compact, onToggle }) {
+  return (
+    <button
+      className={`presentation-switch${compact ? ' presentation-switch-compact' : ' presentation-switch-creative'}${isProfessional ? ' is-on' : ''}`}
+      type="button"
+      role="switch"
+      aria-label="Bascule rendu"
+      aria-checked={isProfessional}
+      onClick={onToggle}
+    >
+      {!compact && <span className="presentation-switch-label">Bascule rendu</span>}
+      <span className="presentation-switch-track" aria-hidden="true">
+        <span className="presentation-switch-thumb" />
+      </span>
+    </button>
+  );
+}
+
 export default function Header() {
   const { isProfessional, togglePresentation } = usePresentation();
   const [theme, setTheme] = useState('dark');
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const timecodeRef = useRef(null);
+
+  function handlePresentationToggle() {
+    setMenuOpen(false);
+    if (isProfessional) window.scrollTo({ top: 0, behavior: 'smooth' });
+    togglePresentation();
+  }
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -78,6 +102,13 @@ export default function Header() {
           </div>
           <div className="top-actions">
             <span className="timecode" ref={timecodeRef}>00:00:24:07</span>
+            {isProfessional && (
+              <PresentationSwitch
+                isProfessional={isProfessional}
+                compact
+                onToggle={handlePresentationToggle}
+              />
+            )}
             <Link className="icon-btn" to={SHOP_URL} aria-label="Accéder à la boutique" title="Boutique">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="M3 3h2l2.4 12.4a2 2 0 002 1.6h8.2a2 2 0 002-1.6L21 8H6" />
@@ -111,25 +142,12 @@ export default function Header() {
         </div>
       </header>
 
-      <button
-        className={`presentation-switch${isProfessional ? ' is-on' : ''}`}
-        type="button"
-        role="switch"
-        aria-label="Bascule rendu"
-        aria-checked={isProfessional}
-        onClick={() => {
-          setMenuOpen(false);
-          togglePresentation();
-        }}
-      >
-        <svg className="presentation-switch-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M4 7h14m0 0-3-3m3 3-3 3M20 17H6m0 0 3 3m-3-3 3-3" />
-        </svg>
-        <span className="presentation-switch-label">Bascule rendu</span>
-        <span className="presentation-switch-track" aria-hidden="true">
-          <span className="presentation-switch-thumb" />
-        </span>
-      </button>
+      {!isProfessional && (
+        <PresentationSwitch
+          isProfessional={isProfessional}
+          onToggle={handlePresentationToggle}
+        />
+      )}
 
       <nav className={`nav-overlay${menuOpen ? ' open' : ''}`}>
         <div className="nav-links">
