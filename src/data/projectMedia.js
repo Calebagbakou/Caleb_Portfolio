@@ -1,5 +1,14 @@
 const YOUTUBE_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
 
+export function getProjectThumbnailUrl(project) {
+  if (project?.thumbnail_url) return project.thumbnail_url;
+  if (project?.media_type === 'youtube') {
+    const videoId = extractYouTubeVideoId(project.media_url);
+    return videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null;
+  }
+  return project?.media_type === 'image' ? project.media_url || null : null;
+}
+
 export function extractYouTubeVideoId(value) {
   if (typeof value !== 'string' || !value.trim()) return null;
 

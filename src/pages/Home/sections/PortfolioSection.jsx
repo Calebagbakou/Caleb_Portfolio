@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PORTFOLIO_ROWS } from '../../../data/portfolio';
-import { getYouTubePreviewUrl, extractYouTubeVideoId } from '../../../data/projectMedia';
+import { getYouTubePreviewUrl, extractYouTubeVideoId, getProjectThumbnailUrl } from '../../../data/projectMedia';
 import { listPublishedProjects } from '../../../services/projects';
 import { useReveal } from '../../../hooks/useReveal';
 import { useTilt } from '../../../hooks/useTilt';
@@ -71,7 +71,7 @@ function groupProjects(projects) {
 function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisibility }) {
   const [revealRef, visible] = useReveal();
   const tiltRef = useTilt();
-  const image = item.thumbnail_url || item.youtubeThumbnail || (item.media_type === 'image' ? item.media_url : null);
+  const image = getProjectThumbnailUrl(item);
   const videoPreviewEnabled = item.media_type !== 'image' && item.autoplay_preview;
   const finishPreview = useCallback(() => onPreviewVisibility(item.id, 0), [item.id, onPreviewVisibility]);
 

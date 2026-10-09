@@ -4,6 +4,7 @@ import {
   extractYouTubeVideoId,
   getYouTubeEmbedUrl,
   getYouTubePreviewUrl,
+  getProjectThumbnailUrl,
   normalizeYouTubeUrl,
 } from './projectMedia.js';
 
@@ -34,4 +35,24 @@ test('rejects invalid or non-YouTube URLs and produces safe normalized URLs', ()
   assert.equal(preview.searchParams.has('mute'), false);
   assert.equal(preview.searchParams.get('controls'), '0');
   assert.equal(preview.searchParams.get('enablejsapi'), '1');
+});
+
+test('selects project thumbnails from explicit images, image media, and YouTube', () => {
+  assert.equal(getProjectThumbnailUrl({
+    media_type: 'external_video',
+    media_url: 'https://vimeo.com/1234',
+    thumbnail_url: 'https://cdn.example.com/preview.jpg',
+  }), 'https://cdn.example.com/preview.jpg');
+  assert.equal(getProjectThumbnailUrl({
+    media_type: 'image',
+    media_url: 'https://cdn.example.com/poster.png',
+  }), 'https://cdn.example.com/poster.png');
+  assert.equal(getProjectThumbnailUrl({
+    media_type: 'youtube',
+    media_url: `https://youtu.be/${videoId}`,
+  }), `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`);
+  assert.equal(getProjectThumbnailUrl({
+    media_type: 'external_video',
+    media_url: 'https://vimeo.com/1234',
+  }), null);
 });

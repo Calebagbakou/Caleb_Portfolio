@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { createProject, deleteProject, listProjects, updateProject } from '../../services/projects';
-import { extractYouTubeVideoId, normalizeYouTubeUrl } from '../../data/projectMedia';
+import { extractYouTubeVideoId, getProjectThumbnailUrl, normalizeYouTubeUrl } from '../../data/projectMedia';
 
 const EMPTY_FORM = {
   title: '',
@@ -128,6 +128,10 @@ export default function Projects() {
 
     if (thumbnailUrl && !validHttpUrl(thumbnailUrl)) {
       return { error: 'La miniature doit être une URL complète commençant par https:// ou http://.' };
+    }
+
+    if (form.media_type === 'external_video' && !thumbnailUrl) {
+      return { error: 'Ajoute une miniature pour cette vidéo externe afin qu’elle soit visible dans le portfolio.' };
     }
 
     if (form.media_type === 'image' && thumbnailUrl && !validHttpUrl(thumbnailUrl)) {
@@ -289,11 +293,32 @@ export default function Projects() {
               <textarea id="project-description" name="description" value={form.description} onChange={updateField} rows="4" maxLength={2000} />
             </div>
             <div className="form-group project-form-wide">
-              <label htmlFor="project-thumbnail">URL de la miniature (facultative)</label>
-              <input id="project-thumbnail" name="thumbnail_url" type="url" value={form.thumbnail_url} onChange={updateField} placeholder="https://…" />
+              <label htmlFor="project-thumbnail">
+                URL de la miniature{form.media_type === 'external_video' ? ' (obligatoire)' : ' (facultative)'}
+              </label>
+              <input
+                id="project-thumbnail"
+                name="thumbnail_url"
+                type="url"
+                value={form.thumbnail_url}
+                onChange={updateField}
+                placeholder="https://…"
+                required={form.media_type === 'external_video'}
+              />
               <small className="project-form-hint">
-                Lien direct et public vers un fichier image, pas une page de partage. Pour YouTube, la miniature est utilisée automatiquement si ce champ est vide. Aucun fichier vidéo n'est stocké dans Supabase.
+                {form.media_type === 'image'
+                  ? "L’image du projet sert de miniature si tu ne fournis pas de lien séparé."
+                  : form.media_type === 'youtube'
+                    ? 'YouTube fournit automatiquement la miniature si tu ne fournis pas de lien séparé.'
+                    : 'Obligatoire : colle un lien direct et public vers un fichier image (JPG, PNG ou WebP), pas une page de partage. La vidéo seule ne fournit pas de miniature fiable.'}
+                {' '}Aucun fichier vidéo n’est stocké dans Supabase.
               </small>
+              {getProjectThumbnailUrl(form) && (
+                <div className="project-thumbnail-preview">
+                  <img src={getProjectThumbnailUrl(form)} alt="Aperçu de la miniature" />
+                  <span>Aperçu de la miniature</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -344,11 +369,9 @@ export default function Projects() {
             {projects.map((project) => (
               <article className="project-admin-card" key={project.id}>
                 <div className="project-admin-thumb">
-                  {project.thumbnail_url
-                    ? <img src={project.thumbnail_url} alt="" loading="lazy" />
-                    : project.media_type === 'youtube' && extractYouTubeVideoId(project.media_url)
-                      ? <img src={`https://img.youtube.com/vi/${extractYouTubeVideoId(project.media_url)}/hqdefault.jpg`} alt="" loading="lazy" />
-                      : <span>{mediaLabel(project.media_type)}</span>}
+                  {getProjectThumbnailUrl(project)
+                    ? <img src={getProjectThumbnailUrl(project)} alt="" loading="lazy" />
+                    : <span>{mediaLabel(project.media_type)} · miniature manquante</span>}
                 </div>
                 <div className="project-admin-info">
                   <div className="project-admin-meta">
