@@ -24,6 +24,7 @@ const EMPTY_PRODUCT = {
   avatar: '',
   gradient: 'linear-gradient(135deg,#4285F4,#34A853)',
   image_url: '',
+  access_url: '',
   plans: [{ id: null, slug: '', label: '', price: '', old_price: '', currency: 'XOF', active: true }],
 };
 
@@ -52,6 +53,7 @@ function productForm(product) {
     avatar: product.avatar || '',
     gradient: product.gradient || EMPTY_PRODUCT.gradient,
     image_url: product.image_url || '',
+    access_url: product.access_url || '',
     plans: product.plans.length
       ? product.plans.map((plan) => ({ ...plan, old_price: plan.old_price ?? '' }))
       : EMPTY_PRODUCT.plans,
@@ -148,6 +150,7 @@ export default function Shop() {
       avatar: form.avatar.trim() || null,
       gradient: form.gradient.trim() || null,
       image_url: form.image_url.trim() || null,
+      access_url: form.access_url.trim() || null,
     };
     const { error: saveError, partial } = await saveShopProduct(product, form.plans);
     if (saveError) {
@@ -319,6 +322,11 @@ export default function Shop() {
               <label htmlFor="shop-product-image">URL d’image (facultative)</label>
               <input id="shop-product-image" type="url" name="image_url" value={form.image_url || ''} onChange={updateProductField} placeholder="https://…" />
               <small className="project-form-hint">Lien direct et public vers le fichier image (.jpg, .png, .webp…). Les liens vers une page de partage ne s’affichent pas comme image.</small>
+            </div>
+            <div className="form-group">
+              <label htmlFor="shop-product-access">URL d'accès post-achat (facultative)</label>
+              <input id="shop-product-access" type="url" name="access_url" value={form.access_url || ''} onChange={updateProductField} placeholder="https://…" />
+              <small className="project-form-hint">Lien affiché au client après l'achat (ex: interface Gemini, lien CapCut, etc.). Laisser vide si pas d'accès direct.</small>
             </div>
             <div className="form-group">
               <label htmlFor="shop-product-status">Publication</label>

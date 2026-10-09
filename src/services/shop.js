@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-const PRODUCT_FIELDS = 'id, name, slug, description, tagline, highlights, category_id, badge, status, featured, sort_order, avatar, gradient, image_url';
+const PRODUCT_FIELDS = 'id, name, slug, description, tagline, highlights, category_id, badge, status, featured, sort_order, avatar, gradient, image_url, access_url';
 const PLAN_FIELDS = 'id, product_id, slug, label, price, old_price, currency, sort_order, active';
 
 function attachShopData(products, plans, categories) {

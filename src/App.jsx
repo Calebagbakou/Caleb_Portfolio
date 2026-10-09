@@ -13,6 +13,7 @@ import Produit from './pages/Boutique/Produit';
 import Panier from './pages/Boutique/Panier';
 import Commande from './pages/Boutique/Commande';
 import Confirmation from './pages/Boutique/Confirmation';
+import GeminiPro from './pages/GeminiPro';
 
 import Login from './pages/admin/Login';
 import ForgotPassword from './pages/admin/ForgotPassword';
@@ -46,6 +47,11 @@ export default function App() {
       <Route element={<ShopLayout showFullNav={false} showMobileButton={false} />}>
         <Route path="/boutique/commande" element={<Commande />} />
         <Route path="/boutique/confirmation" element={<Confirmation />} />
+      </Route>
+
+      {/* ================= GEMINI PRO ================= */}
+      <Route element={<ShopLayout showFullNav={false} showMobileButton={false} />}>
+        <Route path="/gemini-pro" element={<GeminiPro />} />
       </Route>
 
       {/* ================= ADMIN — connexion (pages publiques) ================= */}

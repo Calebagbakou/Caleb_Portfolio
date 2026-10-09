@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LAST_ORDER_KEY } from '../../context/CartContext';
 import { formatPrice } from '../../data/products';
+import { listShopCatalog } from '../../services/shop';
 
 export default function Confirmation() {
   const location = useLocation();
   const [order, setOrder] = useState(undefined); // undefined = pas encore lu, null = absent
+  const [products, setProducts] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (location.state?.order) {
@@ -20,6 +23,27 @@ export default function Confirmation() {
       setOrder(null);
     }
   }, [location.state]);
+
+  useEffect(() => {
+    if (!order?.items?.length) return;
+    
+    async function loadProducts() {
+      setLoading(true);
+      const { data, error } = await listShopCatalog({ includeInactive: true });
+      if (!error && data?.products) {
+        setProducts(data.products);
+      }
+      setLoading(false);
+    }
+    
+    loadProducts();
+  }, [order]);
+
+  function getProductAccessUrl(productId) {
+    if (!products) return null;
+    const product = products.find((p) => p.id === productId);
+    return product?.access_url || null;
+  }
 
   if (order === undefined) return null;
 
@@ -70,14 +94,27 @@ export default function Confirmation() {
 
         <div className="confirm-summary">
           <div>
-            {(order.items || []).map((line) => (
-              <div className="summary-row" key={`${line.productId}-${line.planId}`}>
-                <span>
-                  {line.name} ({line.planLabel}) ×{line.qty}
-                </span>
-                <span>{formatPrice(line.lineTotal)}</span>
-              </div>
-            ))}
+            {(order.items || []).map((line) => {
+              const accessUrl = getProductAccessUrl(line.productId);
+              return (
+                <div key={`${line.productId}-${line.planId}`}>
+                  <div className="summary-row">
+                    <span>
+                      {line.name} ({line.planLabel}) ×{line.qty}
+                    </span>
+                    <span>{formatPrice(line.lineTotal)}</span>
+                  </div>
+                  {accessUrl && (
+                    <div className="summary-row access-link">
+                      <span style={{ color: 'var(--ink-dim)', fontSize: '0.9rem' }}>Accès :</span>
+                      <a href={accessUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
+                        Ouvrir
+                      </a>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <div className="summary-row total">
             <span>Total</span>
