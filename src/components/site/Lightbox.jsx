@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getYouTubeEmbedUrl } from '../../data/projectMedia';
+import { getExternalVideoSource } from '../../data/externalVideo';
 
 /**
  * items: liste à plat de toutes les cartes portfolio (toutes rangées confondues)
@@ -11,30 +12,10 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
   const item = open ? items[index] : null;
   const isVideo = item?.media_type === 'youtube' || item?.media_type === 'external_video';
 
-  function externalVideoSource(value) {
-    try {
-      const url = new URL(value);
-      if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
-      if (url.hostname === 'player.vimeo.com' || url.hostname === 'www.youtube.com') {
-        return { kind: 'embed', src: url.href };
-      }
-      if (url.hostname === 'vimeo.com' || url.hostname === 'www.vimeo.com') {
-        const videoId = url.pathname.split('/').filter(Boolean)[0];
-        if (/^\d+$/.test(videoId || '')) {
-          const playerUrl = new URL(`https://player.vimeo.com/video/${videoId}`);
-          const unlistedHash = url.searchParams.get('h');
-          if (unlistedHash) playerUrl.searchParams.set('h', unlistedHash);
-          return { kind: 'embed', src: playerUrl.href };
-        }
-      }
-      return { kind: 'file', src: url.href };
-    } catch {
-      return null;
-    }
-  }
-
   const youtubeEmbed = item?.media_type === 'youtube' ? getYouTubeEmbedUrl(item.media_url) : null;
-  const externalSource = item?.media_type === 'external_video' ? externalVideoSource(item.media_url) : null;
+  const externalSource = item?.media_type === 'external_video'
+    ? getExternalVideoSource(item.media_url)
+    : null;
 
   useEffect(() => {
     setYoutubeLoaded(false);

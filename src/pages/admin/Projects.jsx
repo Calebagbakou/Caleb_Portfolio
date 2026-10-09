@@ -30,7 +30,7 @@ function validHttpUrl(value) {
 function mediaFieldLabel(type) {
   if (type === 'youtube') return 'URL YouTube';
   if (type === 'image') return "Lien direct vers l'image";
-  return 'Lien direct vidéo ou Vimeo';
+  return 'Lien vidéo MP4/WebM, Vimeo ou Wistia';
 }
 
 function mediaFieldHint(type) {
@@ -40,7 +40,7 @@ function mediaFieldHint(type) {
   if (type === 'image') {
     return 'Colle le lien direct et public du fichier image (par ex. .jpg, .png, .webp). Les pages de partage/galerie ne sont pas des liens image.';
   }
-  return 'Colle un lien direct vers un fichier vidéo MP4/WebM, ou un lien vidéo Vimeo. Les pages Google Drive, réseaux sociaux et autres pages web ne sont pas des fichiers vidéo.';
+  return 'Colle un lien direct vers un fichier vidéo MP4/WebM ou un lien de partage Wistia/Vimeo. Le lecteur convertit les liens Wistia et Vimeo en lecteur intégré. Les pages Google Drive, réseaux sociaux et autres pages web ne sont pas des fichiers vidéo.';
 }
 
 export default function Projects() {
