@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import profileJpg from '../../../assets/profile.jpg';
 import { getSettingValue } from '../../../services/settings';
+import { usePresentation } from '../../../context/PresentationContext';
 
 const BR = '\u0001';
 const EM_S = '\u0002';
@@ -38,6 +39,7 @@ function renderTyped(n) {
 }
 
 export default function Hero() {
+  const { isProfessional } = usePresentation();
   const [profileImage, setProfileImage] = useState(null);
   const [typedCount, setTypedCount] = useState(prefersReducedMotion ? FULL_TEXT.length : 0);
   const [activeChapter, setActiveChapter] = useState(0);
@@ -65,7 +67,10 @@ export default function Hero() {
 
   // Typewriter
   useEffect(() => {
-    if (prefersReducedMotion) return;
+    if (prefersReducedMotion || isProfessional) {
+      setTypedCount(FULL_TEXT.length);
+      return;
+    }
     let n = 0;
     let timeoutId;
     function step() {
@@ -75,7 +80,7 @@ export default function Hero() {
     }
     step();
     return () => clearTimeout(timeoutId);
-  }, []);
+  }, [isProfessional]);
 
   function goToChapter(i, { jump = true } = {}) {
     const pos = STOPS[i];
@@ -139,7 +144,7 @@ export default function Hero() {
     <div className="hero">
       <main className="hero-main">
         <span className="hero-badge">
-          <span className="dot"></span>CALEB CREATIVE
+          <span className="dot"></span>{isProfessional ? 'CRÉATEUR VISUEL · BÉNIN' : 'CALEB CREATIVE'}
         </span>
         <h1>
           <span>{renderTyped(typedCount)}</span>

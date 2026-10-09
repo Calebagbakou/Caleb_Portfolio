@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { usePresentation } from '../../context/PresentationContext';
 
 const SUN_PATH = (
   <>
@@ -22,6 +23,7 @@ const NAV_LINKS = [
 const SHOP_URL = '/boutique';
 
 export default function Header() {
+  const { isProfessional, togglePresentation } = usePresentation();
   const [theme, setTheme] = useState('dark');
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -76,6 +78,18 @@ export default function Header() {
           </div>
           <div className="top-actions">
             <span className="timecode" ref={timecodeRef}>00:00:24:07</span>
+            <button
+              className="presentation-toggle"
+              type="button"
+              aria-label={isProfessional ? 'Revenir à la présentation motion' : 'Passer à la présentation professionnelle'}
+              aria-pressed={isProfessional}
+              onClick={() => {
+                setMenuOpen(false);
+                togglePresentation();
+              }}
+            >
+              {isProfessional ? 'Motion' : 'Mode pro'}
+            </button>
             <Link className="icon-btn" to={SHOP_URL} aria-label="Accéder à la boutique" title="Boutique">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
                 <path d="M3 3h2l2.4 12.4a2 2 0 002 1.6h8.2a2 2 0 002-1.6L21 8H6" />
@@ -84,7 +98,7 @@ export default function Header() {
               </svg>
             </Link>
             <button
-              className="icon-btn"
+              className="icon-btn theme-toggle"
               aria-label={theme === 'dark' ? 'Passer au thème clair' : 'Passer au thème sombre'}
               aria-pressed={theme === 'light'}
               onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
