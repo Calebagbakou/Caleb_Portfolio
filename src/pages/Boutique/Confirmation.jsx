@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LAST_ORDER_KEY } from '../../context/CartContext';
 import { formatPrice } from '../../data/products';
@@ -45,6 +45,13 @@ export default function Confirmation() {
     return product?.access_url || null;
   }
 
+  const hasGeminiPro = useMemo(
+    () => (order?.items || []).some((line) => products?.some(
+      (product) => product.id === line.productId && product.slug === 'gemini-pro'
+    )),
+    [order, products]
+  );
+
   if (order === undefined) return null;
 
   if (!order || !order.ref) {
@@ -87,7 +94,9 @@ export default function Confirmation() {
           </svg>
         </div>
         <h1 style={{ fontSize: 'clamp(1.6rem,4vw,2.1rem)', margin: '0 0 8px' }}>Paiement confirmé</h1>
-        <p style={{ color: 'var(--ink-dim)' }}>Merci {order.customer?.name} ! Ton paiement KKiaPay a été vérifié.</p>
+        <p style={{ color: 'var(--ink-dim)' }}>
+          Merci {order.customer?.name} ! Ton paiement KKiaPay a été vérifié.
+        </p>
         <div className="confirm-ref">
           Référence : <strong>{order.ref}</strong>
         </div>
@@ -120,15 +129,25 @@ export default function Confirmation() {
             <span>Total</span>
             <span>{formatPrice(order.total)}</span>
           </div>
-          <div className="summary-row"><span>Paiement</span><span>KKiaPay · confirmé</span></div>
+          <div className="summary-row">
+            <span>Paiement</span>
+            <span>KKiaPay · confirmé</span>
+          </div>
         </div>
 
         <p style={{ color: 'var(--ink-dim)', fontSize: 14, marginBottom: 22 }}>
-          Ta commande est enregistrée. Caleb préparera l’activation du produit et pourra te contacter si une
-          information complémentaire est nécessaire.
+          Ta commande est enregistrée. Caleb préparera l’activation du produit et pourra te contacter si une information complémentaire est nécessaire.
         </p>
 
         <div className="shop-hero-cta">
+          {hasGeminiPro && (
+            <Link
+              to={`/gemini-pro?order_id=${encodeURIComponent(order.id)}&order_ref=${encodeURIComponent(order.ref)}`}
+              className="btn btn-primary"
+            >
+              Continuer avec PixVerify
+            </Link>
+          )}
           <Link to="/boutique/catalogue" className="btn btn-primary">
             Retour à la boutique
           </Link>

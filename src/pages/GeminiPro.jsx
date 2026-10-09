@@ -1,131 +1,260 @@
-import { useState, useEffect } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { supabase } from '../services/supabase';
+
+async function getInvocationError(error, data) {
+  if (typeof data?.error === 'string') return data.error;
+  if (error?.context && typeof error.context.clone === 'function') {
+    try {
+      const body = await error.context.clone().json();
+      if (typeof body?.error === 'string') return body.error;
+      if (typeof body?.message === 'string') return body.message;
+    } catch {
+      try {
+        const responseText = await error.context.clone().text();
+        if (responseText) return responseText.slice(0, 300);
+      } catch {
+        // Keep the SDK error when the response body cannot be read.
+      }
+    }
+  }
+  const status = error?.context?.status;
+  const statusText = status ? `HTTP ${status}` : '';
+  const message = error?.message || 'La requête PixVerify a échoué.';
+  return [statusText, message].filter(Boolean).join(' — ');
+}
 
 export default function GeminiPro() {
   const [searchParams] = useSearchParams();
-  const [result, setResult] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const orderId = searchParams.get('order_id') || '';
+  const orderRef = searchParams.get('order_ref') || '';
+  const [type, setType] = useState('vip');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [totpSecret, setTotpSecret] = useState('');
+  const [generationId, setGenerationId] = useState(null);
+  const [status, setStatus] = useState('checking');
+  const [resultUrl, setResultUrl] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const code = searchParams.get('code');
-    const email = searchParams.get('email');
+    let cancelled = false;
 
-    if (!code || !email) {
-      setError('Paramètres invalides. Accès refusé.');
-      setLoading(false);
-      return;
-    }
+    async function loadExistingVerification() {
+      if (!orderId || !orderRef) {
+        setStatus('invalid_order');
+        return;
+      }
 
-    async function verifyAndActivate() {
-      try {
-        setLoading(true);
-        const response = await fetch(`/api/gemini-pro/activate`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code, email }),
-        });
+      const { data, error: invokeError } = await supabase.functions.invoke('gemini-pro-activate', {
+        body: { action: 'status', order_id: orderId, order_ref: orderRef },
+      });
+      if (cancelled) return;
+      if (invokeError || data?.error) {
+        setError(await getInvocationError(invokeError, data));
+        setStatus('error');
+        return;
+      }
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Activation échouée');
-        }
-
-        const data = await response.json();
-        setResult(data);
-        setError('');
-      } catch (err) {
-        console.error('Erreur lors de l\'activation :', err);
-        setError(err.message || 'Une erreur s\'est produite.');
-        setResult(null);
-      } finally {
-        setLoading(false);
+      setStatus(data.status || 'not_started');
+      setGenerationId(data.generation_id || null);
+      setResultUrl(data.result_url || '');
+      if (data.status === 'failed') {
+        setError(data.error_code
+          ? `PixVerify n’a pas pu terminer la vérification (code : ${data.error_code}).`
+          : 'PixVerify n’a pas pu terminer la vérification.');
       }
     }
 
-    verifyAndActivate();
-  }, [searchParams]);
+    loadExistingVerification();
+    return () => {
+      cancelled = true;
+    };
+  }, [orderId, orderRef]);
 
-  if (loading) {
-    return (
-      <main style={{ padding: '2rem', textAlign: 'center' }}>
-        <div className="state-box">Activation en cours…</div>
-      </main>
-    );
+  useEffect(() => {
+    if (!orderId || !orderRef || !['starting', 'pending', 'queued', 'running'].includes(status)) return undefined;
+
+    let cancelled = false;
+    let timeoutId;
+
+    async function checkStatus() {
+      const { data, error: invokeError } = await supabase.functions.invoke('gemini-pro-activate', {
+        body: { action: 'status', order_id: orderId, order_ref: orderRef },
+      });
+
+      if (cancelled) return;
+      if (invokeError || data?.error) {
+        setError(await getInvocationError(invokeError, data));
+        setStatus('error');
+        return;
+      }
+
+      setStatus(data.status);
+      if (data.status === 'success') {
+        setResultUrl(data.result_url || '');
+      } else if (data.status === 'failed') {
+        setError(data.error_code
+          ? `PixVerify n’a pas pu terminer la vérification (code : ${data.error_code}).`
+          : 'PixVerify n’a pas pu terminer la vérification.');
+      } else {
+        timeoutId = window.setTimeout(checkStatus, 4000);
+      }
+    }
+
+    timeoutId = window.setTimeout(checkStatus, 1000);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [orderId, orderRef, status]);
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setError('');
+    setResultUrl('');
+    setSubmitting(true);
+
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke('gemini-pro-activate', {
+        body: {
+          action: 'start',
+          order_id: orderId,
+          order_ref: orderRef,
+          type,
+          email: email.trim(),
+          password,
+          totp_secret: totpSecret.replace(/\s/g, '').toUpperCase(),
+        },
+      });
+
+      if (invokeError || data?.error) throw new Error(await getInvocationError(invokeError, data));
+      if (data?.generation_id === undefined) throw new Error('PixVerify n’a pas renvoyé d’identifiant de vérification.');
+
+      setGenerationId(data.generation_id);
+      setStatus(data.status || 'pending');
+      setPassword('');
+      setTotpSecret('');
+    } catch (submitError) {
+      console.error('Impossible de démarrer la vérification PixVerify:', submitError);
+      setError(submitError.message || 'Impossible de démarrer la vérification. Réessaie plus tard.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  if (error) {
-    return (
-      <main style={{ padding: '2rem', textAlign: 'center' }}>
-        <div className="state-box error">
-          <h2 style={{ fontSize: '1.4rem', marginBottom: '1rem' }}>Erreur d'activation</h2>
-          <p style={{ color: 'var(--ink-dim)', marginBottom: '1.5rem' }}>{error}</p>
-          <Link to="/boutique/catalogue" className="btn btn-dark">
-            Retour à la boutique
-          </Link>
-        </div>
-      </main>
-    );
-  }
+  const isRunning = ['starting', 'pending', 'queued', 'running'].includes(status);
+  const isVerifiedOrder = Boolean(orderId && orderRef);
 
   return (
-    <main style={{ padding: '2rem', maxWidth: '600px', margin: '0 auto' }}>
+    <main style={{ padding: '2rem', maxWidth: '680px', margin: '0 auto' }}>
       <div className="confirm-wrap">
-        <div className="confirm-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
-            <path d="M5 12l5 5L20 7" />
-          </svg>
-        </div>
-        <h1 style={{ fontSize: 'clamp(1.6rem,4vw,2.1rem)', margin: '0 0 8px' }}>Accès Gemini Pro activé</h1>
+        <h1 style={{ fontSize: 'clamp(1.6rem,4vw,2.1rem)', margin: '0 0 8px' }}>
+          Vérification Google One
+        </h1>
         <p style={{ color: 'var(--ink-dim)', marginBottom: '1.5rem' }}>
-          Bienvenue ! Ton accès Gemini Pro est maintenant actif.
+          Après une commande Gemini Pro payée, cette page envoie la demande à PixVerify et affiche son statut ou son message de solde.
         </p>
 
-        {result?.access_info && (
-          <div style={{ background: 'var(--bg-dim)', padding: '1.5rem', borderRadius: '0.5rem', marginBottom: '1.5rem' }}>
-            <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: 'var(--ink-dim)' }}>
-              Tes informations d'accès :
-            </p>
-            {result.access_info.username && (
-              <div style={{ marginBottom: '0.75rem', fontFamily: 'monospace', fontSize: '0.9rem' }}>
-                <strong>Utilisateur :</strong> {result.access_info.username}
-              </div>
-            )}
-            {result.access_info.password && (
-              <div style={{ marginBottom: '0.75rem', fontFamily: 'monospace', fontSize: '0.9rem' }}>
-                <strong>Mot de passe :</strong>
-                <span style={{ userSelect: 'all', marginLeft: '0.5rem' }}>
-                  {result.access_info.password}
-                </span>
-              </div>
-            )}
-            {result.access_info.gemini_pro_url && (
-              <div style={{ marginBottom: '0.75rem', fontSize: '0.9rem' }}>
-                <strong>Interface :</strong>
-                <br />
-                <a href={result.access_info.gemini_pro_url} target="_blank" rel="noopener noreferrer">
-                  {result.access_info.gemini_pro_url}
-                </a>
-              </div>
-            )}
+        {!isVerifiedOrder && (
+          <div className="shop-admin-alert error" role="alert">
+            Ouvre cette page depuis le bouton PixVerify de la confirmation d’une commande Gemini Pro payée.
           </div>
         )}
 
-        {result?.message && (
-          <p style={{ color: 'var(--ink-dim)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-            {result.message}
-          </p>
+        {isVerifiedOrder && status === 'checking' && (
+          <div className="state-box" role="status">Vérification de la commande…</div>
         )}
 
-        <div className="shop-hero-cta">
-          {result?.access_info?.gemini_pro_url && (
-            <a href={result.access_info.gemini_pro_url} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
-              Accéder à Gemini Pro
+        {isVerifiedOrder && status === 'not_started' && (
+          <form onSubmit={handleSubmit} className="form-card" style={{ textAlign: 'left' }}>
+            <div className="form-group">
+              <label htmlFor="gemini-verification-type">Type de vérification</label>
+              <select id="gemini-verification-type" value={type} onChange={(event) => setType(event.target.value)}>
+                <option value="vip">VIP — abonnement complet</option>
+                <option value="normal">Normal — lien uniquement</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label htmlFor="gemini-email">Adresse Gmail</label>
+              <input
+                id="gemini-email"
+                type="email"
+                autoComplete="username"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="gemini-password">Mot de passe Google</label>
+              <input
+                id="gemini-password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="gemini-totp">Secret TOTP (32 caractères Base32)</label>
+              <input
+                id="gemini-totp"
+                type="password"
+                autoComplete="off"
+                required
+                maxLength={39}
+                value={totpSecret}
+                onChange={(event) => setTotpSecret(event.target.value)}
+              />
+            </div>
+            <p style={{ color: 'var(--ink-dim)', fontSize: '0.85rem' }}>
+              Ces informations sont envoyées à PixVerify pour cette demande et ne sont pas enregistrées par ce site.
+              Saisis uniquement les identifiants d’un compte que tu possèdes. PixVerify peut débiter des crédits si
+              la demande est acceptée.
+            </p>
+            {error && <div className="shop-admin-alert error" role="alert">{error}</div>}
+            <button className="btn btn-primary" type="submit" disabled={submitting}>
+              {submitting ? 'Envoi à PixVerify…' : 'Démarrer la vérification PixVerify'}
+            </button>
+          </form>
+        )}
+
+        {isVerifiedOrder && isRunning && (
+          <div className="state-box" role="status" aria-live="polite">
+            Vérification en cours auprès de PixVerify… Le statut est actualisé automatiquement.
+            {generationId && <div style={{ marginTop: '0.5rem', fontSize: '0.85rem' }}>Référence : {generationId}</div>}
+          </div>
+        )}
+
+        {isVerifiedOrder && status === 'success' && resultUrl && (
+          <>
+            <div className="confirm-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
+                <path d="M5 12l5 5L20 7" />
+              </svg>
+            </div>
+            <h2>Vérification terminée</h2>
+            <p style={{ color: 'var(--ink-dim)', marginBottom: '1.5rem' }}>
+              PixVerify a terminé la vérification. Ouvre le lien de résultat Google.
+            </p>
+            <a href={resultUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
+              Ouvrir le résultat Google One
             </a>
-          )}
-          <Link to="/boutique/catalogue" className="btn btn-outline">
-            Retour à la boutique
-          </Link>
+          </>
+        )}
+
+        {isVerifiedOrder && ['failed', 'error'].includes(status) && (
+          <div className="shop-admin-alert error" role="alert">
+            {error || 'La vérification n’a pas abouti.'}
+            {generationId && <div style={{ marginTop: '0.5rem' }}>Référence : {generationId}</div>}
+          </div>
+        )}
+
+        <div className="shop-hero-cta" style={{ marginTop: '1.5rem' }}>
+          <Link to="/boutique/catalogue" className="btn btn-outline">Retour à la boutique</Link>
         </div>
       </div>
     </main>

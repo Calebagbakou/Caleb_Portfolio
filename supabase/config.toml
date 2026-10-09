@@ -1,2 +1,5 @@
 [functions.kkiapay-webhook]
 verify_jwt = false
+
+[functions.gemini-pro-activate]
+verify_jwt = false
