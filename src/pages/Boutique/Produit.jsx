@@ -10,16 +10,18 @@ export default function Produit() {
   const product = findProduct(id, products);
   const { add } = useCart();
 
-  const [selectedPlanId, setSelectedPlanId] = useState(product?.plans[0]?.id ?? null);
+  const [selectedPlanId, setSelectedPlanId] = useState(
+    product?.plans.find((plan) => plan.active)?.id ?? null
+  );
   const [qty, setQty] = useState(1);
   const [toast, setToast] = useState('');
 
   useEffect(() => {
     if (!product) return;
     document.title = product.name + ' — Boutique Caleb Creative';
-    setSelectedPlanId((current) => product.plans.some((plan) => plan.id === current)
+    setSelectedPlanId((current) => product.plans.some((plan) => plan.id === current && plan.active)
       ? current
-      : product.plans[0]?.id ?? null);
+      : product.plans.find((plan) => plan.active)?.id ?? null);
   }, [product]);
 
   useEffect(() => {
@@ -44,6 +46,8 @@ export default function Produit() {
   }
 
   function handleAddToCart() {
+    const selectedPlan = product.plans.find((plan) => plan.id === selectedPlanId);
+    if (!selectedPlan?.active) return;
     add(product.id, selectedPlanId, qty);
     setToast(product.name + ' ajouté au panier');
   }
@@ -77,13 +81,20 @@ export default function Produit() {
             <div className="plan-options">
               {product.plans.map((pl) => (
                 <label
-                  className={`plan-option${pl.id === selectedPlanId ? ' selected' : ''}`}
+                  className={`plan-option${pl.id === selectedPlanId ? ' selected' : ''}${pl.active ? '' : ' unavailable'}`}
                   key={pl.id}
-                  onClick={() => setSelectedPlanId(pl.id)}
+                  onClick={() => pl.active && setSelectedPlanId(pl.id)}
                 >
                   <span className="label-wrap">
-                    <input type="radio" name="plan" value={pl.id} checked={pl.id === selectedPlanId} readOnly />
-                    {pl.label}
+                    <input
+                      type="radio"
+                      name="plan"
+                      value={pl.id}
+                      checked={pl.id === selectedPlanId}
+                      disabled={!pl.active}
+                      readOnly
+                    />
+                    <span>{pl.label}{!pl.active && <small className="plan-unavailable-label">Indisponible pour le moment</small>}</span>
                   </span>
                   <span className="price">
                     {formatPrice(pl.price)}
@@ -114,7 +125,11 @@ export default function Produit() {
           </div>
 
           <div className="product-cta-row">
-            <button className="btn btn-primary" onClick={handleAddToCart}>
+            <button
+              className="btn btn-primary"
+              onClick={handleAddToCart}
+              disabled={!product.plans.some((plan) => plan.id === selectedPlanId && plan.active)}
+            >
               Ajouter au panier
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M3 3h2l2.4 12.4a2 2 0 002 1.6h8.2a2 2 0 002-1.6L21 8H6" />
@@ -128,7 +143,7 @@ export default function Produit() {
           </div>
           <p className="product-note">
             {product.slug === 'gemini-pro'
-              ? 'Formule disponible : 18 mois. Après confirmation du paiement, ton lien d’activation est généré automatiquement par PixVerify.'
+              ? 'Les formules 4 et 12 mois sont affichées mais momentanément indisponibles. La formule 18 mois est disponible ; après confirmation du paiement, ton lien d’activation est généré automatiquement par PixVerify.'
               : 'Livraison numérique : les identifiants ou instructions d’activation te sont envoyés directement par Caleb après validation de la commande.'}
           </p>
         </div>

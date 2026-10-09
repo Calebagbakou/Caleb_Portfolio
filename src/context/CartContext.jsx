@@ -47,7 +47,9 @@ export function CartProvider({ children }) {
       const normalized = current.flatMap((item) => {
         const product = findProduct(item.productId, products);
         const plan = findPlan(product, item.planId);
-        return product && plan ? [{ ...item, productId: product.id, planId: plan.id }] : [];
+        return product && plan?.active !== false
+          ? [{ ...item, productId: product.id, planId: plan.id }]
+          : [];
       });
       return JSON.stringify(current) === JSON.stringify(normalized) ? current : normalized;
     });
@@ -90,7 +92,7 @@ export function CartProvider({ children }) {
         const product = findProduct(it.productId, products);
         if (!product) return null;
         const plan = findPlan(product, it.planId);
-        if (!plan) return null;
+        if (!plan || plan.active === false) return null;
         return {
           productId: product.id,
           planId: plan.id,

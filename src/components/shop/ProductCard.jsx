@@ -2,10 +2,11 @@ import { Link } from 'react-router-dom';
 import { formatPrice } from '../../data/products';
 
 export default function ProductCard({ product }) {
-  const firstPlan = product.plans[0];
-  const paidPlans = product.plans.filter((p) => p.price > 0);
+  const availablePlans = product.plans.filter((plan) => plan.active !== false);
+  const firstPlan = availablePlans[0];
+  const paidPlans = availablePlans.filter((plan) => plan.price > 0);
   const priceLabel =
-    product.plans.length > 1
+    availablePlans.length > 1
       ? paidPlans.length
         ? (
             <>
@@ -14,7 +15,9 @@ export default function ProductCard({ product }) {
             </>
           )
         : formatPrice(0)
-      : formatPrice(firstPlan.price);
+      : firstPlan
+        ? formatPrice(firstPlan.price)
+        : 'Indisponible';
 
   return (
     <Link className="product-card product-card-link" to={`/boutique/produit/${product.slug}`}>

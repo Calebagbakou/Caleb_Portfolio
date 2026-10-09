@@ -254,8 +254,11 @@ h1,h2,h3,.brand-name{ font-family:'Unbounded', sans-serif; letter-spacing:-0.02e
 }
 .plan-option:hover{ border-color:var(--border-strong); }
 .plan-option.selected{ border-color:var(--ink); background:var(--surface-alt); }
+.plan-option.unavailable{ opacity:.62; cursor:not-allowed; }
+.plan-option.unavailable:hover{ border-color:var(--border); }
 .plan-option input{ accent-color:var(--ink); width:16px; height:16px; }
 .plan-option .label-wrap{ display:flex; align-items:center; gap:10px; font-weight:600; font-size:14px; }
+.plan-unavailable-label{ display:block; margin-top:2px; color:var(--ink-dim); font-size:11px; font-weight:500; }
 .plan-option .price{ font-weight:700; font-size:14px; }
 
 .qty-row{ display:flex; align-items:center; gap:14px; margin-bottom:24px; }

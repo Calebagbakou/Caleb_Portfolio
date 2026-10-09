@@ -48,11 +48,18 @@ export async function listShopCatalog({ includeInactive = false } = {}) {
   const productIds = products.map((product) => product.id);
   let plans = [];
   if (productIds.length) {
-    let planQuery = supabase.from('product_plans').select(PLAN_FIELDS).in('product_id', productIds).order('sort_order');
-    if (!includeInactive) planQuery = planQuery.eq('active', true);
-    const plansResult = await planQuery;
+    const plansResult = await supabase
+      .from('product_plans')
+      .select(PLAN_FIELDS)
+      .in('product_id', productIds)
+      .order('sort_order');
     if (plansResult.error) return { data: null, error: plansResult.error };
-    plans = plansResult.data || [];
+    const geminiProductIds = new Set(
+      products.filter((product) => product.slug === 'gemini-pro').map((product) => product.id)
+    );
+    plans = (plansResult.data || []).filter((plan) =>
+      includeInactive || plan.active || geminiProductIds.has(plan.product_id)
+    );
   }
 
   return {
