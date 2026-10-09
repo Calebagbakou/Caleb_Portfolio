@@ -145,7 +145,6 @@ function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisi
             </svg>
           </span>
         )}
-        {videoPreviewEnabled && <span className="p-preview-label">APERÇU MUET</span>}
       </div>
       <div className="p-body">
         <div className="p-cat">{item.catLabel}</div>
@@ -235,12 +234,6 @@ export default function PortfolioSection() {
     document.getElementById(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  const resumeVisiblePreview = useCallback(() => {
-    const nextPreview = [...visiblePreviews.current.entries()]
-      .sort((left, right) => right[1] - left[1])[0]?.[0] || null;
-    setActivePreviewId(nextPreview);
-  }, []);
-
   function openLightbox(index) {
     setActivePreviewId(null);
     if (flatItems.length) setLightboxIndex((index + flatItems.length) % flatItems.length);
@@ -249,6 +242,12 @@ export default function PortfolioSection() {
   function navigateLightbox(index) {
     setLightboxIndex((index + flatItems.length) % flatItems.length);
   }
+
+  const resumeVisiblePreview = useCallback(() => {
+    const nextPreview = [...visiblePreviews.current.entries()]
+      .sort((left, right) => right[1] - left[1])[0]?.[0] || null;
+    setActivePreviewId(nextPreview);
+  }, []);
 
   return (
     <section className="wrap" id="portfolio">

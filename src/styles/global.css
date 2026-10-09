@@ -484,11 +484,6 @@
   .p-card:hover .p-play{ transform:translate(-50%,-50%) scale(1.06); opacity:1; }
   .p-play svg{ width:20px; height:20px; margin-left:2px; }
   .p-play.preview-playing{ background:rgba(15,20,22,0.65); color:#fff; opacity:0.78; }
-  .p-preview-label{
-    position:absolute; right:10px; bottom:10px; z-index:1;
-    font-family:'Poppins',monospace; font-size:9px; letter-spacing:.06em;
-    color:#fff; background:rgba(15,20,22,.7); padding:4px 8px; border-radius:999px;
-  }
   .p-expand{
     position:absolute; top:10px; right:10px; width:30px; height:30px; border-radius:9px;
     background:rgba(15,20,22,0.55); backdrop-filter:blur(6px); color:#fff;

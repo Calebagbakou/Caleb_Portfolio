@@ -336,11 +336,10 @@ export default function Projects() {
               />
               <span>
                 Prévisualisation automatique silencieuse
-                <small>Lecture muette limitée à 8 secondes quand cette carte apparaît à l’écran. Une seule vidéo à la fois. Le bouton son se trouve en bas à droite de l’aperçu.</small>
+                <small>Lecture muette limitée à 8 secondes quand cette carte apparaît à l’écran. Une seule vidéo à la fois. L’icône de son reste visible.</small>
               </span>
             </label>
           )}
-
           <div className="row-actions project-form-actions">
             <button className="btn btn-primary" type="submit" disabled={saving}>
               {saving ? 'Enregistrement…' : editingId ? 'Enregistrer les modifications' : 'Ajouter le projet'}
@@ -379,7 +378,7 @@ export default function Projects() {
                       {project.published ? 'Publié' : 'Brouillon'}
                     </span>
                     {project.media_type !== 'image' && project.autoplay_preview && (
-                      <span className="badge badge-unread">Aperçu auto</span>
+                      <span className="badge badge-unread">Aperçu auto activé</span>
                     )}
                     <span className="project-admin-category">{project.category}</span>
                     <span className="project-admin-category">{mediaLabel(project.media_type)}</span>
