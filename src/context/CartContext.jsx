@@ -2,14 +2,13 @@
    CART CONTEXT — CALEB CREATIVE BOUTIQUE
    -------------------------------------------------------------------------
    Port direct de l'ancien boutique/assets/cart.js, sous forme de contexte
-   React. Le panier reste stocké dans le navigateur du visiteur
-   (localStorage) : aucune donnée n'est envoyée à un serveur, il n'y a pas
-   de vrai paiement — la commande se conclut via WhatsApp (voir la page
-   Confirmation), exactement comme avant la migration.
+   React.    Le panier reste stocké localement. Les commandes et paiements sont
+   enregistrés côté serveur au moment du checkout.
    ========================================================================= */
 
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { findProduct, findPlan } from '../data/products';
+import { useShop } from './ShopContext';
 
 const CART_KEY = 'caleb_boutique_cart_v1';
 export const LAST_ORDER_KEY = 'caleb_boutique_last_order_v1';
@@ -36,10 +35,23 @@ const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState(() => readCart());
+  const { products, loading: shopLoading, error: shopError } = useShop();
 
   useEffect(() => {
     writeCart(items);
   }, [items]);
+
+  useEffect(() => {
+    if (shopLoading || shopError || !products.length) return;
+    setItems((current) => {
+      const normalized = current.flatMap((item) => {
+        const product = findProduct(item.productId, products);
+        const plan = findPlan(product, item.planId);
+        return product && plan ? [{ ...item, productId: product.id, planId: plan.id }] : [];
+      });
+      return JSON.stringify(current) === JSON.stringify(normalized) ? current : normalized;
+    });
+  }, [products, shopLoading, shopError]);
 
   const add = useCallback((productId, planId, qty = 1) => {
     const safeQty = Math.max(1, parseInt(qty, 10) || 1);
@@ -75,7 +87,7 @@ export function CartProvider({ children }) {
   const details = useMemo(() => {
     return items
       .map((it) => {
-        const product = findProduct(it.productId);
+        const product = findProduct(it.productId, products);
         if (!product) return null;
         const plan = findPlan(product, it.planId);
         if (!plan) return null;
@@ -87,14 +99,15 @@ export function CartProvider({ children }) {
           avatar: product.avatar,
           gradient: product.gradient,
           unitPrice: plan.price,
+          currency: plan.currency,
           qty: it.qty,
           lineTotal: plan.price * it.qty,
         };
       })
       .filter(Boolean);
-  }, [items]);
+  }, [items, products]);
 
-  const count = useMemo(() => items.reduce((sum, it) => sum + it.qty, 0), [items]);
+  const count = useMemo(() => details.reduce((sum, it) => sum + it.qty, 0), [details]);
   const total = useMemo(() => details.reduce((sum, line) => sum + line.lineTotal, 0), [details]);
 
   const value = { items, details, count, total, add, updateQty, remove, clear };

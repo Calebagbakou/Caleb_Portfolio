@@ -1,13 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useCart, LAST_ORDER_KEY } from '../../context/CartContext';
+import { LAST_ORDER_KEY, useCart } from '../../context/CartContext';
 import { formatPrice } from '../../data/products';
-
-const PAY_OPTIONS = [
-  { id: 'mtn', label: 'Mobile Money — MTN' },
-  { id: 'moov', label: 'Mobile Money — Moov' },
-  { id: 'virement', label: 'Virement bancaire' },
-];
+import { createShopCheckout, verifyShopPayment } from '../../services/shop';
+import { isKkiaPayConfigured, startKkiaPayPayment } from '../../services/kkiapay';
 
 export default function Commande() {
   const { details, total, clear } = useCart();
@@ -17,7 +13,9 @@ export default function Commande() {
   const [fcontact, setFcontact] = useState('');
   const [femail, setFemail] = useState('');
   const [fnote, setFnote] = useState('');
-  const [pay, setPay] = useState('mtn');
+  const [pendingOrder, setPendingOrder] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
 
   if (!details.length) {
     return (
@@ -43,27 +41,59 @@ export default function Commande() {
     );
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    const payLabel = PAY_OPTIONS.find((p) => p.id === pay)?.label || '';
-
-    const ref = 'CC-' + Date.now().toString(36).toUpperCase();
-    const order = {
-      ref,
-      date: new Date().toISOString(),
-      customer: { name: fname.trim(), contact: fcontact.trim(), email: femail.trim(), note: fnote.trim() },
-      payMethod: payLabel,
-      items: details,
-      total,
-    };
-
-    try {
-      localStorage.setItem(LAST_ORDER_KEY, JSON.stringify(order));
-    } catch {
-      /* stockage indisponible : on continue quand même, la confirmation gérera l'absence de commande */
+    setError('');
+    if (!isKkiaPayConfigured()) {
+      setError('Le paiement n’est pas encore configuré. Réessaie plus tard ou contacte Caleb.');
+      return;
     }
-    clear();
-    navigate('/boutique/confirmation');
+    setSaving(true);
+    try {
+      let order = pendingOrder;
+      if (!order) {
+        const { data, error: createError } = await createShopCheckout({
+          customer: { name: fname.trim(), contact: fcontact.trim(), email: femail.trim() },
+          items: details.map((line) => ({ product_id: line.productId, plan_id: line.planId, qty: line.qty })),
+          note: fnote.trim(),
+        });
+        if (createError) throw createError;
+        order = data?.order;
+        if (!order?.id || !order?.ref || !Number.isFinite(Number(order.total))) {
+          throw new Error('Le serveur n’a pas renvoyé une commande valide.');
+        }
+        setPendingOrder(order);
+      }
+
+      const paymentResponse = await startKkiaPayPayment({
+        order,
+        customer: order.customer || { name: fname.trim(), contact: fcontact.trim(), email: femail.trim() },
+      });
+      const transactionId = paymentResponse?.transactionId;
+      if (!transactionId) throw new Error('KKiaPay n’a pas renvoyé de référence de transaction.');
+
+      const { data: verification, error: verificationError } = await verifyShopPayment({
+        orderId: order.id,
+        transactionId,
+      });
+      if (verificationError) throw verificationError;
+      if (!verification?.verified || !verification.order) {
+        throw new Error(verification?.message || 'Le paiement n’a pas pu être confirmé. La commande reste en attente.');
+      }
+
+      try {
+        localStorage.setItem(LAST_ORDER_KEY, JSON.stringify(verification.order));
+      } catch (storageError) {
+        console.error('Le reçu ne peut pas être conservé sur cet appareil :', storageError);
+      }
+      clear();
+      navigate('/boutique/confirmation', { state: { order: verification.order } });
+    } catch (checkoutError) {
+      console.error('Le checkout KKiaPay a échoué :', checkoutError);
+      setError(checkoutError.message || 'Le paiement a échoué ou a été annulé. Ta commande reste en attente.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -72,13 +102,14 @@ export default function Commande() {
         <div className="eyebrow">COMMANDE</div>
         <h1 style={{ fontSize: 'clamp(1.7rem,4vw,2.2rem)', margin: '0 0 8px' }}>Finaliser ma commande</h1>
         <p style={{ color: 'var(--ink-dim)', maxWidth: '56ch', margin: '0 0 6px' }}>
-          Renseigne tes informations : tu recevras un récapitulatif avec une référence de commande, à confirmer
-          ensuite sur WhatsApp pour le paiement et l'activation.
+          Renseigne tes coordonnées. Le prix est recalculé à partir du catalogue enregistré, puis le paiement est
+          sécurisé par le widget officiel KKiaPay.
         </p>
       </div>
 
       <form className="checkout-layout" onSubmit={handleSubmit}>
         <div className="form-card">
+          {error && <div className="shop-admin-alert error" role="alert">{error}</div>}
           <h2 style={{ fontSize: 16, margin: '0 0 16px' }}>Tes informations</h2>
           <div className="form-row-2">
             <div className="form-group">
@@ -125,26 +156,13 @@ export default function Commande() {
             />
           </div>
 
-          <h2 style={{ fontSize: 16, margin: '22px 0 14px' }}>Méthode de paiement</h2>
-          <div className="pay-method">
-            {PAY_OPTIONS.map((opt) => (
-              <label
-                className={`pay-option${pay === opt.id ? ' selected' : ''}`}
-                key={opt.id}
-                onClick={() => setPay(opt.id)}
-              >
-                <input type="radio" name="pay" value={opt.id} checked={pay === opt.id} readOnly /> {opt.label}
-              </label>
-            ))}
-          </div>
           <p className="pay-note">
-            Aucun paiement n'est prélevé automatiquement ici. Après validation, tu recevras les coordonnées de
-            paiement par WhatsApp — un acompte est demandé au démarrage, le solde à la livraison, comme précisé
-            dans la FAQ du portfolio.
+            Le paiement ne sera marqué comme confirmé qu’après validation serveur de la transaction KKiaPay.
+            Les moyens proposés par le widget dépendent des options activées sur ton compte marchand.
           </p>
 
-          <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 22 }}>
-            Confirmer la commande
+          <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 22 }} disabled={saving}>
+            {saving ? 'Connexion sécurisée à KKiaPay…' : pendingOrder ? `Reprendre le paiement · ${pendingOrder.ref}` : 'Commander et payer avec KKiaPay'}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
@@ -165,7 +183,7 @@ export default function Commande() {
           </div>
           <div className="summary-row total">
             <span>Total</span>
-            <span>{formatPrice(total)}</span>
+            <span>{formatPrice(pendingOrder ? Number(pendingOrder.total) : total)}</span>
           </div>
         </aside>
       </form>

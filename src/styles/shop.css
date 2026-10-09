@@ -141,6 +141,8 @@ h1,h2,h3,.brand-name{ font-family:'Unbounded', sans-serif; letter-spacing:-0.02e
 }
 .shop-hero p{ color:var(--ink-dim); max-width:52ch; margin:0 auto 28px; font-size:16.5px; }
 .shop-hero-cta{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+.shop-state{ padding:28px 16px; text-align:center; color:var(--ink-dim); }
+.shop-state.error{ color:var(--danger); }
 
 /* ---------- CATEGORY CHIPS / FILTERS ---------- */
 .chip-row{ display:flex; gap:10px; flex-wrap:wrap; padding:28px 0 8px; }
@@ -170,6 +172,8 @@ h1,h2,h3,.brand-name{ font-family:'Unbounded', sans-serif; letter-spacing:-0.02e
   aspect-ratio:4/3; position:relative; display:flex; align-items:flex-end; padding:14px;
   transition: transform .5s var(--ease);
 }
+.product-thumb img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.product-thumb-avatar{ position:relative; z-index:1; }
 .product-card:hover .product-thumb{ transform:scale(1.03); }
 .product-thumb-avatar{
   width:44px;height:44px;border-radius:11px; background:rgba(255,255,255,0.92); color:var(--ink);
@@ -207,6 +211,8 @@ h1,h2,h3,.brand-name{ font-family:'Unbounded', sans-serif; letter-spacing:-0.02e
   aspect-ratio:1/1; border-radius:var(--radius-lg); display:flex; align-items:center; justify-content:center;
   position:relative; overflow:hidden;
 }
+.product-visual img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.product-visual-avatar{ position:relative; z-index:1; }
 .product-visual-avatar{
   width:96px;height:96px;border-radius:24px; background:rgba(255,255,255,0.92); color:var(--ink);
   display:flex; align-items:center; justify-content:center; font-family:'Unbounded',sans-serif; font-weight:800; font-size:32px;

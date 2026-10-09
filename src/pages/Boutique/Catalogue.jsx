@@ -1,13 +1,14 @@
 import { useSearchParams } from 'react-router-dom';
-import { CATEGORIES, PRODUCTS } from '../../data/products';
 import ProductCard from '../../components/shop/ProductCard';
+import { useShop } from '../../context/ShopContext';
 
 export default function Catalogue() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { categories, products, loading, error } = useShop();
   const requested = searchParams.get('cat') || 'tous';
-  const activeCat = CATEGORIES.some((c) => c.id === requested) ? requested : 'tous';
+  const activeCat = categories.some((category) => category.slug === requested) ? requested : 'tous';
 
-  const list = activeCat === 'tous' ? PRODUCTS : PRODUCTS.filter((p) => p.category === activeCat);
+  const list = activeCat === 'tous' ? products : products.filter((product) => product.category === activeCat);
 
   function selectCategory(id) {
     if (id === 'tous') {
@@ -29,23 +30,25 @@ export default function Catalogue() {
         </p>
 
         <div className="chip-row">
-          {CATEGORIES.map((c) => (
+          {[{ id: 'tous', slug: 'tous', label: 'Tous les produits' }, ...categories].map((c) => (
             <button
               key={c.id}
-              className={`chip${activeCat === c.id ? ' active' : ''}`}
-              onClick={() => selectCategory(c.id)}
+              className={`chip${activeCat === c.slug ? ' active' : ''}`}
+              onClick={() => selectCategory(c.slug)}
             >
               {c.label}
             </button>
           ))}
         </div>
 
-        <div className="product-grid" style={{ marginTop: 22 }}>
-          {list.map((p) => (
-            <ProductCard product={p} key={p.id} />
-          ))}
-        </div>
-        {!list.length && (
+        {loading && <div className="shop-state">Chargement des produits…</div>}
+        {error && <div className="shop-state error">Impossible de charger la boutique : {error}</div>}
+        {!loading && !error && list.length > 0 && (
+          <div className="product-grid" style={{ marginTop: 22 }}>
+            {list.map((product) => <ProductCard product={product} key={product.id} />)}
+          </div>
+        )}
+        {!loading && !error && !list.length && (
           <p style={{ color: 'var(--ink-dim)', padding: '40px 0', textAlign: 'center' }}>
             Aucun produit dans cette catégorie pour le moment.
           </p>

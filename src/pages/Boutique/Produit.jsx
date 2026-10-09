@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { findProduct, formatPrice } from '../../data/products';
 import { useCart } from '../../context/CartContext';
+import { useShop } from '../../context/ShopContext';
 
 export default function Produit() {
   const { id } = useParams();
-  const product = findProduct(id);
+  const { products, loading, error } = useShop();
+  const product = findProduct(id, products);
   const { add } = useCart();
 
   const [selectedPlanId, setSelectedPlanId] = useState(product?.plans[0]?.id ?? null);
@@ -13,7 +15,11 @@ export default function Produit() {
   const [toast, setToast] = useState('');
 
   useEffect(() => {
-    if (product) document.title = product.name + ' — Boutique Caleb Creative';
+    if (!product) return;
+    document.title = product.name + ' — Boutique Caleb Creative';
+    setSelectedPlanId((current) => product.plans.some((plan) => plan.id === current)
+      ? current
+      : product.plans[0]?.id ?? null);
   }, [product]);
 
   useEffect(() => {
@@ -23,11 +29,12 @@ export default function Produit() {
   }, [toast]);
 
   if (!product) {
+    if (loading) return <main className="wrap"><div className="shop-state">Chargement du produit…</div></main>;
     return (
       <div className="wrap" style={{ textAlign: 'center', padding: '80px 24px' }}>
-        <h1 style={{ fontSize: '1.6rem' }}>Produit introuvable</h1>
+        <h1 style={{ fontSize: '1.6rem' }}>{error ? 'Boutique indisponible' : 'Produit introuvable'}</h1>
         <p style={{ color: 'var(--ink-dim)', marginBottom: 22 }}>
-          Ce produit n'existe pas ou a été retiré du catalogue.
+          {error || "Ce produit n'existe pas ou a été retiré du catalogue."}
         </p>
         <Link to="/boutique/catalogue" className="btn btn-dark">
           Retour au catalogue
@@ -45,7 +52,9 @@ export default function Produit() {
     <main className="wrap" style={{ position: 'relative' }}>
       <div className="product-detail">
         <div className="product-visual reveal in" style={{ background: product.gradient }}>
-          <span className="product-visual-avatar">{product.avatar}</span>
+          {product.image_url
+            ? <img src={product.image_url} alt={product.name} />
+            : <span className="product-visual-avatar">{product.avatar}</span>}
         </div>
         <div className="product-info reveal in">
           <div className="eyebrow">{product.categoryLabel}</div>

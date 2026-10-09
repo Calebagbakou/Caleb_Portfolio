@@ -147,6 +147,54 @@ h1,h2,h3,.brand{ font-family:'Unbounded',sans-serif; letter-spacing:-0.01em; }
 .project-admin-thumb{ width:84px; aspect-ratio:9/16; overflow:hidden; border-radius:8px; background:#202a2e; display:flex; align-items:center; justify-content:center; color:var(--ink-dim); font-size:11px; text-align:center; }
 .project-admin-thumb img{ width:100%; height:100%; object-fit:cover; }
 .project-admin-info{ min-width:0; }
+.shop-admin-alert{ padding:12px 14px; border-radius:var(--radius-sm); margin:0 0 16px; font-size:13px; line-height:1.5; overflow-wrap:anywhere; }
+.shop-admin-alert.error{ color:var(--danger); background:rgba(255,92,92,.1); }
+.shop-admin-alert.success{ color:var(--success); background:rgba(74,222,128,.1); }
+.shop-admin-content-form,.shop-admin-product-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 16px; margin-top:18px; }
+.shop-admin-content-form input,.shop-admin-content-form textarea,
+.shop-admin-product-grid input,.shop-admin-product-grid textarea,.shop-admin-product-grid select,
+.shop-admin-plan input,.shop-admin-category select,.shop-admin-order-footer select{
+  width:100%; padding:11px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-strong);
+  background:var(--surface-alt); color:var(--ink); font:inherit; font-size:14px;
+}
+.shop-admin-content-form textarea,.shop-admin-product-grid textarea{ resize:vertical; line-height:1.5; }
+.shop-admin-wide{ grid-column:1/-1; }
+.shop-admin-categories{ display:grid; gap:8px; margin:16px 0; }
+.shop-admin-category{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; background:var(--surface-alt); border:1px solid var(--border); border-radius:var(--radius-sm); }
+.shop-admin-new-category{ display:flex; align-items:flex-end; gap:10px; }
+.shop-admin-new-category .form-group{ flex:1; margin:0; }
+.shop-admin-check{ display:flex; align-items:center; gap:8px; color:var(--ink-dim); font-size:13px; margin:8px 0 18px; }
+.shop-admin-check input{ width:17px; height:17px; accent-color:var(--accent); }
+.shop-admin-plans{ border-top:1px solid var(--border); padding-top:18px; margin-top:10px; }
+.shop-admin-plans-heading,.shop-admin-list-heading{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+.shop-admin-plans-heading h3{ font-size:14px; margin:0 0 12px; }
+.shop-admin-plan{ display:grid; grid-template-columns:1.2fr 1fr 1fr auto; align-items:end; gap:12px; padding:12px; margin-bottom:10px; background:var(--surface-alt); border:1px solid var(--border); border-radius:var(--radius-sm); }
+.shop-admin-plan .form-group{ margin:0; }
+.shop-admin-plan .shop-admin-check{ margin:0 0 11px; white-space:nowrap; }
+.shop-admin-form-actions{ margin-top:16px; }
+.shop-admin-list-heading{ margin-bottom:16px; }
+.shop-admin-list-heading h2{ margin-bottom:6px; }
+.shop-admin-product-list,.shop-admin-orders{ display:grid; gap:12px; margin-top:16px; }
+.shop-admin-product{ display:grid; grid-template-columns:76px minmax(0,1fr) auto; align-items:center; gap:14px; padding:12px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface-alt); }
+.shop-admin-product-visual{ width:76px; aspect-ratio:1; border-radius:9px; display:flex; align-items:center; justify-content:center; font-weight:700; overflow:hidden; }
+.shop-admin-product-visual img{ width:100%; height:100%; object-fit:cover; }
+.shop-admin-product-info{ min-width:0; }
+.shop-admin-product-info h3{ font-size:14px; margin:8px 0 4px; }
+.shop-admin-product-info p{ font-size:12px; overflow-wrap:anywhere; }
+.shop-admin-order{ padding:16px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface-alt); }
+.shop-admin-order-heading,.shop-admin-order-footer{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+.shop-admin-order-heading h3{ font-size:14px; margin:9px 0 4px; }
+.shop-admin-order-heading p,.shop-admin-order-note{ color:var(--ink-dim); font-size:12px; margin:0; overflow-wrap:anywhere; }
+.shop-admin-order-total{ text-align:right; display:grid; gap:5px; }
+.shop-admin-order-total span,.shop-admin-order-footer{ font-size:12px; color:var(--ink-faint); }
+.shop-admin-order-total strong{ color:var(--ink); font-size:16px; }
+.shop-admin-order-items{ border-top:1px solid var(--border); border-bottom:1px solid var(--border); margin:14px 0; padding:10px 0; }
+.shop-admin-order-item{ display:flex; justify-content:space-between; gap:10px; padding:4px 0; font-size:12px; }
+.shop-admin-order-item strong{ white-space:nowrap; }
+.shop-admin-order-footer{ align-items:flex-end; flex-wrap:wrap; }
+.shop-admin-order-footer label{ display:grid; gap:5px; min-width:150px; }
+.shop-admin-order-footer select{ padding:8px 10px; }
+.shop-admin-order-note{ margin-top:12px; }
 .project-admin-meta{ display:flex; align-items:center; flex-wrap:wrap; gap:7px; }
 .project-admin-category{ font-size:11px; color:var(--ink-faint); }
 .project-admin-info h3{ margin:7px 0 4px; font-size:14px; overflow-wrap:anywhere; }
@@ -175,4 +223,18 @@ h1,h2,h3,.brand{ font-family:'Unbounded',sans-serif; letter-spacing:-0.01em; }
   .project-form-actions .btn{ width:100%; }
   .project-admin-card{ padding:11px; }
   .project-admin-actions .btn{ padding:8px 9px; font-size:11.5px; }
+  .shop-admin-content-form,.shop-admin-product-grid{ grid-template-columns:1fr; }
+  .shop-admin-wide{ grid-column:auto; }
+  .shop-admin-category,.shop-admin-list-heading,.shop-admin-plans-heading{ align-items:stretch; flex-direction:column; }
+  .shop-admin-new-category{ align-items:stretch; flex-direction:column; }
+  .shop-admin-new-category .btn{ width:100%; }
+  .shop-admin-plan{ grid-template-columns:1fr 1fr; }
+  .shop-admin-plan .form-group:first-child{ grid-column:1/-1; }
+  .shop-admin-plan .shop-admin-check{ grid-column:1/-1; }
+  .shop-admin-product{ grid-template-columns:58px minmax(0,1fr); gap:10px; }
+  .shop-admin-product-visual{ width:58px; }
+  .shop-admin-product .row-actions{ grid-column:1/-1; }
+  .shop-admin-order-heading{ flex-direction:column; }
+  .shop-admin-order-total{ text-align:left; }
+  .shop-admin-order-footer{ align-items:stretch; flex-direction:column; }
 }

@@ -6,6 +6,8 @@ import '../styles/admin.css';
 const TITLES = {
   '/admin': 'Dashboard',
   '/admin/projects': 'Projets',
+  '/admin/shop': 'Boutique',
+  '/admin/orders': 'Commandes',
   '/admin/messages': 'Messages',
   '/admin/parametres': 'Paramètres',
 };

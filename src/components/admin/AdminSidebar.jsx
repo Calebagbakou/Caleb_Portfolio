@@ -3,9 +3,8 @@ import { NavLink } from 'react-router-dom';
 /**
  * Port direct de la sidebar admin (identique sur index.html, messages.html,
  * parametres.html dans l'ancien projet). Les sections Compétences,
- * Services, Images, Vidéos, Produits, Commandes, Clients restent marquées
- * "bientôt" — leurs écrans n'existent pas encore côté admin, seuls Projets,
- * Messages et Paramètres sont fonctionnels.
+ * La gestion du portfolio et de la boutique est regroupée dans les routes
+ * protégées de l'espace admin.
  */
 export default function AdminSidebar({ onLogout }) {
   return (
@@ -66,21 +65,21 @@ export default function AdminSidebar({ onLogout }) {
         </a>
 
         <div className="admin-nav-label">Boutique</div>
-        <a href="#soon-produits" onClick={(e) => e.preventDefault()}>
+        <NavLink to="/admin/shop">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path d="M3 3h2l2.4 12.4a2 2 0 002 1.6h8.2a2 2 0 002-1.6L21 8H6" />
             <circle cx="9" cy="20" r="1.4" />
             <circle cx="17" cy="20" r="1.4" />
           </svg>
-          Produits<span className="soon">bientôt</span>
-        </a>
-        <a href="#soon-commandes" onClick={(e) => e.preventDefault()}>
+          Produits
+        </NavLink>
+        <NavLink to="/admin/orders">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <rect x="3" y="5" width="18" height="14" rx="2" />
             <path d="M3 10h18" />
           </svg>
-          Commandes<span className="soon">bientôt</span>
-        </a>
+          Commandes
+        </NavLink>
         <a href="#soon-clients" onClick={(e) => e.preventDefault()}>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <circle cx="12" cy="8" r="4" />

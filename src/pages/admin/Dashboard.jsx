@@ -47,14 +47,13 @@ export default function Dashboard() {
       )}
 
       <div className="panel">
-        <h2>Gère ton portfolio sans modifier le code</h2>
-        <p>Ajoute tes projets, colle directement une URL YouTube, et choisis lesquels afficher en public.</p>
-        <div className="placeholder-note">
-          La gestion des projets est disponible. Les autres espaces seront ajoutés progressivement.
-        </div>
-        <p style={{ marginTop: 16 }}>
+        <h2>Gère ton contenu sans modifier le code</h2>
+        <p>Administre ton portfolio, les textes et produits de la boutique ainsi que le suivi des commandes.</p>
+        <div className="row-actions" style={{ marginTop: 16 }}>
           <Link className="btn btn-primary" to="/admin/projects">Gérer les projets</Link>
-        </p>
+          <Link className="btn btn-secondary" to="/admin/shop">Gérer la boutique</Link>
+          <Link className="btn btn-secondary" to="/admin/orders">Voir les commandes</Link>
+        </div>
       </div>
     </>
   );

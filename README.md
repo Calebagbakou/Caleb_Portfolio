@@ -47,9 +47,10 @@ src/
   animés, portfolio avec filtres/drag-scroll/lightbox, FAQ en accordéon et
   formulaire de contact (envoie réellement dans Supabase `messages`) ont
   tous été portés fidèlement.
-- **Boutique** : catalogue **statique** (`src/data/products.js`), panier en
-  `localStorage`, commande qui génère une référence et redirige vers
-  WhatsApp — **aucun vrai paiement ni back-end**, exactement comme avant.
+- **Boutique** : catalogue et contenu chargés depuis Supabase, panier conservé
+  dans `localStorage`, écrans d'administration pour le catalogue et les
+  commandes. Le checkout crée la commande côté serveur et ne confirme le
+  paiement qu'après vérification KKiaPay côté serveur.
 - **Admin** : authentification Supabase + vérification dans la table
   `admins`, avec gestion des **Projets**, **Messages** et **Paramètres**.
   Les projets sont lus depuis Supabase côté public; publier ou modifier un
@@ -57,19 +58,38 @@ src/
 
 ## Ce qui n'a pas été construit (et pourquoi)
 
-Le cahier des charges de migration liste encore des écrans admin
-(Compétences, Services, Médias, Produits, Commandes, Clients) et
-un catalogue boutique branché sur Supabase. **Ces écrans n'existaient pas
-dans le projet d'origine** — seuls Auth/Messages/Paramètres étaient
-fonctionnels côté admin, et la boutique était entièrement statique. Pour
-respecter la consigne « ne rien perdre / ne pas refaire une refonte
-fonctionnelle », ils restent marqués « bientôt » dans la sidebar.
+Les produits hérités sont conservés dans `src/data/products.js` comme
+référence de migration; la migration SQL les insère de façon idempotente dans
+les tables déjà présentes. Les écrans admin Boutique et Commandes utilisent
+les tables Supabase existantes.
 
 La migration additive pour `projects`, son import des cartes historiques et
 la compatibilité avec les politiques RLS déjà en place sont dans
 [`supabase/migrations/001_projects_admin.sql`](./supabase/migrations/001_projects_admin.sql).
 Avant de l'exécuter, vérifie la structure et les politiques déjà présentes
 dans ton projet Supabase en suivant [`ADMIN_SETUP.md`](./ADMIN_SETUP.md).
+
+### Mise en service de la boutique et de KKiaPay
+
+1. Exécute `supabase/migrations/003_shop_admin_kkiapay.sql` dans le SQL Editor
+   Supabase après avoir vérifié que le schéma correspond aux tables existantes.
+2. Déploie les Edge Functions `checkout-shop`, `verify-kkiapay-payment` et
+   `kkiapay-webhook`. Les fonctions serveur nécessitent les secrets
+   `KKIAPAY_PRIVATE_KEY`, `KKIAPAY_PUBLIC_KEY`, `KKIAPAY_SECRET_KEY` et
+   `KKIAPAY_WEBHOOK_SECRET`; `KKIAPAY_SANDBOX=true` active le mode test.
+   `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont les secrets habituels
+   fournis à une Edge Function Supabase. La clé `service_role` ne doit jamais
+   être mise dans les variables `VITE_*`.
+3. Dans les **Variables** du dépôt GitHub, renseigne
+   `VITE_KKIAPAY_PUBLIC_KEY` avec la clé publique et
+   `VITE_KKIAPAY_SANDBOX` à `true` pour les tests. Ces variables ne contiennent
+   aucune clé serveur; la clé publique est destinée au widget navigateur.
+4. Configure dans le tableau de bord KKiaPay le webhook vers l'URL de la
+   fonction `kkiapay-webhook`, avec le secret correspondant à
+   `KKIAPAY_WEBHOOK_SECRET`.
+
+Ne passe pas en production avant d'avoir effectué un paiement de test complet
+et vérifié la commande dans `/admin/orders`.
 
 ## Sécurité — variables d'environnement
 

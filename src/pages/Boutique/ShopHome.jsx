@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
-import { PRODUCTS } from '../../data/products';
 import ProductCard from '../../components/shop/ProductCard';
 import { useReveal } from '../../hooks/useReveal';
+import { useShop } from '../../context/ShopContext';
 
 function TrustItem({ icon, title, desc }) {
   const [ref, visible] = useReveal();
@@ -22,19 +22,15 @@ function TrustItem({ icon, title, desc }) {
 
 export default function ShopHome() {
   const [heroRef, heroVisible] = useReveal();
-  const featured = PRODUCTS.slice(0, 3);
+  const { categories, products, content, loading, error } = useShop();
+  const featured = products.filter((product) => product.featured).slice(0, 3);
 
   return (
     <>
       <section className="shop-hero" ref={heroRef}>
         <div className="eyebrow">CALEB CREATIVE — BOUTIQUE</div>
-        <h1 className={`reveal${heroVisible ? ' in' : ''}`}>
-          Des outils IA et créatifs premium, activés rapidement.
-        </h1>
-        <p className={`reveal${heroVisible ? ' in' : ''}`}>
-          Abonnements Gemini Pro, CapCut Pro, Canva Pro et plus — sélectionnés par Caleb Creative, activés
-          après commande, avec un accompagnement direct.
-        </p>
+        <h1 className={`reveal${heroVisible ? ' in' : ''}`}>{content.shop_hero_title}</h1>
+        <p className={`reveal${heroVisible ? ' in' : ''}`}>{content.shop_hero_description}</p>
         <div className={`shop-hero-cta reveal${heroVisible ? ' in' : ''}`}>
           <Link to="/boutique/catalogue" className="btn btn-dark">
             Voir le catalogue
@@ -53,12 +49,11 @@ export default function ShopHome() {
           <Link to="/boutique/catalogue" className="chip active">
             Tous les produits
           </Link>
-          <Link to="/boutique/catalogue?cat=ia" className="chip">
-            Intelligence artificielle
-          </Link>
-          <Link to="/boutique/catalogue?cat=logiciels" className="chip">
-            Logiciels créatifs
-          </Link>
+          {categories.map((category) => (
+            <Link to={`/boutique/catalogue?cat=${category.slug}`} className="chip" key={category.id}>
+              {category.label}
+            </Link>
+          ))}
         </div>
 
         <section className="section">
@@ -68,17 +63,22 @@ export default function ShopHome() {
               Voir tout le catalogue →
             </Link>
           </div>
-          <div className="product-grid">
-            {featured.map((p) => (
-              <ProductCard product={p} key={p.id} />
-            ))}
-          </div>
+          {loading && <div className="shop-state">Chargement des produits…</div>}
+          {error && <div className="shop-state error">Impossible de charger la boutique : {error}</div>}
+          {!loading && !error && featured.length === 0 && (
+            <div className="shop-state">Les produits phares seront bientôt disponibles.</div>
+          )}
+          {!loading && !error && featured.length > 0 && (
+            <div className="product-grid">
+              {featured.map((product) => <ProductCard product={product} key={product.id} />)}
+            </div>
+          )}
         </section>
 
         <div className="trust-row">
           <TrustItem
-            title="Activation rapide"
-            desc="Sous 24 à 48h après commande"
+            title={content.shop_activation_title}
+            desc={content.shop_activation_description}
             icon={
               <>
                 <path d="M12 2l8 4.5v9L12 20l-8-4.5v-9z" />
@@ -87,13 +87,13 @@ export default function ShopHome() {
             }
           />
           <TrustItem
-            title="Suivi par WhatsApp"
-            desc="Un échange direct, sans robot"
+            title={content.shop_contact_title}
+            desc={content.shop_contact_description}
             icon={<path d="M4 20l1.3-4A8 8 0 1112 20a8 8 0 01-4-1z" />}
           />
           <TrustItem
-            title="Paiement local"
-            desc="Mobile Money ou virement bancaire"
+            title={content.shop_payment_title}
+            desc={content.shop_payment_description}
             icon={
               <>
                 <rect x="3" y="5" width="18" height="14" rx="2" />

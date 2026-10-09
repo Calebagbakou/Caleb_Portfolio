@@ -1,12 +1,8 @@
 /* =========================================================================
    PRODUITS DE LA BOUTIQUE — CALEB CREATIVE
    -------------------------------------------------------------------------
-   Port direct de l'ancien boutique/assets/products.js. Les données restent
-   statiques pour l'instant (comme avant la migration) : l'écran admin
-   "Produits" n'existe pas encore, donc la table Supabase "products" n'est
-   pas branchée côté boutique. Pour ajouter un produit : copie un bloc
-   { ... } et modifie ses valeurs. Un prix à 0 affiche automatiquement
-   "Prix sur demande".
+   Ancien catalogue conservé comme référence et pour initialiser la migration.
+   Les pages de la boutique chargent maintenant les produits depuis Supabase.
    ========================================================================= */
 
 export const PRODUCTS = [
@@ -81,11 +77,11 @@ export function formatPrice(price) {
   return price.toLocaleString('fr-FR') + ' FCFA';
 }
 
-export function findProduct(id) {
-  return PRODUCTS.find((p) => p.id === id) || null;
+export function findProduct(id, products = PRODUCTS) {
+  return products.find((product) => product.id === id || product.slug === id) || null;
 }
 
 export function findPlan(product, planId) {
   if (!product) return null;
-  return product.plans.find((pl) => pl.id === planId) || product.plans[0] || null;
+  return product.plans.find((plan) => plan.id === planId || plan.slug === planId) || product.plans[0] || null;
 }
