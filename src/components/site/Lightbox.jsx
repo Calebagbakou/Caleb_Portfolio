@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getYouTubeEmbedUrl } from '../../data/projectMedia';
+import { DEFAULT_PROJECT_IMAGE_RATIO, getYouTubeEmbedUrl } from '../../data/projectMedia';
 import { resolveExternalVideoSource } from '../../data/externalVideo';
 
 /**
@@ -14,6 +14,9 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
   const open = index !== null && index !== undefined;
   const item = open ? items[index] : null;
   const isVideo = item?.media_type === 'youtube' || item?.media_type === 'external_video';
+  const isImage = item?.media_type === 'image';
+  const imageRatio = item?.image_ratio || DEFAULT_PROJECT_IMAGE_RATIO;
+  const imageRatioClass = imageRatio.replace('/', '-');
 
   const youtubeEmbed = item?.media_type === 'youtube' ? getYouTubeEmbedUrl(item.media_url) : null;
 
@@ -83,11 +86,12 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
           <path d="M15 6l-6 6 6 6" />
         </svg>
       </button>
-      <div className={`lightbox-inner${isVideo ? ' video' : ''}`}>
+      <div className={`lightbox-inner${isVideo ? ' video' : ''}${isImage ? ` image ratio-${imageRatioClass}` : ''}`}>
         <div
           className="lightbox-thumb"
           style={{
             background: item && !isVideo ? item.gradient : '#000',
+            ...(isImage ? { aspectRatio: imageRatio } : {}),
             ...(externalSource?.aspectRatio ? { aspectRatio: externalSource.aspectRatio } : {}),
           }}
         >

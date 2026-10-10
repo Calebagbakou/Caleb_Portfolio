@@ -600,10 +600,14 @@
     width:min(100%, 420px, calc((100dvh - 140px) * 9 / 16));
     max-width:none;
   }
+  .lightbox-inner.image.ratio-1-1{ width:min(100%, 80dvh); max-width:none; }
+  .lightbox-inner.image.ratio-3-4{ width:min(100%, 56dvh); max-width:none; }
+  .lightbox-inner.image.ratio-9-16{ width:min(100%, 40dvh); max-width:none; }
   .lightbox.open .lightbox-inner{ transform:perspective(1000px) scale(1) rotateX(0); }
   .lightbox-thumb{ aspect-ratio:16/9; width:100%; position:relative; overflow:hidden; }
   .lightbox-inner.video .lightbox-thumb{ aspect-ratio:9/16; }
-  .lightbox-image{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+  .lightbox-inner.image .lightbox-thumb{ max-height:calc(100dvh - 140px); }
+  .lightbox-image{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .video-loading{
     position:absolute; inset:0; z-index:1; display:flex; align-items:center; justify-content:center;
     color:var(--paper-dim); background:#000; font-size:13px; pointer-events:none;
