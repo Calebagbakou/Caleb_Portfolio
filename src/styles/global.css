@@ -437,7 +437,7 @@
   }
   .accompagne .tag-ic svg{ width:16px; height:16px; }
   .section-icon-svg{ width:100%; height:100%; }
-  .section-custom-icon{ width:100%; height:100%; object-fit:contain; }
+  .section-custom-icon{ width:100%; height:100%; object-fit:contain; border-radius:5px; }
   .accompagne .tag{ font-family:'Poppins', monospace; font-size:11px; color:var(--teal); letter-spacing:0.08em; display:block; }
   .audience-list{ display:flex; flex-direction:column; gap:2px; }
   .audience-item{
