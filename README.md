@@ -68,6 +68,10 @@ la compatibilité avec les politiques RLS déjà en place sont dans
 [`supabase/migrations/001_projects_admin.sql`](./supabase/migrations/001_projects_admin.sql).
 Avant de l'exécuter, vérifie la structure et les politiques déjà présentes
 dans ton projet Supabase en suivant [`ADMIN_SETUP.md`](./ADMIN_SETUP.md).
+Exécute la migration
+[`supabase/migrations/010_project_image_ratio.sql`](./supabase/migrations/010_project_image_ratio.sql)
+dans le SQL Editor Supabase pour ajouter le choix du format de cadre des images
+des réalisations dans l'administration.
 
 ### Mise en service de la boutique et de KKiaPay
 

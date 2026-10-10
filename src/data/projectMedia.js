@@ -1,5 +1,13 @@
 const YOUTUBE_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
 
+export const PROJECT_IMAGE_RATIOS = [
+  { value: '1/1', label: 'Carré (1:1)' },
+  { value: '4/3', label: 'Classique (4:3)' },
+  { value: '16/9', label: 'Large (16:9)' },
+  { value: '9/16', label: 'Portrait (9:16)' },
+];
+export const DEFAULT_PROJECT_IMAGE_RATIO = '4/3';
+
 export function getProjectThumbnailUrl(project) {
   if (project?.thumbnail_url) return project.thumbnail_url;
   if (project?.media_type === 'youtube') {

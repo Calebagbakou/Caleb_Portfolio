@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-const PROJECT_COLUMNS = 'id, slug, title, description, category, media_type, media_url, thumbnail_url, published, autoplay_preview, status, category_id, cover_media_id, video_media_id, created_at, updated_at';
+const PROJECT_COLUMNS = 'id, slug, title, description, category, media_type, media_url, thumbnail_url, image_ratio, published, autoplay_preview, status, category_id, cover_media_id, video_media_id, created_at, updated_at';
 
 function getStoredMediaUrl(media) {
   if (!media) return null;

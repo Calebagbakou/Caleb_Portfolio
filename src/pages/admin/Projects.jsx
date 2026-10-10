@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { createProject, deleteProject, listProjects, updateProject } from '../../services/projects';
-import { extractYouTubeVideoId, getProjectThumbnailUrl, normalizeYouTubeUrl } from '../../data/projectMedia';
+import {
+  DEFAULT_PROJECT_IMAGE_RATIO,
+  extractYouTubeVideoId,
+  getProjectThumbnailUrl,
+  normalizeYouTubeUrl,
+  PROJECT_IMAGE_RATIOS,
+} from '../../data/projectMedia';
 
 const EMPTY_FORM = {
   title: '',
@@ -9,6 +15,7 @@ const EMPTY_FORM = {
   media_type: 'youtube',
   media_url: '',
   thumbnail_url: '',
+  image_ratio: DEFAULT_PROJECT_IMAGE_RATIO,
   published: false,
   autoplay_preview: true,
 };
@@ -91,6 +98,7 @@ export default function Projects() {
       media_type: project.media_type || 'image',
       media_url: project.media_url || '',
       thumbnail_url: project.thumbnail_url || '',
+      image_ratio: project.image_ratio || DEFAULT_PROJECT_IMAGE_RATIO,
       published: Boolean(project.published),
       autoplay_preview: Boolean(project.autoplay_preview),
     });
@@ -146,6 +154,7 @@ export default function Projects() {
         media_type: form.media_type,
         media_url: normalizedMediaUrl,
         thumbnail_url: thumbnailUrl || null,
+        image_ratio: form.media_type === 'image' ? form.image_ratio : DEFAULT_PROJECT_IMAGE_RATIO,
         published: form.published,
         autoplay_preview: form.media_type !== 'image' && form.autoplay_preview,
       },
@@ -262,6 +271,17 @@ export default function Projects() {
                 {MEDIA_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
               </select>
             </div>
+            {form.media_type === 'image' && (
+              <div className="form-group">
+                <label htmlFor="project-image-ratio">Format du cadre de l’image</label>
+                <select id="project-image-ratio" name="image_ratio" value={form.image_ratio} onChange={updateField}>
+                  {PROJECT_IMAGE_RATIOS.map((ratio) => (
+                    <option key={ratio.value} value={ratio.value}>{ratio.label}</option>
+                  ))}
+                </select>
+                <small className="project-form-hint">Choisis le format qui correspond à ton image pour qu’elle remplisse correctement sa carte.</small>
+              </div>
+            )}
             <div className="form-group">
               <label htmlFor="project-media-url">{mediaFieldLabel(form.media_type)}</label>
               <input
@@ -310,7 +330,11 @@ export default function Projects() {
               </small>
               {getProjectThumbnailUrl(form) && (
                 <div className="project-thumbnail-preview">
-                  <img src={getProjectThumbnailUrl(form)} alt="Aperçu de la miniature" />
+                  <img
+                    src={getProjectThumbnailUrl(form)}
+                    alt="Aperçu de la miniature"
+                    style={{ aspectRatio: form.image_ratio }}
+                  />
                   <span>Aperçu de la miniature</span>
                 </div>
               )}
@@ -362,7 +386,10 @@ export default function Projects() {
           <div className="project-admin-list">
             {projects.map((project) => (
               <article className="project-admin-card" key={project.id}>
-                <div className={`project-admin-thumb${project.media_type !== 'image' ? ' video' : ''}`}>
+                <div
+                  className={`project-admin-thumb${project.media_type !== 'image' ? ' video' : ''}`}
+                  style={project.media_type === 'image' ? { aspectRatio: project.image_ratio || DEFAULT_PROJECT_IMAGE_RATIO } : undefined}
+                >
                   {getProjectThumbnailUrl(project)
                     ? <img src={getProjectThumbnailUrl(project)} alt="" loading="lazy" />
                     : <span>{mediaLabel(project.media_type)} · miniature manquante</span>}

@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PORTFOLIO_ROWS } from '../../../data/portfolio';
-import { getYouTubePreviewUrl, extractYouTubeVideoId, getProjectThumbnailUrl } from '../../../data/projectMedia';
+import {
+  DEFAULT_PROJECT_IMAGE_RATIO,
+  getYouTubePreviewUrl,
+  extractYouTubeVideoId,
+  getProjectThumbnailUrl,
+} from '../../../data/projectMedia';
 import { listPublishedProjects } from '../../../services/projects';
 import { useReveal } from '../../../hooks/useReveal';
 import { useTilt } from '../../../hooks/useTilt';
@@ -20,6 +25,7 @@ const LEGACY_ITEMS = PORTFOLIO_ROWS.flatMap((row) => row.items.map((item) => ({
   thumbnail_url: null,
   published: true,
   autoplay_preview: false,
+  image_ratio: DEFAULT_PROJECT_IMAGE_RATIO,
   ...item,
 })));
 const LEGACY_DECORATIONS = new Map(LEGACY_ITEMS.map((item) => [item.title.trim().toLowerCase(), item]));
@@ -49,6 +55,7 @@ function prepareProject(project) {
     thumbLabel: legacy?.thumbLabel || categoryLabel(project.category).toUpperCase(),
     youtubeId: videoId,
     autoplay_preview: Boolean(project.autoplay_preview),
+    image_ratio: project.image_ratio || DEFAULT_PROJECT_IMAGE_RATIO,
     youtubeThumbnail: videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null,
   };
 }
@@ -120,7 +127,13 @@ function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisi
           <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" />
         </svg>
       </span>
-      <div className={`p-thumb${item.media_type !== 'image' ? ' video' : ''}`} style={{ background: item.gradient }}>
+      <div
+        className={`p-thumb${item.media_type !== 'image' ? ' video' : ''}`}
+        style={{
+          background: item.gradient,
+          ...(item.media_type === 'image' ? { aspectRatio: item.image_ratio || DEFAULT_PROJECT_IMAGE_RATIO } : {}),
+        }}
+      >
         {previewActive && (
           item.media_type === 'youtube'
             ? <YouTubePreview
