@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import profileJpg from '../../../assets/profile.jpg';
 import { getSettingValue } from '../../../services/settings';
 import { usePresentation } from '../../../context/PresentationContext';
@@ -178,12 +179,12 @@ export default function Hero() {
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
           </a>
-          <a href="/boutique" className="btn btn-ghost">
+          <Link to="/boutique" className="btn btn-ghost">
             Accéder à la boutique
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
-          </a>
+          </Link>
         </div>
         <div className="motion-sequence" aria-label="Le processus créatif : idée, design, mouvement et rendu">
           <div className="motion-step idea-step">
