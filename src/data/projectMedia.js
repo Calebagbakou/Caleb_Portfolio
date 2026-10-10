@@ -8,6 +8,7 @@ export const PROJECT_IMAGE_RATIOS = [
   { value: '9/16', label: 'Portrait (9:16)' },
 ];
 export const DEFAULT_PROJECT_IMAGE_RATIO = '4/3';
+export const PROJECT_IMAGE_THUMBNAIL_RATIO = '3/4';
 
 export function getProjectThumbnailUrl(project) {
   if (project?.thumbnail_url) return project.thumbnail_url;

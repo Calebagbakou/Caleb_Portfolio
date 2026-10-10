@@ -8,12 +8,14 @@ import {
   getProjectThumbnailUrl,
   normalizeYouTubeUrl,
   PROJECT_IMAGE_RATIOS,
+  PROJECT_IMAGE_THUMBNAIL_RATIO,
 } from './projectMedia.js';
 
 const videoId = 'dQw4w9WgXcQ';
 
 test('provides supported frame ratios for project images', () => {
   assert.equal(DEFAULT_PROJECT_IMAGE_RATIO, '4/3');
+  assert.equal(PROJECT_IMAGE_THUMBNAIL_RATIO, '3/4');
   assert.deepEqual(PROJECT_IMAGE_RATIOS.map(({ value }) => value), ['1/1', '4/3', '3/4', '16/9', '9/16']);
 });
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PORTFOLIO_ROWS } from '../../../data/portfolio';
 import {
   DEFAULT_PROJECT_IMAGE_RATIO,
+  PROJECT_IMAGE_THUMBNAIL_RATIO,
   getYouTubePreviewUrl,
   extractYouTubeVideoId,
   getProjectThumbnailUrl,
@@ -131,7 +132,7 @@ function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisi
         className={`p-thumb${item.media_type !== 'image' ? ' video' : ''}`}
         style={{
           background: item.gradient,
-          ...(item.media_type === 'image' ? { aspectRatio: item.image_ratio || DEFAULT_PROJECT_IMAGE_RATIO } : {}),
+          ...(item.media_type === 'image' ? { aspectRatio: PROJECT_IMAGE_THUMBNAIL_RATIO } : {}),
         }}
       >
         {previewActive && (

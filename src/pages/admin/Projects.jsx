@@ -6,6 +6,7 @@ import {
   getProjectThumbnailUrl,
   normalizeYouTubeUrl,
   PROJECT_IMAGE_RATIOS,
+  PROJECT_IMAGE_THUMBNAIL_RATIO,
 } from '../../data/projectMedia';
 
 const EMPTY_FORM = {
@@ -333,7 +334,7 @@ export default function Projects() {
                   <img
                     src={getProjectThumbnailUrl(form)}
                     alt="Aperçu de la miniature"
-                    style={{ aspectRatio: form.image_ratio }}
+                    style={{ aspectRatio: PROJECT_IMAGE_THUMBNAIL_RATIO }}
                   />
                   <span>Aperçu de la miniature</span>
                 </div>
@@ -388,7 +389,7 @@ export default function Projects() {
               <article className="project-admin-card" key={project.id}>
                 <div
                   className={`project-admin-thumb${project.media_type !== 'image' ? ' video' : ''}`}
-                  style={project.media_type === 'image' ? { aspectRatio: project.image_ratio || DEFAULT_PROJECT_IMAGE_RATIO } : undefined}
+                  style={project.media_type === 'image' ? { aspectRatio: PROJECT_IMAGE_THUMBNAIL_RATIO } : undefined}
                 >
                   {getProjectThumbnailUrl(project)
                     ? <img src={getProjectThumbnailUrl(project)} alt="" loading="lazy" />
