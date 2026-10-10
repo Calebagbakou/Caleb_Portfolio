@@ -102,10 +102,22 @@ export async function listShopAdminData() {
 export async function saveShopProduct(product, plans) {
   const id = product.id || crypto.randomUUID();
   const productRow = {
-    ...product,
     id,
+    name: product.name,
     slug: product.slug,
+    description: product.description,
+    tagline: product.tagline,
+    highlights: product.highlights,
+    category_id: product.category_id,
+    badge: product.badge,
+    status: product.status,
+    featured: product.featured,
     sort_order: Number(product.sort_order) || 999,
+    avatar: product.avatar,
+    gradient: product.gradient,
+    logo_url: product.logo_url,
+    image_url: product.image_url,
+    access_url: product.access_url,
     updated_at: new Date().toISOString(),
   };
   if (!product.id) productRow.created_at = productRow.updated_at;
