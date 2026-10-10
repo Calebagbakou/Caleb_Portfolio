@@ -44,6 +44,41 @@ export function normalizeYouTubeUrl(value) {
   return id ? `https://www.youtube.com/watch?v=${id}` : null;
 }
 
+export function getYouTubeShortOrientation(value) {
+  if (!extractYouTubeVideoId(value)) return null;
+  const url = new URL(value.trim());
+  return url.pathname.split('/').filter(Boolean)[0] === 'shorts' ? 'portrait' : null;
+}
+
+export function getVideoOrientationFromDimensions(width, height) {
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return null;
+  return height > width ? 'portrait' : 'landscape';
+}
+
+export function isAIVideoCategory(category) {
+  const normalized = String(category || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, '');
+  return normalized === 'videos' || normalized === 'videosia';
+}
+
+export function getBaseProjectCategory(category) {
+  return String(category || '').replace(/-(portrait|landscape)$/i, '');
+}
+
+export function getVideoOrientationFromCategory(category) {
+  const match = String(category || '').match(/-(portrait|landscape)$/i);
+  return match?.[1]?.toLowerCase() || null;
+}
+
+export function getProjectCategoryForVideo(category, orientation) {
+  if (!isAIVideoCategory(category)) return category;
+  return `videos-${orientation === 'portrait' ? 'portrait' : 'landscape'}`;
+}
+
 export function getYouTubeEmbedUrl(value) {
   const id = extractYouTubeVideoId(value);
   if (!id) return null;

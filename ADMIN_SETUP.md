@@ -89,6 +89,14 @@ Les catégories sont saisies librement.
   éléments de marque, restrictions d'intégration ou vérifications anti-abus.
 - **Image** : renseigne une URL d'image accessible publiquement.
 - **Vidéo externe** : renseigne une URL MP4/WebM directe ou un lecteur Vimeo.
+- **Vidéos IA** : le formulaire vérifie automatiquement les dimensions d'un
+  fichier vidéo direct et reconnaît les liens YouTube Shorts. Pour les autres
+  lecteurs, vérifie l'image puis sélectionne **Portrait** ou **Paysage**. Le
+  portfolio range les projets dans deux lignes distinctes « Vidéos IA ·
+  Portrait » et « Vidéos IA · Paysage »; les vidéos et miniatures restent
+  contenues dans leur cadre sans être recadrées. Les anciens projets non
+  classés restent dans la ligne Paysage jusqu'à ce que tu les modifies dans
+  l'admin et confirmes leur format.
 - **Miniature** : optionnelle. Les liens d'image sont enregistrés dans
   `thumbnail_url`; les fichiers ne sont pas envoyés vers Supabase Storage.
   Pour YouTube, sa miniature est utilisée automatiquement si aucun lien n'est

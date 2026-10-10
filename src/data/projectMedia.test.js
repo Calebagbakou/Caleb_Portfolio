@@ -5,6 +5,11 @@ import {
   getYouTubeEmbedUrl,
   getYouTubePreviewUrl,
   getProjectThumbnailUrl,
+  getProjectCategoryForVideo,
+  getVideoOrientationFromCategory,
+  getVideoOrientationFromDimensions,
+  getYouTubeShortOrientation,
+  isAIVideoCategory,
   normalizeYouTubeUrl,
 } from './projectMedia.js';
 
@@ -55,4 +60,20 @@ test('selects project thumbnails from explicit images, image media, and YouTube'
     media_type: 'external_video',
     media_url: 'https://vimeo.com/1234',
   }), null);
+});
+
+test('detects video orientation and groups AI video categories without ratio labels', () => {
+  assert.equal(getYouTubeShortOrientation(`https://www.youtube.com/shorts/${videoId}`), 'portrait');
+  assert.equal(getYouTubeShortOrientation(`https://www.youtube.com/watch?v=${videoId}`), null);
+  assert.equal(getVideoOrientationFromDimensions(1080, 1920), 'portrait');
+  assert.equal(getVideoOrientationFromDimensions(1920, 1080), 'landscape');
+  assert.equal(getVideoOrientationFromDimensions(0, 0), null);
+
+  assert.equal(isAIVideoCategory('Vidéos IA'), true);
+  assert.equal(isAIVideoCategory('videos'), true);
+  assert.equal(isAIVideoCategory('Motion Design'), false);
+  assert.equal(getProjectCategoryForVideo('Vidéos IA', 'portrait'), 'videos-portrait');
+  assert.equal(getProjectCategoryForVideo('videos', 'landscape'), 'videos-landscape');
+  assert.equal(getVideoOrientationFromCategory('videos-portrait'), 'portrait');
+  assert.equal(getVideoOrientationFromCategory('videos-landscape'), 'landscape');
 });

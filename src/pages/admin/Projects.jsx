@@ -1,12 +1,23 @@
 import { useEffect, useState } from 'react';
 import { createProject, deleteProject, listProjects, updateProject } from '../../services/projects';
-import { extractYouTubeVideoId, getProjectThumbnailUrl, normalizeYouTubeUrl } from '../../data/projectMedia';
+import {
+  extractYouTubeVideoId,
+  getBaseProjectCategory,
+  getProjectCategoryForVideo,
+  getProjectThumbnailUrl,
+  getVideoOrientationFromCategory,
+  getVideoOrientationFromDimensions,
+  getYouTubeShortOrientation,
+  isAIVideoCategory,
+  normalizeYouTubeUrl,
+} from '../../data/projectMedia';
 
 const EMPTY_FORM = {
   title: '',
   description: '',
   category: '',
   media_type: 'youtube',
+  video_orientation: '',
   media_url: '',
   thumbnail_url: '',
   published: false,
@@ -49,6 +60,7 @@ export default function Projects() {
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [formatCheck, setFormatCheck] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
@@ -75,6 +87,72 @@ export default function Projects() {
     loadProjects();
   }, []);
 
+  useEffect(() => {
+    if (form.media_type === 'image' || !isAIVideoCategory(form.category) || !form.media_url.trim()) {
+      setFormatCheck('');
+      return undefined;
+    }
+
+    const mediaUrl = form.media_url.trim();
+    if (!validHttpUrl(mediaUrl)) {
+      setFormatCheck('Saisis une URL valide pour vérifier le format.');
+      return undefined;
+    }
+
+    if (form.media_type === 'youtube') {
+      const orientation = getYouTubeShortOrientation(mediaUrl);
+      if (orientation) {
+        setForm((current) => ({ ...current, video_orientation: orientation }));
+        setFormatCheck('Format vertical détecté automatiquement.');
+      } else {
+        setFormatCheck('Vérifie la vidéo puis choisis son format ci-dessous.');
+      }
+      return undefined;
+    }
+
+    let mediaPath;
+    try {
+      mediaPath = new URL(mediaUrl).pathname.toLowerCase();
+    } catch (error) {
+      console.warn('Impossible de lire le chemin du média pour vérifier son format :', error);
+      setFormatCheck('Vérifie la vidéo puis choisis son format ci-dessous.');
+      return undefined;
+    }
+
+    if (!/\.(mp4|webm|ogv|mov|m4v)$/.test(mediaPath)) {
+      setFormatCheck('Ce lecteur ne permet pas de détecter automatiquement le format. Vérifie la vidéo puis choisis son format.');
+      return undefined;
+    }
+
+    let active = true;
+    const video = document.createElement('video');
+    const timeoutId = window.setTimeout(() => {
+      if (active) setFormatCheck('Détection indisponible. Vérifie la vidéo puis choisis son format.');
+    }, 10000);
+    const finish = (orientation) => {
+      if (!active) return;
+      window.clearTimeout(timeoutId);
+      if (orientation) {
+        setForm((current) => ({ ...current, video_orientation: orientation }));
+        setFormatCheck(`Format ${orientation === 'portrait' ? 'vertical' : 'horizontal'} détecté automatiquement.`);
+      } else {
+        setFormatCheck('Dimensions indisponibles. Vérifie la vidéo puis choisis son format.');
+      }
+    };
+    video.preload = 'metadata';
+    video.onloadedmetadata = () => finish(getVideoOrientationFromDimensions(video.videoWidth, video.videoHeight));
+    video.onerror = () => finish(null);
+    setFormatCheck('Vérification du format de la vidéo…');
+    video.src = mediaUrl;
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeoutId);
+      video.removeAttribute('src');
+      video.load();
+    };
+  }, [form.category, form.media_type, form.media_url]);
+
   function updateField(event) {
     const { name, value, type, checked } = event.target;
     setForm((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value }));
@@ -87,8 +165,9 @@ export default function Projects() {
     setForm({
       title: project.title || '',
       description: project.description || '',
-      category: project.category || '',
+      category: isAIVideoCategory(getBaseProjectCategory(project.category)) ? 'Vidéos IA' : getBaseProjectCategory(project.category) || '',
       media_type: project.media_type || 'image',
+      video_orientation: getVideoOrientationFromCategory(project.category) || '',
       media_url: project.media_url || '',
       thumbnail_url: project.thumbnail_url || '',
       published: Boolean(project.published),
@@ -102,18 +181,27 @@ export default function Projects() {
   function resetForm() {
     setEditingId(null);
     setForm(EMPTY_FORM);
+    setFormatCheck('');
     setError('');
     setNotice('');
   }
 
   function prepareProject() {
     const title = form.title.trim();
-    const category = form.category.trim();
+    const baseCategory = form.category.trim();
+    const category = form.media_type !== 'image' && isAIVideoCategory(baseCategory)
+      ? getProjectCategoryForVideo(baseCategory, form.video_orientation)
+      : baseCategory;
     const mediaUrl = form.media_url.trim();
     const thumbnailUrl = form.thumbnail_url.trim();
 
     if (!title || !category || !mediaUrl) {
       return { error: 'Le titre, la catégorie et le média sont obligatoires.' };
+    }
+
+    if (form.media_type !== 'image' && isAIVideoCategory(category)
+      && !['portrait', 'landscape'].includes(form.video_orientation)) {
+      return { error: 'Vérifie le format de la vidéo IA puis sélectionne Portrait ou Paysage.' };
     }
 
     let normalizedMediaUrl = mediaUrl;
@@ -231,6 +319,12 @@ export default function Projects() {
   }
 
   const mediaLabel = (type) => MEDIA_TYPES.find((item) => item.value === type)?.label || 'Média';
+  const projectCategoryLabel = (category) => {
+    if (!isAIVideoCategory(getBaseProjectCategory(category))) return category;
+    const orientation = getVideoOrientationFromCategory(category);
+    if (!orientation) return 'Vidéos IA · À classer';
+    return `Vidéos IA · ${orientation === 'portrait' ? 'Portrait' : 'Paysage'}`;
+  };
 
   return (
     <div className="projects-admin">
@@ -284,6 +378,23 @@ export default function Projects() {
                 <small className="project-form-hint">{mediaFieldHint(form.media_type)}</small>
               )}
             </div>
+            {form.media_type !== 'image' && isAIVideoCategory(form.category) && (
+              <div className="form-group project-form-wide">
+                <label htmlFor="project-video-orientation">Format de la vidéo IA</label>
+                <select
+                  id="project-video-orientation"
+                  name="video_orientation"
+                  value={form.video_orientation}
+                  onChange={updateField}
+                  required
+                >
+                  <option value="" disabled>Vérifier puis choisir le format</option>
+                  <option value="portrait">Portrait</option>
+                  <option value="landscape">Paysage</option>
+                </select>
+                {formatCheck && <small className="project-form-hint" role="status">{formatCheck}</small>}
+              </div>
+            )}
             <div className="form-group project-form-wide">
               <label htmlFor="project-description">Description</label>
               <textarea id="project-description" name="description" value={form.description} onChange={updateField} rows="4" maxLength={2000} />
@@ -362,7 +473,7 @@ export default function Projects() {
           <div className="project-admin-list">
             {projects.map((project) => (
               <article className="project-admin-card" key={project.id}>
-                <div className={`project-admin-thumb${project.media_type !== 'image' ? ' video' : ''}`}>
+                <div className={`project-admin-thumb${project.media_type !== 'image' ? ` video video-${getVideoOrientationFromCategory(project.category) || 'landscape'}` : ''}`}>
                   {getProjectThumbnailUrl(project)
                     ? <img src={getProjectThumbnailUrl(project)} alt="" loading="lazy" />
                     : <span>{mediaLabel(project.media_type)} · miniature manquante</span>}
@@ -375,7 +486,7 @@ export default function Projects() {
                     {project.media_type !== 'image' && project.autoplay_preview && (
                       <span className="badge badge-unread">Aperçu auto activé</span>
                     )}
-                    <span className="project-admin-category">{project.category}</span>
+                    <span className="project-admin-category">{projectCategoryLabel(project.category)}</span>
                     <span className="project-admin-category">{mediaLabel(project.media_type)}</span>
                   </div>
                   <h3>{project.title}</h3>
