@@ -436,6 +436,8 @@
     display:flex; align-items:center; justify-content:center; flex-shrink:0;
   }
   .accompagne .tag-ic svg{ width:16px; height:16px; }
+  .section-icon-svg{ width:100%; height:100%; }
+  .section-custom-icon{ width:100%; height:100%; object-fit:contain; }
   .accompagne .tag{ font-family:'Poppins', monospace; font-size:11px; color:var(--teal); letter-spacing:0.08em; display:block; }
   .audience-list{ display:flex; flex-direction:column; gap:2px; }
   .audience-item{
@@ -470,6 +472,7 @@
   .service:nth-child(3n+2) .service-icon{ background:var(--orange-dim); color:var(--orange); }
   .service:nth-child(3n+3) .service-icon{ background:var(--violet-dim); color:var(--violet); }
   .service-icon svg{ width:19px; height:19px; }
+  .service-icon .section-icon-svg:not(.section-custom-icon){ width:19px; height:19px; }
   .service h3{ font-family:'Montserrat', sans-serif; font-size:15.5px; font-weight:600; margin:2px 0 6px; }
   .service p{ font-size:13.5px; line-height:1.5; color:var(--paper-dim); margin:0; }
   .services-note{

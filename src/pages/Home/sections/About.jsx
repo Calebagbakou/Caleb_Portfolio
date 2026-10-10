@@ -1,9 +1,12 @@
 import { useReveal } from '../../../hooks/useReveal';
 import { useTilt } from '../../../hooks/useTilt';
 import RevealHeading from '../../../components/site/RevealHeading';
+import SectionIcon from '../../../components/site/SectionIcon';
+import { useSectionLogos } from '../../../hooks/useSectionLogos';
 
 const AUDIENCE = [
   {
+    id: 'about-individuals',
     icon: (
       <>
         <circle cx="12" cy="8" r="3.5" />
@@ -14,6 +17,7 @@ const AUDIENCE = [
     desc: 'Portraits, réseaux sociaux, projets personnels',
   },
   {
+    id: 'about-businesses',
     icon: (
       <>
         <rect x="4" y="3" width="16" height="18" rx="1.5" />
@@ -24,6 +28,7 @@ const AUDIENCE = [
     desc: 'Identité visuelle, contenus marketing, publicités',
   },
   {
+    id: 'about-organizations',
     icon: (
       <>
         <path d="M12 2l8 4.5v9L12 20l-8-4.5v-9z" />
@@ -36,6 +41,7 @@ const AUDIENCE = [
 ];
 
 export default function About() {
+  const logos = useSectionLogos();
   const [ref, visible] = useReveal();
   const tilt1 = useTilt();
   const tilt2 = useTilt();
@@ -56,9 +62,9 @@ export default function About() {
         <div className={`card mission-card reveal${visible ? ' in' : ''}`} ref={tilt1}>
           <div className="tag-row">
             <span className="tag-ic">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <SectionIcon id="about-mission" logos={logos} className="section-icon-svg">
                 <path d="M12 3l2.5 5 5.5.8-4 3.9.9 5.5-4.9-2.6-4.9 2.6.9-5.5-4-3.9 5.5-.8z" />
-              </svg>
+              </SectionIcon>
             </span>
             <span className="tag">NOTRE MISSION</span>
           </div>
@@ -67,11 +73,11 @@ export default function About() {
         <div className={`card accompagne reveal${visible ? ' in' : ''}`} style={{ transitionDelay: '80ms' }} ref={tilt2}>
           <div className="tag-row">
             <span className="tag-ic">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+              <SectionIcon id="about-audience" logos={logos} className="section-icon-svg">
                 <path d="M17 20v-1.5a3.5 3.5 0 00-3.5-3.5h-5A3.5 3.5 0 005 18.5V20" />
                 <circle cx="9.5" cy="7.5" r="3.5" />
                 <path d="M19 20v-1.5a3.3 3.3 0 00-2.2-3.1M14.5 4.2a3.5 3.5 0 010 6.6" />
-              </svg>
+              </SectionIcon>
             </span>
             <span className="tag">QUI J'ACCOMPAGNE</span>
           </div>
@@ -79,9 +85,9 @@ export default function About() {
             {AUDIENCE.map((a) => (
               <div className="audience-item" key={a.name}>
                 <span className="audience-ic">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <SectionIcon id={a.id} logos={logos} className="section-icon-svg">
                     {a.icon}
-                  </svg>
+                  </SectionIcon>
                 </span>
                 <div>
                   <div className="name">{a.name}</div>

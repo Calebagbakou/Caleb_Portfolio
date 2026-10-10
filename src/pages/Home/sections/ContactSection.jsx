@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { sendContactMessage } from '../../../services/messages';
 import RevealHeading from '../../../components/site/RevealHeading';
+import SectionIcon from '../../../components/site/SectionIcon';
+import { useSectionLogos } from '../../../hooks/useSectionLogos';
 
 const CONTACT_ITEMS = [
   {
+    id: 'contact-email',
     href: 'mailto:calebagbakou@gmail.com',
     label: 'EMAIL',
     value: 'calebagbakou@gmail.com',
@@ -15,6 +18,7 @@ const CONTACT_ITEMS = [
     ),
   },
   {
+    id: 'contact-whatsapp',
     href: 'https://wa.me/2290148135395',
     external: true,
     label: 'WHATSAPP',
@@ -22,6 +26,7 @@ const CONTACT_ITEMS = [
     icon: <path d="M4 20l1.3-4A8 8 0 1112 20a8 8 0 01-4-1z" />,
   },
   {
+    id: 'contact-phone',
     href: 'tel:+22901502597092',
     label: 'TÉLÉPHONE',
     value: '+229 01 50 25 97 92',
@@ -30,6 +35,7 @@ const CONTACT_ITEMS = [
     ),
   },
   {
+    id: 'contact-phone-alt',
     href: 'tel:+2290195938600',
     label: 'TÉLÉPHONE (ALT.)',
     value: '+229 01 95 93 86 00',
@@ -38,6 +44,7 @@ const CONTACT_ITEMS = [
     ),
   },
   {
+    id: 'contact-location',
     href: 'https://www.google.com/maps/search/Abomey+B%C3%A9nin',
     external: true,
     label: 'LOCALISATION',
@@ -52,6 +59,7 @@ const CONTACT_ITEMS = [
 ];
 
 export default function ContactSection() {
+  const logos = useSectionLogos();
   const [form, setForm] = useState({ nom: '', email: '', message: '' });
   const [status, setStatus] = useState(null); // { kind: 'loading'|'success'|'error', text }
   const [submitting, setSubmitting] = useState(false);
@@ -106,9 +114,9 @@ export default function ContactSection() {
             rel={item.external ? 'noopener' : undefined}
           >
             <div className="ic">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <SectionIcon id={item.id} logos={logos} className="section-icon-svg">
                 {item.icon}
-              </svg>
+              </SectionIcon>
             </div>
             <div>
               <div className="label">{item.label}</div>

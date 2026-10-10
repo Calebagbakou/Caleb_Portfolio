@@ -3,6 +3,7 @@ import { listShopAdminData } from '../../services/shop';
 import { getSettings, saveSettings } from '../../services/settings';
 import { supabase } from '../../services/supabase';
 import { TOOL_GROUPS } from '../../data/tools';
+import { parseSectionLogoSettings, SECTION_ICON_GROUPS, SECTION_LOGOS_SETTING } from '../../data/sectionLogos';
 
 const BUCKET = 'site-media';
 const MAX_IMAGE_SIZE = 8 * 1024 * 1024;
@@ -44,6 +45,7 @@ function UploadField({ id, label, currentUrl, busy, disabled, onChange, onRemove
 export default function Media() {
   const [products, setProducts] = useState([]);
   const [toolLogos, setToolLogos] = useState({});
+  const [sectionLogos, setSectionLogos] = useState({});
   const [profileUrl, setProfileUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState('');
@@ -78,6 +80,13 @@ export default function Media() {
         console.error('Impossible de lire les logos des outils enregistrés :', parseError);
         setError('Chargement impossible : le paramètre des logos des outils est invalide.');
       }
+      const sectionLogosSetting = settingsResult.data?.find((setting) => setting.key === SECTION_LOGOS_SETTING);
+      try {
+        setSectionLogos(parseSectionLogoSettings(sectionLogosSetting?.value));
+      } catch (parseError) {
+        console.error('Impossible de lire les icônes personnalisées des sections :', parseError);
+        setError('Chargement impossible : le paramètre des icônes des sections est invalide.');
+      }
     }
     setLoading(false);
   }
@@ -106,7 +115,13 @@ export default function Media() {
 
     setUploading(key);
     try {
-      const scope = product ? `products/${product.id}` : field === 'tool_logo' ? 'tools' : 'site';
+      const scope = product
+        ? `products/${product.id}`
+        : field === 'tool_logo'
+          ? 'tools'
+          : field === 'section_logo'
+            ? 'section-icons'
+            : 'site';
       const path = `${scope}/${field}-${crypto.randomUUID()}.${IMAGE_EXTENSIONS[file.type]}`;
       const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, {
         cacheControl: '3600',
@@ -135,6 +150,16 @@ export default function Media() {
         ]);
         if (saveError) throw saveError;
         setToolLogos(nextLogos);
+      } else if (field === 'section_logo') {
+        const nextLogos = {
+          ...sectionLogos,
+          [key]: { url: publicUrl, mode: 'custom' },
+        };
+        const { error: saveError } = await saveSettings([
+          { key: SECTION_LOGOS_SETTING, value: JSON.stringify(nextLogos) },
+        ]);
+        if (saveError) throw saveError;
+        setSectionLogos(nextLogos);
       } else {
         const { error: saveError } = await saveSettings([
           { key: 'site_profile_image_url', value: publicUrl },
@@ -149,6 +174,29 @@ export default function Media() {
     } finally {
       setUploading('');
       input.value = '';
+    }
+  }
+
+  async function setSectionLogoMode(id, mode) {
+    setError('');
+    setNotice('');
+    setUploading(id);
+    try {
+      const nextLogos = {
+        ...sectionLogos,
+        [id]: { url: sectionLogos[id]?.url || '', mode },
+      };
+      const { error: saveError } = await saveSettings([
+        { key: SECTION_LOGOS_SETTING, value: JSON.stringify(nextLogos) },
+      ]);
+      if (saveError) throw saveError;
+      setSectionLogos(nextLogos);
+      setNotice(`Affichage de l’icône ${mode === 'default' ? 'par défaut' : 'personnalisée'} enregistré.`);
+    } catch (saveError) {
+      console.error('Impossible de modifier l’affichage de cette icône :', saveError);
+      setError(`Modification impossible : ${saveError instanceof Error ? saveError.message : String(saveError)}`);
+    } finally {
+      setUploading('');
     }
   }
 
@@ -196,6 +244,56 @@ export default function Media() {
               disabled={Boolean(uploading)}
               onChange={(event) => handleUpload(event, { key: 'profile', field: 'site_profile_image_url' })}
             />
+          </section>
+
+          <section className="panel">
+            <div className="projects-heading">
+              <div>
+                <h2>Icônes des sections Services, À propos et Contact</h2>
+                <p>Pour chaque icône, garde le visuel par défaut ou importe une image personnalisée. Le choix est enregistré immédiatement.</p>
+              </div>
+            </div>
+            {SECTION_ICON_GROUPS.map((group) => (
+              <div className="media-tool-group" key={group.section}>
+                <h3>{group.section}</h3>
+                <div className="media-tool-list">
+                  {group.items.map((item) => {
+                    const logo = sectionLogos[item.id] || { url: '', mode: 'default' };
+                    const busy = uploading === item.id;
+                    return (
+                      <div className="media-tool-card" key={item.id}>
+                        <UploadField
+                          id={`media-section-icon-${item.id}`}
+                          label={item.label}
+                          currentUrl={logo.url}
+                          busy={busy}
+                          disabled={Boolean(uploading)}
+                          previewClassName="media-tool-logo-preview"
+                          onChange={(event) => handleUpload(event, {
+                            key: item.id,
+                            field: 'section_logo',
+                          })}
+                        />
+                        <label className="media-section-logo-mode" htmlFor={`media-section-logo-mode-${item.id}`}>
+                          Affichage
+                        </label>
+                        <select
+                          id={`media-section-logo-mode-${item.id}`}
+                          className="media-section-logo-select"
+                          value={logo.mode}
+                          disabled={Boolean(uploading)}
+                          onChange={(event) => setSectionLogoMode(item.id, event.target.value)}
+                        >
+                          <option value="default">Icône par défaut</option>
+                          <option value="custom" disabled={!logo.url}>Image personnalisée</option>
+                        </select>
+                        {!logo.url && <small className="project-form-hint">Importe une image pour activer le choix personnalisé.</small>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </section>
 
           <section className="panel">
