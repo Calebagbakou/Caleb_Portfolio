@@ -83,14 +83,12 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
           <path d="M15 6l-6 6 6 6" />
         </svg>
       </button>
-      <div className={`lightbox-inner${isVideo ? ` video video-${item.videoOrientation || 'landscape'}` : ''}`}>
+      <div className={`lightbox-inner${isVideo ? ' video' : ''}`}>
         <div
-          className={`lightbox-thumb${isVideo ? ` video-${item.videoOrientation || 'landscape'}` : ''}`}
+          className="lightbox-thumb"
           style={{
             background: item && !isVideo ? item.gradient : '#000',
-            ...(isVideo
-              ? { aspectRatio: item.videoOrientation === 'portrait' ? '9 / 16' : '16 / 9' }
-              : externalSource?.aspectRatio ? { aspectRatio: externalSource.aspectRatio } : {}),
+            ...(externalSource?.aspectRatio ? { aspectRatio: externalSource.aspectRatio } : {}),
           }}
         >
           {item?.media_type === 'image' && item.media_url && (

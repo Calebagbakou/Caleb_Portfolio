@@ -1,14 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PORTFOLIO_ROWS } from '../../../data/portfolio';
-import {
-  getYouTubePreviewUrl,
-  extractYouTubeVideoId,
-  getBaseProjectCategory,
-  getProjectCategoryForVideo,
-  getProjectThumbnailUrl,
-  getVideoOrientationFromCategory,
-  isAIVideoCategory,
-} from '../../../data/projectMedia';
+import { getYouTubePreviewUrl, extractYouTubeVideoId, getProjectThumbnailUrl } from '../../../data/projectMedia';
 import { listPublishedProjects } from '../../../services/projects';
 import { useReveal } from '../../../hooks/useReveal';
 import { useTilt } from '../../../hooks/useTilt';
@@ -34,8 +26,6 @@ const LEGACY_DECORATIONS = new Map(LEGACY_ITEMS.map((item) => [item.title.trim()
 const CATEGORY_LABELS = {
   images: 'Images IA',
   videos: 'Vidéos IA',
-  'videos-portrait': 'Vidéos IA · Portrait',
-  'videos-landscape': 'Vidéos IA · Paysage',
   motion: 'Motion Design',
   pub: 'Publicités',
   logos: 'Logos',
@@ -50,22 +40,13 @@ function categoryLabel(category) {
 function prepareProject(project) {
   const legacy = LEGACY_DECORATIONS.get((project.title || '').trim().toLowerCase());
   const videoId = project.media_type === 'youtube' ? extractYouTubeVideoId(project.media_url) : null;
-  const videoOrientation = getVideoOrientationFromCategory(project.category) || 'landscape';
-  const category = isAIVideoCategory(getBaseProjectCategory(project.category))
-    ? getProjectCategoryForVideo(project.category, videoOrientation)
-    : project.category;
-  const displayCategory = isAIVideoCategory(getBaseProjectCategory(category)) ? 'Vidéos IA' : category;
   return {
     ...legacy,
     ...project,
-    category,
-    cat: category,
-    catLabel: categoryLabel(displayCategory).toUpperCase(),
-    videoOrientation: project.media_type !== 'image' && isAIVideoCategory(getBaseProjectCategory(category))
-      ? videoOrientation
-      : null,
+    cat: project.category,
+    catLabel: categoryLabel(project.category).toUpperCase(),
     gradient: legacy?.gradient || 'linear-gradient(135deg,#1F3350,#4ADE80)',
-    thumbLabel: legacy?.thumbLabel || categoryLabel(displayCategory).toUpperCase(),
+    thumbLabel: legacy?.thumbLabel || categoryLabel(project.category).toUpperCase(),
     youtubeId: videoId,
     autoplay_preview: Boolean(project.autoplay_preview),
     youtubeThumbnail: videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : null,
@@ -75,24 +56,13 @@ function prepareProject(project) {
 function groupProjects(projects) {
   const categories = new Map();
   projects.forEach((project) => {
-    const originalCategory = project.category || 'Autres';
-    const category = isAIVideoCategory(getBaseProjectCategory(originalCategory))
-      ? getProjectCategoryForVideo(originalCategory, getVideoOrientationFromCategory(originalCategory) || 'landscape')
-      : originalCategory;
+    const category = project.category || 'Autres';
     if (!categories.has(category)) categories.set(category, []);
-    categories.get(category).push({
-      ...project,
-      category,
-      videoOrientation: project.media_type !== 'image' && isAIVideoCategory(getBaseProjectCategory(category))
-        ? getVideoOrientationFromCategory(category)
-        : null,
-    });
+    categories.get(category).push(project);
   });
 
   return Array.from(categories, ([category, items]) => ({
-    id: category === 'videos-landscape'
-      ? 'row-videos'
-      : `row-${category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
+    id: `row-${category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`,
     title: categoryLabel(category),
     count: `${items.length} réalisation${items.length === 1 ? '' : 's'}`,
     items,
@@ -132,7 +102,7 @@ function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisi
 
   return (
     <div
-      className={`p-card${item.videoOrientation ? ` video-${item.videoOrientation}` : ''} reveal${visible ? ' in' : ''}`}
+      className={`p-card reveal${visible ? ' in' : ''}`}
       ref={mergeRefs}
       onClick={() => onOpen(globalIndex)}
       onKeyDown={(event) => {
@@ -150,10 +120,7 @@ function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisi
           <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" />
         </svg>
       </span>
-      <div
-        className={`p-thumb${item.media_type !== 'image' ? ` video video-${item.videoOrientation || 'landscape'}` : ''}`}
-        style={{ background: item.media_type !== 'image' ? '#080808' : item.gradient }}
-      >
+      <div className={`p-thumb${item.media_type !== 'image' ? ' video' : ''}`} style={{ background: item.gradient }}>
         {previewActive && (
           item.media_type === 'youtube'
             ? <YouTubePreview
