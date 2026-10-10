@@ -71,7 +71,9 @@ dans ton projet Supabase en suivant [`ADMIN_SETUP.md`](./ADMIN_SETUP.md).
 Exécute la migration
 [`supabase/migrations/010_project_image_ratio.sql`](./supabase/migrations/010_project_image_ratio.sql)
 dans le SQL Editor Supabase pour ajouter le choix du format de cadre des images
-des réalisations dans l'administration.
+des réalisations dans l'administration. La migration
+[`supabase/migrations/011_project_image_ratio_three_four.sql`](./supabase/migrations/011_project_image_ratio_three_four.sql)
+ajoute aussi le format portrait 3:4.
 
 ### Mise en service de la boutique et de KKiaPay
 

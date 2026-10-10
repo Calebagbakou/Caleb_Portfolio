@@ -14,7 +14,7 @@ const videoId = 'dQw4w9WgXcQ';
 
 test('provides supported frame ratios for project images', () => {
   assert.equal(DEFAULT_PROJECT_IMAGE_RATIO, '4/3');
-  assert.deepEqual(PROJECT_IMAGE_RATIOS.map(({ value }) => value), ['1/1', '4/3', '16/9', '9/16']);
+  assert.deepEqual(PROJECT_IMAGE_RATIOS.map(({ value }) => value), ['1/1', '4/3', '3/4', '16/9', '9/16']);
 });
 
 test('extracts YouTube IDs from common watch, short, and Shorts URLs', () => {
