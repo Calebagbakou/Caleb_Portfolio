@@ -63,16 +63,27 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
       if (e.key === 'ArrowLeft') onNavigate(index - 1);
       if (e.key === 'ArrowRight') onNavigate(index + 1);
     }
+    function onFullscreenChange() {
+      // If fullscreen was exited unexpectedly, ensure body scrollability is restored when appropriate
+      if (!document.fullscreenElement) {
+        document.body.style.overflow = open ? 'hidden' : '';
+      }
+    }
     document.addEventListener('keydown', onKey);
+    document.addEventListener('fullscreenchange', onFullscreenChange);
     return () => {
       document.body.style.overflow = '';
       document.removeEventListener('keydown', onKey);
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
     };
   }, [open, index, onClose, onNavigate]);
 
   return (
-    <div className={`lightbox${open ? ' open' : ''}`}>
-      <button className="lightbox-close" aria-label="Fermer" onClick={onClose}>
+      <div
+        className={`lightbox${open ? ' open' : ''}`}
+        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      >
+        <button className="lightbox-close" aria-label="Fermer" onClick={onClose}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M6 6l12 12M18 6L6 18" />
         </svg>
@@ -133,6 +144,7 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
               src={externalSource.src}
               controls
               playsInline
+              onEnded={() => onClose()}
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }}
             />
           )}
