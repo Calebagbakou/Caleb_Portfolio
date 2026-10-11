@@ -249,8 +249,8 @@ export default function Media() {
           <section className="panel">
             <div className="projects-heading">
               <div>
-                <h2>Icônes des sections Services, À propos et Contact</h2>
-                <p>Pour chaque icône, garde le visuel par défaut ou importe une image personnalisée. Le choix est enregistré immédiatement.</p>
+                <h2>Icônes des sections et des réseaux sociaux</h2>
+                <p>Personnalise les icônes de Services, À propos, Contact, Facebook et TikTok. Le choix est enregistré immédiatement.</p>
               </div>
             </div>
             {SECTION_ICON_GROUPS.map((group) => (

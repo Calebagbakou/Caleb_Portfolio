@@ -4,12 +4,13 @@ const CONNECTION_DISTANCE = 132;
 const POINTER_RADIUS = 150;
 const MAX_PARTICLES = 96;
 
-export default function ParticleField() {
+export default function ParticleField({ scopeRef, className = 'particle-field' }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
+    const scope = scopeRef?.current || null;
     if (!canvas || !context) {
       console.error('Impossible d’initialiser le fond de particules.');
       return undefined;
@@ -17,6 +18,7 @@ export default function ParticleField() {
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const pointer = { x: 0, y: 0, active: false };
+    let visible = !scope || !('IntersectionObserver' in window);
     let particles = [];
     let frameId = 0;
     let width = 0;
@@ -27,8 +29,9 @@ export default function ParticleField() {
       window.cancelAnimationFrame(frameId);
       frameId = 0;
       const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
-      width = window.innerWidth;
-      height = window.innerHeight;
+      const bounds = scope?.getBoundingClientRect();
+      width = scope ? bounds.width : window.innerWidth;
+      height = scope ? bounds.height : window.innerHeight;
       canvas.width = Math.round(width * ratio);
       canvas.height = Math.round(height * ratio);
       canvas.style.width = `${width}px`;
@@ -44,10 +47,11 @@ export default function ParticleField() {
         vy: (Math.random() - 0.5) * 0.18,
         radius: Math.random() * 1.15 + 0.55,
       }));
-      draw();
+      if (visible) draw();
     }
 
     function draw() {
+      frameId = 0;
       context.clearRect(0, 0, width, height);
 
       for (let i = 0; i < particles.length; i += 1) {
@@ -100,12 +104,20 @@ export default function ParticleField() {
       }
 
       context.globalAlpha = 1;
-      if (!reducedMotion.matches && !document.hidden) frameId = window.requestAnimationFrame(draw);
+      if (!reducedMotion.matches && !document.hidden && visible) {
+        frameId = window.requestAnimationFrame(draw);
+      }
     }
 
     function handlePointerMove(event) {
-      pointer.x = event.clientX;
-      pointer.y = event.clientY;
+      if (scope) {
+        const bounds = scope.getBoundingClientRect();
+        pointer.x = event.clientX - bounds.left;
+        pointer.y = event.clientY - bounds.top;
+      } else {
+        pointer.x = event.clientX;
+        pointer.y = event.clientY;
+      }
       pointer.active = true;
       if (reducedMotion.matches) draw();
     }
@@ -121,26 +133,45 @@ export default function ParticleField() {
 
     function handleVisibilityChange() {
       window.cancelAnimationFrame(frameId);
+      frameId = 0;
       if (!document.hidden) draw();
     }
 
     resize();
-    if (!reducedMotion.matches) frameId = window.requestAnimationFrame(draw);
-    window.addEventListener('resize', resize);
-    window.addEventListener('pointermove', handlePointerMove, { passive: true });
-    window.addEventListener('pointerleave', handlePointerLeave);
+    let resizeObserver;
+    let intersectionObserver;
+    if (scope && 'ResizeObserver' in window) {
+      resizeObserver = new ResizeObserver(resize);
+      resizeObserver.observe(scope);
+    } else if (!scope) {
+      window.addEventListener('resize', resize);
+    }
+    if (scope && 'IntersectionObserver' in window) {
+      intersectionObserver = new IntersectionObserver(([entry]) => {
+        visible = entry.isIntersecting;
+        window.cancelAnimationFrame(frameId);
+        frameId = 0;
+        if (visible) draw();
+      });
+      intersectionObserver.observe(scope);
+    }
+    const pointerTarget = scope || window;
+    pointerTarget.addEventListener('pointermove', handlePointerMove, { passive: true });
+    pointerTarget.addEventListener('pointerleave', handlePointerLeave);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     reducedMotion.addEventListener('change', handleMotionPreferenceChange);
 
     return () => {
       window.cancelAnimationFrame(frameId);
-      window.removeEventListener('resize', resize);
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerleave', handlePointerLeave);
+      resizeObserver?.disconnect();
+      intersectionObserver?.disconnect();
+      if (!scope) window.removeEventListener('resize', resize);
+      pointerTarget.removeEventListener('pointermove', handlePointerMove);
+      pointerTarget.removeEventListener('pointerleave', handlePointerLeave);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       reducedMotion.removeEventListener('change', handleMotionPreferenceChange);
     };
-  }, []);
+  }, [scopeRef]);
 
-  return <canvas ref={canvasRef} className="particle-field" aria-hidden="true" />;
+  return <canvas ref={canvasRef} className={className} aria-hidden="true" />;
 }

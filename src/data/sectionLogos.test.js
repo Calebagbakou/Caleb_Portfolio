@@ -13,7 +13,20 @@ test('reads default and custom icons for known public sections', () => {
     'service-content-ai': { url: 'https://cdn.example.com/service.png', mode: 'custom' },
     'contact-email': { url: '', mode: 'default' },
   });
-  assert.ok(SECTION_ICON_GROUPS.length >= 3);
+  assert.ok(SECTION_ICON_GROUPS.some((group) => (
+    group.items.some((item) => item.id === 'social-facebook')
+    && group.items.some((item) => item.id === 'social-tiktok')
+  )));
+});
+
+test('accepts custom Facebook and TikTok logos for the public social links', () => {
+  const logos = parseSectionLogoSettings(JSON.stringify({
+    'social-facebook': { url: 'https://cdn.example.com/facebook.png', mode: 'custom' },
+    'social-tiktok': { url: 'https://cdn.example.com/tiktok.png', mode: 'custom' },
+  }));
+
+  assert.equal(logos['social-facebook'].mode, 'custom');
+  assert.equal(logos['social-tiktok'].mode, 'custom');
 });
 
 test('rejects invalid section icon settings', () => {

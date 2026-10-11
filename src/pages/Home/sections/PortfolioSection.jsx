@@ -84,6 +84,12 @@ function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisi
   const videoPreviewEnabled = item.media_type !== 'image' && item.autoplay_preview;
   const finishPreview = useCallback(() => onPreviewVisibility(item.id, 0), [item.id, onPreviewVisibility]);
 
+  function handleThumbnailPointerMove(event) {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    event.currentTarget.style.setProperty('--pointer-x', `${event.clientX - bounds.left}px`);
+    event.currentTarget.style.setProperty('--pointer-y', `${event.clientY - bounds.top}px`);
+  }
+
   function mergeRefs(el) {
     revealRef.current = el;
     tiltRef.current = el;
@@ -129,7 +135,8 @@ function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisi
         </svg>
       </span>
       <div
-        className={`p-thumb${item.media_type !== 'image' ? ' video' : ''}`}
+        className={`p-thumb${item.media_type !== 'image' ? ' video' : ''}${image && item.media_type === 'image' ? ' has-project-image' : ''}`}
+        onPointerMove={image && item.media_type === 'image' ? handleThumbnailPointerMove : undefined}
         style={{
           background: item.gradient,
           ...(item.media_type === 'image' ? { aspectRatio: PROJECT_IMAGE_THUMBNAIL_RATIO } : {}),
@@ -149,7 +156,15 @@ function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisi
             />
         )}
         {!previewActive && image
-          ? <img src={image} alt="" loading="lazy" />
+          ? <>
+            <img className="project-image-main" src={image} alt="" loading="lazy" />
+            {item.media_type === 'image' && (
+              <>
+                <img className="project-image-glitch project-image-glitch-cyan" src={image} alt="" aria-hidden="true" />
+                <img className="project-image-glitch project-image-glitch-violet" src={image} alt="" aria-hidden="true" />
+              </>
+            )}
+          </>
           : !previewActive && <span>{item.thumbLabel}</span>}
         {(item.media_type === 'youtube' || item.media_type === 'external_video') && (
           <span className={`p-play${previewActive ? ' preview-playing' : ''}`} aria-hidden="true">

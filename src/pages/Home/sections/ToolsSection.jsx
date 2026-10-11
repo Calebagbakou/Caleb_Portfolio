@@ -1,17 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { TOOL_GROUPS } from '../../../data/tools';
 import { useTilt } from '../../../hooks/useTilt';
 import { useReveal } from '../../../hooks/useReveal';
 import RevealHeading from '../../../components/site/RevealHeading';
+import ParticleField from '../../../components/site/ParticleField';
+import { usePresentation } from '../../../context/PresentationContext';
 import { getSettingValue } from '../../../services/settings';
 
-function ToolChip({ tool, logoUrl }) {
+function ToolChip({ tool, logoUrl, index }) {
   const ref = useTilt();
   return (
     <div className="tool-chip" ref={ref}>
-      {logoUrl
-        ? <img className="tool-avatar tool-logo" src={logoUrl} alt="" loading="lazy" />
-        : <span className="tool-avatar">{tool.avatar}</span>}
+      <span className="tool-mark">
+        {logoUrl
+          ? <img className="tool-avatar tool-logo" src={logoUrl} alt="" loading="lazy" />
+          : <span className="tool-avatar">{tool.avatar}</span>}
+        <svg className="tool-mark-outline" viewBox="0 0 36 36" aria-hidden="true">
+          <circle className="tool-mark-trace" cx="18" cy="18" r="16" style={{ animationDelay: `${index * 55}ms` }} />
+        </svg>
+      </span>
       {tool.name}
     </div>
   );
@@ -24,8 +31,8 @@ function ToolGroup({ group, index, toolLogos }) {
       style={{ transitionDelay: `${Math.min(index * 100, 300)}ms` }}>
       <span className="tool-group-label">{group.label}</span>
       <div className="tool-grid">
-        {group.tools.map((tool) => (
-          <ToolChip tool={tool} logoUrl={toolLogos[tool.name]} key={tool.name} />
+        {group.tools.map((tool, toolIndex) => (
+          <ToolChip tool={tool} logoUrl={toolLogos[tool.name]} index={toolIndex} key={tool.name} />
         ))}
       </div>
     </div>
@@ -34,6 +41,8 @@ function ToolGroup({ group, index, toolLogos }) {
 
 export default function ToolsSection() {
   const [toolLogos, setToolLogos] = useState({});
+  const sectionRef = useRef(null);
+  const { isProfessional } = usePresentation();
 
   useEffect(() => {
     let active = true;
@@ -66,7 +75,8 @@ export default function ToolsSection() {
   }, []);
 
   return (
-    <section className="alt" id="tools">
+    <section className="alt tools-section" id="tools" ref={sectionRef}>
+      {!isProfessional && <ParticleField scopeRef={sectionRef} className="tools-particle-field" />}
       <div className="wrap">
         <RevealHeading eyebrow="OUTILS">Un savoir-faire technique, augmenté par l'IA.</RevealHeading>
         {TOOL_GROUPS.map((group, index) => (

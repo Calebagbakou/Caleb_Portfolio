@@ -49,6 +49,27 @@ export default function Hero() {
   const scrubTrackRef = useRef(null);
   const draggingRef = useRef(false);
 
+  function handlePortraitPointerMove(event) {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - bounds.left) / bounds.width - 0.5;
+    const y = (event.clientY - bounds.top) / bounds.height - 0.5;
+    event.currentTarget.style.setProperty('--portrait-pointer-x', `${(x + 0.5) * 100}%`);
+    event.currentTarget.style.setProperty('--portrait-pointer-y', `${(y + 0.5) * 100}%`);
+    event.currentTarget.style.setProperty('--portrait-rotate-x', `${-y * 7}deg`);
+    event.currentTarget.style.setProperty('--portrait-rotate-y', `${x * 9}deg`);
+    event.currentTarget.style.setProperty('--portrait-shift-x', `${x * -5}px`);
+    event.currentTarget.style.setProperty('--portrait-shift-y', `${y * -5}px`);
+  }
+
+  function resetPortraitPointer(event) {
+    event.currentTarget.style.setProperty('--portrait-pointer-x', '50%');
+    event.currentTarget.style.setProperty('--portrait-pointer-y', '50%');
+    event.currentTarget.style.setProperty('--portrait-rotate-x', '0deg');
+    event.currentTarget.style.setProperty('--portrait-rotate-y', '0deg');
+    event.currentTarget.style.setProperty('--portrait-shift-x', '0px');
+    event.currentTarget.style.setProperty('--portrait-shift-y', '0px');
+  }
+
   useEffect(() => {
     let active = true;
     getSettingValue('site_profile_image_url').then(({ data, error }) => {
@@ -177,7 +198,11 @@ export default function Hero() {
           Vidéo IA, Design, montage vidéo et Visuels IA{' '}
           <strong>au service de vos projets, au Bénin et au-delà.</strong>
         </p>
-        <div className="hero-photo">
+        <div
+          className="hero-photo"
+          onPointerMove={handlePortraitPointerMove}
+          onPointerLeave={resetPortraitPointer}
+        >
           <div className="hero-photo-ring">
             <div className="hero-photo-frame">
               {profileImage && (

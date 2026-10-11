@@ -58,6 +58,21 @@ const CONTACT_ITEMS = [
   },
 ];
 
+const SOCIAL_ITEMS = [
+  {
+    id: 'social-facebook',
+    href: 'https://www.facebook.com/profile.php?id=61580115693070',
+    label: 'Facebook — Caleb Agk',
+    icon: <path d="M13.2 21v-8h2.7l.4-3.1h-3.1v-2c0-.9.3-1.5 1.6-1.5h1.7V3.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4.1 1.5-4.1 4.2v2.3H7.3V13H10v8h3.2Z" fill="currentColor" stroke="none" />,
+  },
+  {
+    id: 'social-tiktok',
+    href: 'https://tiktok.com/@calebagk',
+    label: 'TikTok — Caleb Agk',
+    icon: <path d="M14 3v11.1a3.3 3.3 0 1 1-2.8-3.3V7.9a6.6 6.6 0 1 0 6 6.5V9.1a8.2 8.2 0 0 0 3.8.9V6.8A4.8 4.8 0 0 1 16.2 3H14Z" fill="currentColor" stroke="none" />,
+  },
+];
+
 export default function ContactSection() {
   const logos = useSectionLogos();
   const [form, setForm] = useState({ nom: '', email: '', message: '' });
@@ -127,17 +142,20 @@ export default function ContactSection() {
       </div>
 
       <div className="social-row">
-        <a
-          href="https://www.facebook.com/profile.php?id=61580115693070"
-          target="_blank"
-          rel="noopener"
-          aria-label="Facebook — Caleb Agk"
-        >
-          FB
-        </a>
-        <a href="https://tiktok.com/@calebagk" target="_blank" rel="noopener" aria-label="TikTok — Caleb Agk">
-          TT
-        </a>
+        {SOCIAL_ITEMS.map((item) => (
+          <a
+            key={item.id}
+            href={item.href}
+            target="_blank"
+            rel="noopener"
+            aria-label={item.label}
+            title={item.label}
+          >
+            <SectionIcon id={item.id} logos={logos} className="social-icon">
+              {item.icon}
+            </SectionIcon>
+          </a>
+        ))}
       </div>
 
       <form className="contact-form" onSubmit={handleSubmit}>

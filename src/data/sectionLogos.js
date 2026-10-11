@@ -33,6 +33,13 @@ export const SECTION_ICON_GROUPS = [
       { id: 'contact-location', label: 'Localisation' },
     ],
   },
+  {
+    section: 'Réseaux sociaux',
+    items: [
+      { id: 'social-facebook', label: 'Facebook' },
+      { id: 'social-tiktok', label: 'TikTok' },
+    ],
+  },
 ];
 
 export const SECTION_LOGOS_SETTING = 'site_section_logos';
