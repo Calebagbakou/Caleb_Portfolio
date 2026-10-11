@@ -7,6 +7,7 @@ import {
   saveShopContent,
   saveShopProduct,
   updateShopCategory,
+  hideActivationProvider,
 } from '../../services/shop';
 import { DEFAULT_SHOP_CONTENT } from '../../context/ShopContext';
 import { supabase } from '../../services/supabase';
@@ -267,7 +268,7 @@ export default function Shop() {
     });
     if (invokeError || data?.error) {
       console.error('Impossible de charger les catégories PixVerify :', invokeError || data.error);
-      setPixverifyError(data?.error || invokeError.message);
+      setPixverifyError('Impossible de charger le catalogue d’activation. Réessaie plus tard.');
       setPixverifyCategories(null);
     } else {
       setPixverifyCategories(data.categories || []);
@@ -281,13 +282,13 @@ export default function Shop() {
       {notice && <div className="shop-admin-alert success" role="status">{notice}</div>}
 
       <section className="panel">
-        <h2>Catalogue API PixVerify</h2>
+        <h2>Catalogue des activations</h2>
         <p>
-          Consulte les catégories disponibles sur PixVerify pour identifier l’ID exact du lien Gemini AI Pro 18 mois.
-          Cette action ne lance aucun achat et ne dépense aucun crédit.
+          Consulte les offres disponibles pour vérifier le lien Gemini AI Pro 18 mois.
+          Cette action ne lance aucun achat et ne déclenche aucun paiement.
         </p>
         <button className="btn btn-secondary" type="button" onClick={loadPixverifyCategories} disabled={pixverifyLoading}>
-          {pixverifyLoading ? 'Chargement…' : 'Charger les catégories PixVerify'}
+          {pixverifyLoading ? 'Chargement…' : 'Charger les offres disponibles'}
         </button>
         {pixverifyError && <div className="shop-admin-alert error" role="alert">{pixverifyError}</div>}
         {pixverifyCategories && (
@@ -296,11 +297,13 @@ export default function Shop() {
             {pixverifyCategories.map((category) => (
               <div className="shop-admin-category" key={category.id}>
                 <div>
-                  <strong>{category.name}</strong>
+                  <strong>{hideActivationProvider(category.name)}</strong>
                   <div>ID : <code>{category.id}</code></div>
-                  {category.description && <small>{category.description}</small>}
+                  {category.description && (
+                    <small>{hideActivationProvider(category.description)}</small>
+                  )}
                   {category.price_per_unit !== undefined && <div>Prix : {category.price_per_unit}</div>}
-                  {category.stock && <div>Stock : {category.stock.available ?? 'voir PixVerify'}</div>}
+                  {category.stock && <div>Stock : {category.stock.available ?? 'voir les offres disponibles'}</div>}
                 </div>
               </div>
             ))}

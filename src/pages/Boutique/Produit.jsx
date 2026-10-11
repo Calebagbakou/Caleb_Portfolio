@@ -152,7 +152,7 @@ export default function Produit() {
           </div>
           <p className="product-note">
             {product.slug === 'gemini-pro'
-              ? 'Les formules 4 et 12 mois sont affichées mais momentanément indisponibles. La formule 18 mois est disponible ; après confirmation du paiement, ton lien d’activation est généré automatiquement par PixVerify.'
+              ? 'Les formules 4 et 12 mois sont affichées mais momentanément indisponibles. La formule 18 mois est disponible ; après confirmation du paiement, ton lien d’activation est généré automatiquement.'
               : 'Livraison numérique : les identifiants ou instructions d’activation te sont envoyés directement par Caleb après validation de la commande.'}
           </p>
         </div>

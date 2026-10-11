@@ -14,7 +14,7 @@ async function readDeliveryResponse(error, data) {
       return { error: error.message };
     }
   }
-  return { error: error?.message || 'Le lien PixVerify n’a pas pu être généré.' };
+  return { error: error?.message || 'Le lien d’activation n’a pas pu être généré.' };
 }
 
 export default function Confirmation() {
@@ -110,14 +110,16 @@ export default function Confirmation() {
 
     if (error || data?.error) {
       const response = await readDeliveryResponse(error, data);
-      const message = typeof response.error === 'string'
-        ? response.error
-        : 'Le lien PixVerify n’a pas pu être généré.';
-      console.error('La livraison PixVerify a échoué :', error || message);
-      setDeliveryError(message);
+      console.error('La livraison Gemini a échoué :', error || response.error);
       setDeliveryLinks(Array.isArray(response.links) ? response.links : []);
       const status = response.status
         || (error?.context?.status === 402 ? 'insufficient_balance' : '');
+      const message = status === 'insufficient_balance'
+        ? 'La génération de ton lien d’activation est temporairement indisponible. Réessaie plus tard ou contacte Caleb avec ta référence de commande.'
+        : status === 'retryable'
+          ? 'La génération de ton lien a rencontré un problème temporaire. Tu peux réessayer sans risque de relancer le paiement.'
+          : 'Le lien d’activation n’a pas pu être généré. Contacte Caleb avec ta référence de commande.';
+      setDeliveryError(message);
       setDeliveryStatus(
         status === 'insufficient_balance' || status === 'retryable'
           ? status
@@ -287,10 +289,10 @@ export default function Confirmation() {
           <section className="confirm-summary" aria-live="polite" style={{ marginTop: 16 }}>
             <h2 style={{ fontSize: '1.1rem', marginTop: 0 }}>Lien d’activation Gemini AI Pro · 18 mois</h2>
             {['idle', 'loading'].includes(deliveryStatus) && (
-              <p>Génération automatique du lien par PixVerify en cours…</p>
+              <p>Génération automatique de ton lien d’activation en cours…</p>
             )}
             {deliveryStatus === 'starting' && (
-              <p>La demande est en cours de traitement par PixVerify. Actualise cette page dans quelques instants.</p>
+              <p>Ta demande est en cours de traitement. Actualise cette page dans quelques instants.</p>
             )}
             {deliveryStatus === 'success' && deliveryLinks.length > 0 && (
               <div>
@@ -311,9 +313,7 @@ export default function Confirmation() {
             {['insufficient_balance', 'retryable'].includes(deliveryStatus) && (
               <>
                 <div className="shop-admin-alert error" role="alert">
-                  {deliveryError || (deliveryStatus === 'insufficient_balance'
-                    ? 'Le solde PixVerify est insuffisant. Recharge le compte API pour générer le lien.'
-                    : 'La vérification du catalogue PixVerify peut être retentée sans relancer un achat.')}
+                  {deliveryError || 'La génération de ton lien a rencontré un problème temporaire. Tu peux réessayer sans risque de relancer le paiement.'}
                 </div>
                 <button
                   type="button"
@@ -323,15 +323,13 @@ export default function Confirmation() {
                 >
                   {retrying
                     ? 'Nouvelle tentative…'
-                    : deliveryStatus === 'insufficient_balance'
-                      ? 'Réessayer après recharge PixVerify'
-                      : 'Réessayer'}
+                    : 'Réessayer'}
                 </button>
               </>
             )}
             {deliveryStatus === 'failed' && (
               <div className="shop-admin-alert error" role="alert">
-                {deliveryError || 'PixVerify n’a pas pu générer le lien. Contacte Caleb avec la référence de commande.'}
+                {deliveryError || 'Le lien d’activation n’a pas pu être généré. Contacte Caleb avec ta référence de commande.'}
               </div>
             )}
           </section>

@@ -3,6 +3,12 @@ import { supabase } from './supabase';
 const PRODUCT_FIELDS = 'id, name, slug, description, tagline, highlights, category_id, badge, status, featured, sort_order, avatar, gradient, logo_url, image_url, poster_ratio, delivery_type, download_filename, download_size';
 const PLAN_FIELDS = 'id, product_id, slug, label, price, old_price, currency, sort_order, active';
 
+export function hideActivationProvider(value) {
+  return typeof value === 'string'
+    ? value.replace(/pixverify(?:\.shop)?/gi, 'service d’activation')
+    : value;
+}
+
 function attachShopData(products, plans, categories) {
   const plansByProduct = new Map();
   for (const plan of plans || []) {
@@ -20,10 +26,16 @@ function attachShopData(products, plans, categories) {
     const category = categoryById.get(product.category_id);
     return {
       ...product,
+      name: hideActivationProvider(product.name),
+      description: hideActivationProvider(product.description),
+      tagline: hideActivationProvider(product.tagline),
+      badge: hideActivationProvider(product.badge),
       category: category?.slug || '',
-      categoryLabel: category?.label || 'Autres',
+      categoryLabel: hideActivationProvider(category?.label || 'Autres'),
       plans: (plansByProduct.get(product.id) || []).sort((left, right) => left.sort_order - right.sort_order),
-      highlights: Array.isArray(product.highlights) ? product.highlights : [],
+      highlights: Array.isArray(product.highlights)
+        ? product.highlights.map(hideActivationProvider)
+        : [],
     };
   });
 }
@@ -75,7 +87,7 @@ export async function getShopContent() {
   const { data, error } = await supabase.from('settings').select('key, value').like('key', 'shop_%');
   if (error) return { data: null, error };
   return {
-    data: Object.fromEntries((data || []).map((row) => [row.key, row.value])),
+    data: Object.fromEntries((data || []).map((row) => [row.key, hideActivationProvider(row.value)])),
     error: null,
   };
 }
