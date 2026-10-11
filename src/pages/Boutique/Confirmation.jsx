@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LAST_ORDER_KEY } from '../../context/CartContext';
 import { formatPrice } from '../../data/products';
-import { listShopCatalog } from '../../services/shop';
+import { getShopOrderDeliveries, listShopCatalog } from '../../services/shop';
 import { supabase } from '../../services/supabase';
 
 async function readDeliveryResponse(error, data) {
@@ -25,6 +25,11 @@ export default function Confirmation() {
   const [deliveryLinks, setDeliveryLinks] = useState([]);
   const [deliveryError, setDeliveryError] = useState('');
   const [retrying, setRetrying] = useState(false);
+  const [shopDeliveries, setShopDeliveries] = useState([]);
+  const [shopDeliveryStatus, setShopDeliveryStatus] = useState('idle');
+  const [shopDeliveryError, setShopDeliveryError] = useState('');
+  const [downloadEmail, setDownloadEmail] = useState(null);
+  const requestedShopDelivery = useRef('');
 
   useEffect(() => {
     if (location.state?.order) {
@@ -70,6 +75,28 @@ export default function Confirmation() {
       .filter((line) => eligibleProductIds.has(line.productId) && line.planLabel === '18 mois')
       .reduce((sum, line) => sum + Number(line.qty || 0), 0);
   }, [order, products]);
+
+  async function requestShopDeliveries() {
+    if (!order?.id || !order?.ref || order.payment_status !== 'confirme') return;
+    setShopDeliveryStatus('loading');
+    setShopDeliveryError('');
+    const { data, error } = await getShopOrderDeliveries({ orderId: order.id, orderRef: order.ref });
+    if (error || data?.error) {
+      const response = await readDeliveryResponse(error, data);
+      setShopDeliveryError(response.error || 'La livraison n’a pas pu être préparée.');
+      setShopDeliveryStatus('failed');
+      return;
+    }
+    setShopDeliveries(Array.isArray(data?.deliveries) ? data.deliveries : []);
+    setDownloadEmail(data?.email || null);
+    setShopDeliveryStatus('ready');
+  }
+
+  useEffect(() => {
+    if (order?.payment_status !== 'confirme' || !products || requestedShopDelivery.current === order.id) return;
+    requestedShopDelivery.current = order.id;
+    requestShopDeliveries();
+  }, [order?.id, order?.payment_status, products]);
 
   async function requestPixverifyLink(action = 'deliver') {
     if (!order?.id || !order?.ref || !geminiQuantity) return;
@@ -159,13 +186,50 @@ export default function Confirmation() {
           Référence : <strong>{order.ref}</strong>
         </div>
 
+        {(() => {
+          const downloads = shopDeliveries.filter((delivery) => delivery.type === 'download');
+          if (!downloads.length && shopDeliveryStatus !== 'loading' && shopDeliveryStatus !== 'failed') return null;
+          return (
+            <section className="download-delivery" aria-live="polite">
+              <div className="eyebrow">TES FICHIERS SONT PRÊTS</div>
+              <h2>Téléchargement sécurisé</h2>
+              {shopDeliveryStatus === 'loading' && <p>Préparation de tes liens temporaires…</p>}
+              {shopDeliveryStatus === 'failed' && (
+                <>
+                  <div className="shop-admin-alert error" role="alert">{shopDeliveryError}</div>
+                  <button type="button" className="btn btn-primary download-button" onClick={requestShopDeliveries}>
+                    Réessayer
+                  </button>
+                </>
+              )}
+              {downloads.map((file) => (
+                <div className="download-file" key={file.productId}>
+                  <div className="download-file-name">{file.filename}</div>
+                  <div className="download-file-meta">
+                    {file.size} · {file.name} · payé {formatPrice(file.lineTotal)}
+                  </div>
+                  <a className="btn btn-primary download-button" href={file.url}>
+                    Télécharger
+                  </a>
+                  <p className="download-expiry">Lien temporaire valable 24 heures. Le lien source reste privé.</p>
+                </div>
+              ))}
+              {downloadEmail && (
+                <p className={downloadEmail.sent ? 'download-email-sent' : 'download-email-warning'}>
+                  {downloadEmail.message}
+                </p>
+              )}
+            </section>
+          );
+        })()}
+
         <div className="confirm-summary">
           <div>
             {(order.items || []).map((line) => {
               const product = products?.find((entry) => entry.id === line.productId);
-              const accessUrl = product?.slug === 'gemini-pro' && line.planLabel === '18 mois'
-                ? null
-                : product?.access_url || null;
+              const activation = shopDeliveries.find((entry) =>
+                entry.productId === line.productId && entry.type === 'activate',
+              );
               return (
                 <div key={`${line.productId}-${line.planId}`}>
                   <div className="summary-row">
@@ -174,12 +238,17 @@ export default function Confirmation() {
                     </span>
                     <span>{formatPrice(line.lineTotal)}</span>
                   </div>
-                  {accessUrl && (
+                  {activation?.url && (
                     <div className="summary-row access-link">
-                      <span style={{ color: 'var(--ink-dim)', fontSize: '0.9rem' }}>Accès :</span>
-                      <a href={accessUrl} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
-                        Ouvrir
+                      <span style={{ color: 'var(--ink-dim)', fontSize: '0.9rem' }}>Activation :</span>
+                      <a href={activation.url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
+                        Activer {line.name}
                       </a>
+                    </div>
+                  )}
+                  {activation?.error && (
+                    <div className="summary-row">
+                      <span style={{ color: 'var(--ink-dim)', fontSize: '0.9rem' }}>{activation.error}</span>
                     </div>
                   )}
                 </div>
@@ -210,8 +279,12 @@ export default function Confirmation() {
                 <p>Ton lien d’activation est prêt :</p>
                 {deliveryLinks.map((link, index) => (
                   <p key={link}>
+                    <a href={link} target="_blank" rel="noopener noreferrer" className="gemini-activation-url">
+                      {link}
+                    </a>
+                    <br />
                     <a href={link} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
-                      Ouvrir le lien d’activation{deliveryLinks.length > 1 ? ` ${index + 1}` : ''}
+                      Activer Gemini Pro{deliveryLinks.length > 1 ? ` ${index + 1}` : ''}
                     </a>
                   </p>
                 ))}

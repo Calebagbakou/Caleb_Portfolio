@@ -11,7 +11,9 @@ Deno.serve(async (request) => {
   if (request.method !== 'POST') return jsonResponse({ error: 'Méthode non autorisée.' }, 405);
 
   try {
-    const { orderId, transactionId } = await request.json();
+    const body = await request.json();
+    const orderId = body?.orderId;
+    const transactionId = body?.transactionId;
     if (typeof orderId !== 'string' || typeof transactionId !== 'string' || !transactionId.trim()) {
       return jsonResponse({ error: 'Référence de commande ou transaction invalide.' }, 400);
     }
@@ -21,18 +23,26 @@ Deno.serve(async (request) => {
       .from('orders')
       .select('id, ref, total, currency, payment_status, payment_transaction_id')
       .eq('id', orderId)
-      .single();
-    if (orderError) throw orderError;
+      .maybeSingle();
+    if (orderError) throw new Error(`Lecture de la commande impossible : ${orderError.message}`);
+    if (!order) return jsonResponse({ error: 'Cette commande est introuvable.' }, 404);
 
     const paymentClient = getPaymentClient();
     const result = await paymentClient.verify(transactionId.trim()) as Record<string, unknown>;
     if (!isPaymentSuccessful(result)) {
       return jsonResponse({ verified: false, message: 'KKiaPay ne confirme pas cette transaction.' }, 200);
     }
-    if (String(result.transactionId || '') !== transactionId.trim()
-      || String(result.partnerId || '') !== String(order.ref)
-      || Math.round(Number(result.amount)) !== Math.round(Number(order.total))) {
-      return jsonResponse({ error: 'Les informations de paiement ne correspondent pas à la commande.' }, 400);
+    if (String(result.transactionId || '') !== transactionId.trim()) {
+      return jsonResponse({ error: 'La référence de transaction renvoyée par KKiaPay ne correspond pas.' }, 400);
+    }
+    if (String(result.partnerId || '') !== String(order.ref)) {
+      return jsonResponse({ error: 'La référence de commande renvoyée par KKiaPay ne correspond pas.' }, 400);
+    }
+    const paidAmount = Number(result.amount);
+    const orderAmount = Number(order.total);
+    if (!Number.isFinite(paidAmount) || !Number.isFinite(orderAmount)
+      || Math.round(paidAmount) !== Math.round(orderAmount)) {
+      return jsonResponse({ error: 'Le montant confirmé par KKiaPay ne correspond pas au total de la commande.' }, 400);
     }
 
     if (order.payment_status === 'confirme') {
@@ -74,6 +84,6 @@ Deno.serve(async (request) => {
     return jsonResponse({ verified: true, order: await getOrderReceipt(client, order.id) });
   } catch (error) {
     console.error('Échec de vérification KKiaPay :', error);
-    return jsonResponse({ error: error instanceof Error ? error.message : 'Vérification du paiement impossible.' }, 400);
+    return jsonResponse({ error: 'Une erreur serveur empêche la vérification du paiement. La commande reste en attente.' }, 500);
   }
 });

@@ -25,6 +25,20 @@ Deno.serve(async (request) => {
     }
 
     const client = getServiceClient();
+    const productIds = [...new Set(items
+      .map((item) => item?.product_id)
+      .filter((id): id is string => typeof id === 'string'))];
+    if (productIds.length) {
+      const { data: products, error: productsError } = await client
+        .from('products')
+        .select('id, delivery_type')
+        .in('id', productIds);
+      if (productsError) throw productsError;
+      if (products?.some((product) => product.delivery_type === 'download') && !normalizedCustomer.email) {
+        return jsonResponse({ error: 'Une adresse e-mail est obligatoire pour recevoir le lien de téléchargement.' }, 400);
+      }
+    }
+
     const { data: order, error } = await client.rpc('create_shop_order', {
       p_customer: normalizedCustomer,
       p_items: items,

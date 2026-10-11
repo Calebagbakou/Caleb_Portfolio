@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-const PRODUCT_FIELDS = 'id, name, slug, description, tagline, highlights, category_id, badge, status, featured, sort_order, avatar, gradient, logo_url, image_url, access_url';
+const PRODUCT_FIELDS = 'id, name, slug, description, tagline, highlights, category_id, badge, status, featured, sort_order, avatar, gradient, logo_url, image_url, delivery_type, download_filename, download_size';
 const PLAN_FIELDS = 'id, product_id, slug, label, price, old_price, currency, sort_order, active';
 
 function attachShopData(products, plans, categories) {
@@ -89,13 +89,27 @@ export function saveShopContent(content) {
 }
 
 export async function listShopAdminData() {
-  const [catalog, content] = await Promise.all([
+  const [catalog, content, deliveryResult] = await Promise.all([
     listShopCatalog({ includeInactive: true }),
     getShopContent(),
+    supabase.from('product_deliveries').select('product_id, access_url'),
   ]);
+  const error = catalog.error || content.error || deliveryResult.error;
+  const deliveryByProduct = new Map(
+    (deliveryResult.data || []).map((delivery) => [delivery.product_id, delivery.access_url]),
+  );
   return {
-    data: catalog.data && content.data ? { ...catalog.data, content: content.data } : null,
-    error: catalog.error || content.error,
+    data: catalog.data && content.data && deliveryResult.data
+      ? {
+        ...catalog.data,
+        products: catalog.data.products.map((product) => ({
+          ...product,
+          access_url: deliveryByProduct.get(product.id) || '',
+        })),
+        content: content.data,
+      }
+      : null,
+    error,
   };
 }
 
@@ -117,13 +131,25 @@ export async function saveShopProduct(product, plans) {
     gradient: product.gradient,
     logo_url: product.logo_url,
     image_url: product.image_url,
-    access_url: product.access_url,
+    delivery_type: product.delivery_type || 'activate',
+    download_filename: product.download_filename || null,
+    download_size: product.download_size || null,
     updated_at: new Date().toISOString(),
   };
   if (!product.id) productRow.created_at = productRow.updated_at;
 
   const { error: productError } = await supabase.from('products').upsert(productRow, { onConflict: 'id' });
   if (productError) return { error: productError };
+
+  const deliveryUrl = product.access_url?.trim();
+  const deliveryResult = deliveryUrl
+    ? await supabase.from('product_deliveries').upsert({
+      product_id: id,
+      access_url: deliveryUrl,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'product_id' })
+    : await supabase.from('product_deliveries').delete().eq('product_id', id);
+  if (deliveryResult.error) return { error: deliveryResult.error, partial: true };
 
   const planRows = plans.map((plan, index) => ({
     id: plan.id || crypto.randomUUID(),
@@ -200,8 +226,35 @@ export function createShopCheckout({ customer, items, note }) {
   return supabase.functions.invoke('checkout-shop', { body: { customer, items, note } });
 }
 
-export function verifyShopPayment({ orderId, transactionId }) {
-  return supabase.functions.invoke('verify-kkiapay-payment', {
+async function getFunctionErrorMessage(error) {
+  const response = error?.context;
+  if (response && typeof response.clone === 'function') {
+    try {
+      const body = await response.clone().json();
+      if (typeof body?.error === 'string' && body.error.trim()) return body.error;
+      if (typeof body?.message === 'string' && body.message.trim()) return body.message;
+    } catch (parseError) {
+      console.warn('La réponse d’erreur de la fonction boutique n’est pas au format JSON :', parseError);
+    }
+  }
+  return error?.message || 'La vérification du paiement a échoué.';
+}
+
+export async function verifyShopPayment({ orderId, transactionId }) {
+  const result = await supabase.functions.invoke('verify-kkiapay-payment', {
     body: { orderId, transactionId },
+  });
+  if (result.error) {
+    return {
+      ...result,
+      error: new Error(await getFunctionErrorMessage(result.error)),
+    };
+  }
+  return result;
+}
+
+export function getShopOrderDeliveries({ orderId, orderRef }) {
+  return supabase.functions.invoke('shop-order-delivery', {
+    body: { orderId, orderRef },
   });
 }

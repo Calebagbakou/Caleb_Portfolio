@@ -97,6 +97,7 @@ export function CartProvider({ children }) {
           productId: product.id,
           planId: plan.id,
           name: product.name,
+          deliveryType: product.delivery_type || 'activate',
           planLabel: plan.label,
           avatar: product.avatar,
           gradient: product.gradient,

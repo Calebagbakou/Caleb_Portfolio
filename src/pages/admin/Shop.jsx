@@ -27,6 +27,9 @@ const EMPTY_PRODUCT = {
   logo_url: '',
   image_url: '',
   access_url: '',
+  delivery_type: 'activate',
+  download_filename: '',
+  download_size: '',
   plans: [{ id: null, slug: '', label: '', price: '', old_price: '', currency: 'XOF', active: true }],
 };
 
@@ -57,6 +60,9 @@ function productForm(product) {
     logo_url: product.logo_url || '',
     image_url: product.image_url || '',
     access_url: product.access_url || '',
+    delivery_type: product.delivery_type || 'activate',
+    download_filename: product.download_filename || '',
+    download_size: product.download_size || '',
     plans: product.plans.length
       ? product.plans.map((plan) => ({ ...plan, old_price: plan.old_price ?? '' }))
       : EMPTY_PRODUCT.plans,
@@ -141,6 +147,19 @@ export default function Shop() {
       setError('Ajoute au moins une formule active avec un libellé et un prix supérieur à zéro.');
       return;
     }
+    if (form.delivery_type === 'download'
+      && (!form.access_url.trim() || !form.download_filename.trim() || !form.download_size.trim())) {
+      setError('Pour un téléchargement, renseigne le lien source privé, le nom du fichier et sa taille.');
+      return;
+    }
+    if (form.delivery_type === 'download' && !form.access_url.trim().startsWith('https://')) {
+      setError('Le lien du fichier doit commencer par https://.');
+      return;
+    }
+    if (form.delivery_type === 'activate' && !form.access_url.trim()) {
+      setError('Renseigne le lien d’activation pour ce produit.');
+      return;
+    }
 
     setSaving(true);
     setError('');
@@ -158,6 +177,9 @@ export default function Shop() {
       logo_url: form.logo_url.trim() || null,
       image_url: form.image_url.trim() || null,
       access_url: form.access_url.trim() || null,
+      delivery_type: form.delivery_type,
+      download_filename: form.download_filename.trim() || null,
+      download_size: form.download_size.trim() || null,
     };
     const { error: saveError, partial } = await saveShopProduct(product, form.plans);
     if (saveError) {
@@ -380,10 +402,38 @@ export default function Shop() {
               <small className="project-form-hint">Lien direct et public vers le fichier image (.jpg, .png, .webp…). Les liens vers une page de partage ne s’affichent pas comme image.</small>
             </div>
             <div className="form-group">
-              <label htmlFor="shop-product-access">URL d'accès post-achat (facultative)</label>
-              <input id="shop-product-access" type="url" name="access_url" value={form.access_url || ''} onChange={updateProductField} placeholder="https://…" />
-              <small className="project-form-hint">Lien affiché au client après l'achat (ex: interface Gemini, lien CapCut, etc.). Laisser vide si pas d'accès direct.</small>
+              <label htmlFor="shop-product-delivery-type">Mode de livraison</label>
+              <select id="shop-product-delivery-type" name="delivery_type" value={form.delivery_type} onChange={updateProductField}>
+                <option value="activate">Lien d’activation direct (ex. Canva)</option>
+                <option value="download">Fichier en téléchargement temporaire (ex. CapCut)</option>
+                <option value="api">Activation par API (ex. Gemini Pro)</option>
+              </select>
             </div>
+            {form.delivery_type !== 'api' && (
+              <div className="form-group shop-admin-wide">
+                <label htmlFor="shop-product-access">
+                  {form.delivery_type === 'download' ? 'Lien source privé (Drive ou hébergeur)' : 'Lien d’activation'}
+                </label>
+                <input id="shop-product-access" type="url" name="access_url" value={form.access_url || ''} onChange={updateProductField} placeholder="https://…" />
+                <small className="project-form-hint">
+                  {form.delivery_type === 'download'
+                    ? 'Lien conservé côté serveur. Pour Drive, autorise la lecture par toute personne disposant du lien ; l’acheteur reçoit un lien temporaire, pas cette URL.'
+                    : 'Le client recevra un bouton pour ouvrir directement cette page après paiement.'}
+                </small>
+              </div>
+            )}
+            {form.delivery_type === 'download' && (
+              <>
+                <div className="form-group">
+                  <label htmlFor="shop-product-download-name">Nom du fichier</label>
+                  <input id="shop-product-download-name" name="download_filename" value={form.download_filename || ''} onChange={updateProductField} required />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="shop-product-download-size">Taille du fichier (ex. 250 Mo)</label>
+                  <input id="shop-product-download-size" name="download_size" value={form.download_size || ''} onChange={updateProductField} required />
+                </div>
+              </>
+            )}
             <div className="form-group">
               <label htmlFor="shop-product-status">Publication</label>
               <select id="shop-product-status" name="status" value={form.status} onChange={updateProductField}>

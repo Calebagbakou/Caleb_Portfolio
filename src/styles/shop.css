@@ -328,6 +328,19 @@ h1,h2,h3,.brand-name{ font-family:'Unbounded', sans-serif; letter-spacing:-0.02e
 .confirm-icon svg{ width:32px;height:32px; color:var(--accent-ink); }
 .confirm-ref{ font-family:'Poppins', monospace; font-size:13px; color:var(--ink-dim); background:var(--surface-alt); display:inline-block; padding:8px 16px; border-radius:999px; margin:10px 0 28px; }
 .confirm-summary{ text-align:left; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:22px; margin-bottom:28px; }
+.download-delivery{ text-align:left; background:var(--ink); color:#fff; border-radius:var(--radius-lg); padding:26px; margin:0 0 24px; }
+.download-delivery .eyebrow{ color:var(--accent); font-size:11px; letter-spacing:.12em; font-weight:700; }
+.download-delivery h2{ margin:8px 0 18px; font-size:clamp(1.25rem,3vw,1.7rem); }
+.download-file{ border-top:1px solid rgba(255,255,255,.2); padding:18px 0 4px; }
+.download-file-name{ font-size:1.1rem; font-weight:700; overflow-wrap:anywhere; }
+.download-file-meta,.download-expiry{ color:rgba(255,255,255,.72); font-size:.9rem; margin:7px 0 14px; }
+.download-button{ min-height:54px; padding:0 30px; font-size:1.1rem; font-weight:800; }
+.download-expiry{ margin:12px 0 0; font-size:.82rem; }
+.download-email-sent,.download-email-warning{ margin:14px 0 0; font-size:.9rem; }
+.download-email-sent{ color:var(--accent); }
+.download-email-warning{ color:#ffd48a; }
+.download-delivery .shop-admin-alert{ color:var(--ink); }
+.gemini-activation-url{ overflow-wrap:anywhere; font-size:.85rem; }
 
 /* ---------- TOAST ---------- */
 .toast{

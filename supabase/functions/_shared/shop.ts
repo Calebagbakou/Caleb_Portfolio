@@ -1,5 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
-import kkiapay from 'npm:@kkiapay-org/nodejs-sdk@1.0.7';
+import { kkiapay } from 'npm:@kkiapay-org/nodejs-sdk@1.0.7';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

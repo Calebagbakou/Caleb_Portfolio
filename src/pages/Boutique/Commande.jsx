@@ -16,6 +16,7 @@ export default function Commande() {
   const [pendingOrder, setPendingOrder] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const needsEmail = details.some((line) => line.deliveryType === 'download');
 
   if (!details.length) {
     return (
@@ -44,6 +45,10 @@ export default function Commande() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+    if (needsEmail && !femail.trim()) {
+      setError('Une adresse e-mail est obligatoire pour recevoir le lien de téléchargement sécurisé.');
+      return;
+    }
     if (!isKkiaPayConfigured()) {
       setError('Le paiement n’est pas encore configuré. Réessaie plus tard ou contacte Caleb.');
       return;
@@ -136,11 +141,12 @@ export default function Commande() {
             </div>
           </div>
           <div className="form-group">
-            <label htmlFor="femail">Email (optionnel)</label>
+            <label htmlFor="femail">Email {needsEmail ? '(obligatoire pour le téléchargement)' : '(optionnel)'}</label>
             <input
               type="email"
               id="femail"
               placeholder="vous@exemple.com"
+              required={needsEmail}
               value={femail}
               onChange={(e) => setFemail(e.target.value)}
             />
