@@ -23,15 +23,60 @@ function isPublicHttpsUrl(value: string) {
   }
 }
 
-async function fetchPublicFile(initialUrl: string) {
+function isGoogleDriveHost(hostname: string) {
+  return hostname === 'drive.google.com'
+    || hostname === 'www.drive.google.com'
+    || hostname === 'drive.usercontent.google.com';
+}
+
+function getDriveConfirmation(html: string, response: Response) {
+  const cookie = response.headers.get('set-cookie') || '';
+  const cookieToken = cookie.match(/download_warning[^=]*=([^;\s,]+)/)?.[1];
+  if (cookieToken) return cookieToken;
+
+  const htmlToken = html.match(/[?&]confirm=([0-9A-Za-z_-]+)/)?.[1]
+    || html.match(/name=["']confirm["'][^>]*value=["']([^"']+)/i)?.[1]
+    || html.match(/value=["']([^"']+)["'][^>]*name=["']confirm["']/i)?.[1];
+  return htmlToken ? htmlToken.replace(/&amp;/g, '&') : null;
+}
+
+async function fetchPublicFile(initialUrl: string, range: string | null) {
   let url = initialUrl;
-  for (let redirectCount = 0; redirectCount <= 5; redirectCount += 1) {
+  let cookieHeader = '';
+  for (let redirectCount = 0; redirectCount <= 8; redirectCount += 1) {
     if (!isPublicHttpsUrl(url)) throw new Error('La source de téléchargement n’est pas un hôte HTTPS public.');
-    const response = await fetch(url, { redirect: 'manual' });
-    if (response.status < 300 || response.status >= 400) return response;
-    const location = response.headers.get('location');
-    if (!location) throw new Error('L’hébergeur a renvoyé une redirection sans destination.');
-    url = new URL(location, url).toString();
+    const headers = new Headers();
+    if (range) headers.set('Range', range);
+    if (cookieHeader) headers.set('Cookie', cookieHeader);
+    const response = await fetch(url, { headers, redirect: 'manual' });
+    const setCookie = response.headers.get('set-cookie');
+    const driveCookie = setCookie?.match(/(download_warning[^=]*=[^;\s,]+)/)?.[1];
+    if (driveCookie) cookieHeader = driveCookie;
+
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('location');
+      if (!location) throw new Error('L’hébergeur a renvoyé une redirection sans destination.');
+      url = new URL(location, url).toString();
+      continue;
+    }
+
+    const contentType = response.headers.get('content-type') || '';
+    const currentUrl = new URL(url);
+    if (contentType.toLowerCase().includes('text/html') && isGoogleDriveHost(currentUrl.hostname)) {
+      const html = await response.text();
+      const confirmation = getDriveConfirmation(html, response);
+      if (confirmation && currentUrl.searchParams.get('confirm') !== confirmation) {
+        currentUrl.searchParams.set('confirm', confirmation);
+        url = currentUrl.toString();
+        continue;
+      }
+      return new Response(html, {
+        status: response.status,
+        headers: response.headers,
+      });
+    }
+
+    return response;
   }
   throw new Error('Trop de redirections pendant la récupération du fichier.');
 }
@@ -42,7 +87,7 @@ function googleDriveDownloadUrl(value: string) {
   const match = url.pathname.match(/\/file\/d\/([^/]+)/);
   const fileId = match?.[1] || url.searchParams.get('id');
   if (!fileId) return value;
-  return `https://drive.usercontent.google.com/download?id=${encodeURIComponent(fileId)}&export=download`;
+  return `https://drive.google.com/uc?export=download&id=${encodeURIComponent(fileId)}&confirm=t`;
 }
 
 Deno.serve(async (request) => {
@@ -92,8 +137,9 @@ Deno.serve(async (request) => {
     if (!isPublicHttpsUrl(sourceUrl)) {
       return new Response('La source du fichier n’est pas disponible en HTTPS.', { status: 502 });
     }
-    const upstream = await fetchPublicFile(sourceUrl);
-    if (!upstream.ok || !upstream.body || upstream.headers.get('content-type')?.includes('text/html')) {
+    const upstream = await fetchPublicFile(sourceUrl, request.headers.get('range'));
+    const upstreamContentType = upstream.headers.get('content-type') || '';
+    if (!upstream.ok || !upstream.body || upstreamContentType.toLowerCase().includes('text/html')) {
       return new Response('L’hébergeur n’a pas fourni directement le fichier. Vérifie le lien source dans l’admin.', {
         status: 502,
       });
@@ -104,14 +150,17 @@ Deno.serve(async (request) => {
       `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
     );
     const headers = new Headers({
-      'Content-Type': 'application/octet-stream',
+      'Content-Type': upstreamContentType || 'application/octet-stream',
       'Content-Disposition': `attachment; filename="download"; filename*=UTF-8''${encodedFilename}`,
       'Cache-Control': 'private, no-store, max-age=0',
       'X-Content-Type-Options': 'nosniff',
     });
+    const contentRange = upstream.headers.get('content-range');
+    if (contentRange) headers.set('Content-Range', contentRange);
+    if (upstream.status === 206) headers.set('Accept-Ranges', 'bytes');
     const contentLength = upstream.headers.get('content-length');
     if (contentLength && /^\d+$/.test(contentLength)) headers.set('Content-Length', contentLength);
-    return new Response(upstream.body, { status: 200, headers });
+    return new Response(upstream.body, { status: upstream.status, headers });
   } catch (error) {
     console.error('Échec du téléchargement temporaire :', error);
     return new Response('Téléchargement temporairement indisponible. Réessaie ou contacte Caleb.', { status: 500 });
