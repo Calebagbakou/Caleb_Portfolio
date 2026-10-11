@@ -120,6 +120,24 @@ export default function Hero() {
     draggingRef.current = true;
     setScrubPct(pctFromEvent(e));
   }
+
+  function handleScrubKeyDown(e) {
+    const currentChapter = nearestStopIndex(scrubPct);
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      goToChapter(Math.max(0, currentChapter - 1));
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      goToChapter(Math.min(CHAPTERS.length - 1, currentChapter + 1));
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      goToChapter(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      goToChapter(CHAPTERS.length - 1);
+    }
+  }
+
   useEffect(() => {
     function onMove(e) {
       if (!draggingRef.current) return;
@@ -220,10 +238,23 @@ export default function Hero() {
       </main>
 
       <div className="timeline">
-        <div className="scrub-track" ref={scrubTrackRef} onPointerDown={(e) => startDrag(e)}>
-          <div className="scrub-fill" style={{ width: `${scrubPct}%` }}></div>
+        <div
+          className="scrub-track"
+          ref={scrubTrackRef}
+          role="slider"
+          tabIndex={0}
+          aria-label="Navigation des sections"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(scrubPct)}
+          aria-valuetext={CHAPTERS[nearestStopIndex(scrubPct)].label}
+          onKeyDown={handleScrubKeyDown}
+          onPointerDown={(e) => startDrag(e)}
+        >
+          <div className="scrub-fill" aria-hidden="true" style={{ width: `${scrubPct}%` }}></div>
           <div
             className="scrub-head"
+            aria-hidden="true"
             style={{ left: `${scrubPct}%` }}
             onPointerDown={(e) => {
               e.stopPropagation();
