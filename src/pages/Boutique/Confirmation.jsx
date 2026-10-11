@@ -205,13 +205,31 @@ export default function Confirmation() {
               {downloads.map((file) => (
                 <div className="download-file" key={file.productId}>
                   <div className="download-file-name">{file.filename}</div>
-                  <div className="download-file-meta">
-                    {file.size} · {file.name} · payé {formatPrice(file.lineTotal)}
-                  </div>
-                  <a className="btn btn-primary download-button" href={file.url}>
-                    Télécharger
-                  </a>
-                  <p className="download-expiry">Lien temporaire valable 24 heures. Le lien source reste privé.</p>
+                  {file.error || !file.url ? (
+                    <>
+                      <div className="shop-admin-alert error" role="alert">
+                        {file.error || 'Le lien temporaire est indisponible. Contacte Caleb avec la référence de commande.'}
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-outline download-button"
+                        onClick={requestShopDeliveries}
+                        disabled={shopDeliveryStatus === 'loading'}
+                      >
+                        {shopDeliveryStatus === 'loading' ? 'Vérification…' : 'Réessayer'}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="download-file-meta">
+                        {file.size} · {file.name} · payé {formatPrice(file.lineTotal)}
+                      </div>
+                      <a className="btn btn-primary download-button" href={file.url}>
+                        Télécharger
+                      </a>
+                      <p className="download-expiry">Lien temporaire valable 24 heures. Le lien source reste privé.</p>
+                    </>
+                  )}
                 </div>
               ))}
               {downloadEmail && (
