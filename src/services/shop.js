@@ -1,6 +1,6 @@
 import { supabase } from './supabase';
 
-const PRODUCT_FIELDS = 'id, name, slug, description, tagline, highlights, category_id, badge, status, featured, sort_order, avatar, gradient, logo_url, image_url, delivery_type, download_filename, download_size';
+const PRODUCT_FIELDS = 'id, name, slug, description, tagline, highlights, category_id, badge, status, featured, sort_order, avatar, gradient, logo_url, image_url, poster_ratio, delivery_type, download_filename, download_size';
 const PLAN_FIELDS = 'id, product_id, slug, label, price, old_price, currency, sort_order, active';
 
 function attachShopData(products, plans, categories) {
@@ -131,6 +131,7 @@ export async function saveShopProduct(product, plans) {
     gradient: product.gradient,
     logo_url: product.logo_url,
     image_url: product.image_url,
+    poster_ratio: product.poster_ratio || '4/3',
     delivery_type: product.delivery_type || 'activate',
     download_filename: product.download_filename || null,
     download_size: product.download_size || null,

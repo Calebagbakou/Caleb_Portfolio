@@ -21,7 +21,7 @@ export default function ProductCard({ product }) {
 
   return (
     <Link className="product-card product-card-link" to={`/boutique/produit/${product.slug}`}>
-      <div className="product-thumb" style={{ background: product.gradient }}>
+      <div className="product-thumb" style={{ background: product.gradient, aspectRatio: product.poster_ratio || '4/3' }}>
         {product.badge && <span className="product-badge">{product.badge}</span>}
         {product.image_url && (
           <img className="product-thumb-artwork" src={product.image_url} alt="" loading="lazy" />

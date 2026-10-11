@@ -55,7 +55,10 @@ export default function Produit() {
   return (
     <main className="wrap" style={{ position: 'relative' }}>
       <div className="product-detail">
-        <div className="product-visual reveal in" style={{ background: product.gradient }}>
+        <div
+          className="product-visual reveal in"
+          style={{ background: product.gradient, aspectRatio: product.poster_ratio || '4/3' }}
+        >
           {product.image_url && (
             <img className="product-visual-artwork" src={product.image_url} alt={product.name} />
           )}

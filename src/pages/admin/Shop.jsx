@@ -26,6 +26,7 @@ const EMPTY_PRODUCT = {
   gradient: 'linear-gradient(135deg,#4285F4,#34A853)',
   logo_url: '',
   image_url: '',
+  poster_ratio: '4/3',
   access_url: '',
   delivery_type: 'activate',
   download_filename: '',
@@ -59,6 +60,7 @@ function productForm(product) {
     gradient: product.gradient || EMPTY_PRODUCT.gradient,
     logo_url: product.logo_url || '',
     image_url: product.image_url || '',
+    poster_ratio: product.poster_ratio || '4/3',
     access_url: product.access_url || '',
     delivery_type: product.delivery_type || 'activate',
     download_filename: product.download_filename || '',
@@ -401,6 +403,25 @@ export default function Shop() {
               <input id="shop-product-image" type="url" name="image_url" value={form.image_url || ''} onChange={updateProductField} placeholder="https://…" />
               <small className="project-form-hint">Lien direct et public vers le fichier image (.jpg, .png, .webp…). Les liens vers une page de partage ne s’affichent pas comme image.</small>
             </div>
+            <div className="form-group">
+              <label htmlFor="shop-product-poster-ratio">Format de l’affiche</label>
+              <select id="shop-product-poster-ratio" name="poster_ratio" value={form.poster_ratio} onChange={updateProductField}>
+                <option value="1/1">Carré — 1:1</option>
+                <option value="4/3">Paysage — 4:3</option>
+                <option value="3/4">Portrait — 3:4</option>
+                <option value="16/9">Large — 16:9</option>
+                <option value="9/16">Vertical — 9:16</option>
+              </select>
+            </div>
+            {form.image_url && (
+              <div className="form-group shop-admin-wide">
+                <span className="project-form-hint">Aperçu de l’affiche · {form.poster_ratio.replace('/', ':')}</span>
+                <div className="shop-poster-preview" style={{ aspectRatio: form.poster_ratio, background: form.gradient }}>
+                  <img src={form.image_url} alt={`Aperçu de l’affiche ${form.name || 'produit'}`} />
+                  {form.logo_url && <img className="shop-poster-preview-logo" src={form.logo_url} alt="" />}
+                </div>
+              </div>
+            )}
             <div className="form-group">
               <label htmlFor="shop-product-delivery-type">Mode de livraison</label>
               <select id="shop-product-delivery-type" name="delivery_type" value={form.delivery_type} onChange={updateProductField}>
