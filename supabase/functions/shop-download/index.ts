@@ -61,8 +61,8 @@ Deno.serve(async (request) => {
       .select(`
         expires_at,
         orders ( payment_status ),
-        products ( download_filename ),
-        product_deliveries ( access_url )
+        product_id,
+        products ( download_filename )
       `)
       .eq('token_hash', await hashToken(token))
       .maybeSingle();
@@ -73,9 +73,12 @@ Deno.serve(async (request) => {
 
     const order = Array.isArray(download.orders) ? download.orders[0] : download.orders;
     const product = Array.isArray(download.products) ? download.products[0] : download.products;
-    const delivery = Array.isArray(download.product_deliveries)
-      ? download.product_deliveries[0]
-      : download.product_deliveries;
+    const { data: delivery, error: deliveryError } = await client
+      .from('product_deliveries')
+      .select('access_url')
+      .eq('product_id', download.product_id)
+      .maybeSingle();
+    if (deliveryError) throw deliveryError;
     if (order?.payment_status !== 'confirme' || !product?.download_filename || !delivery?.access_url) {
       return new Response('La commande ne permet pas ce téléchargement.', { status: 403 });
     }
