@@ -974,9 +974,9 @@
   .professional-presentation .btn-primary{ background:#1877F2; color:#fff; }
   .professional-presentation .btn-ghost{ color:#1C1E21; border-color:#DDE3E8; background:#F0F2F5; }
   .professional-presentation .btn-ghost:hover{ color:#1C1E21; border-color:#C9CDD2; }
-  .professional-presentation .btn-shop{ background:#1877F2; color:#fff; border-color:#1877F2; box-shadow:0 6px 16px rgba(24,119,242,.2); }
-  .professional-presentation .btn-shop svg{ color:#fff; }
-  .professional-presentation .btn-shop:hover{ color:#fff; border-color:#166FE5; box-shadow:0 8px 18px rgba(24,119,242,.26); }
+  .professional-presentation .btn-shop{ color:#1C1E21; border-color:#DDE3E8; background:#F0F2F5; box-shadow:none; }
+  .professional-presentation .btn-shop svg{ color:#1C1E21; }
+  .professional-presentation .btn-shop:hover{ color:#1C1E21; border-color:#C9CDD2; box-shadow:0 5px 14px rgba(24,119,242,.18); }
   .professional-presentation .motion-sequence,
   .professional-presentation .timeline{ display:none; }
   .professional-presentation .stats{
