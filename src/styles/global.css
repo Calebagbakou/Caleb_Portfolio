@@ -271,8 +271,8 @@
   .nav-overlay.open .nav-foot{ opacity:1; transform:none; }
   .nav-foot .footer-note{ display:inline; }
   main.hero-main{ position:relative; z-index:1; padding-top: 56px; }
-  .hero-title-row{ display:flex; flex-direction:column; align-items:flex-start; }
-  .hero-title-row h1{ width:100%; }
+  .hero-title-row{ display:flex; flex-direction:column; align-items:flex-start; position:relative; }
+  .hero-title-row h1{ width:100%; position:relative; z-index:1; }
   .ai-core{
     --core-rotate-x:0deg; --core-rotate-y:0deg; --core-shift-x:0px; --core-shift-y:0px;
     width:clamp(128px, 38vw, 190px); aspect-ratio:1; flex:none; position:relative;
@@ -389,6 +389,12 @@
   .btn-primary:hover{ filter: brightness(1.06); }
   .btn-ghost{ background:transparent; color:var(--paper); border:1px solid var(--panel-line); }
   .btn-ghost:hover{ border-color:var(--teal); color:var(--teal); }
+  .btn-shop{
+    background:var(--paper); color:var(--ink); border-color:var(--teal);
+    font-weight:700; box-shadow:0 0 0 1px var(--teal-dim),0 8px 24px -16px var(--teal);
+  }
+  .btn-shop svg{ color:var(--teal); }
+  .btn-shop:hover{ border-color:var(--teal); color:var(--ink); transform:translateY(-2px); box-shadow:0 0 0 2px var(--teal-dim),0 10px 28px -14px var(--teal); }
   .btn svg{ width:16px; height:16px; flex-shrink:0; transition: transform .3s cubic-bezier(.16,.8,.24,1); }
   .btn:hover svg{ transform: translateX(3px); }
   .timeline{ position:relative; z-index:1; margin-top:48px; }
@@ -828,7 +834,7 @@
   }
 
   @media (max-width:420px){
-    .ai-core{ width:124px; margin-top:-8px; }
+    .ai-core{ position:absolute; top:-12px; right:0; z-index:0; width:112px; margin:0; opacity:.58; }
     .motion-sequence{ gap:4px; }
     .motion-step-visual{ width:42px; height:42px; border-radius:11px; }
     .motion-sequence::before{ top:21px; }
@@ -968,6 +974,9 @@
   .professional-presentation .btn-primary{ background:#1877F2; color:#fff; }
   .professional-presentation .btn-ghost{ color:#1C1E21; border-color:#DDE3E8; background:#F0F2F5; }
   .professional-presentation .btn-ghost:hover{ color:#1C1E21; border-color:#C9CDD2; }
+  .professional-presentation .btn-shop{ background:#1877F2; color:#fff; border-color:#1877F2; box-shadow:0 6px 16px rgba(24,119,242,.2); }
+  .professional-presentation .btn-shop svg{ color:#fff; }
+  .professional-presentation .btn-shop:hover{ color:#fff; border-color:#166FE5; box-shadow:0 8px 18px rgba(24,119,242,.26); }
   .professional-presentation .motion-sequence,
   .professional-presentation .timeline{ display:none; }
   .professional-presentation .stats{
