@@ -171,7 +171,7 @@ export default function Hero() {
             <span>{renderTyped(typedCount)}</span>
             <span className="type-cursor">|</span>
           </h1>
-          <AiCore />
+          {!isProfessional && <AiCore />}
         </div>
         <p className="sub">
           Vidéo IA, Design, montage vidéo et Visuels IA{' '}

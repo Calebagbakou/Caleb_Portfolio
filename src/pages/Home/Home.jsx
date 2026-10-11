@@ -8,11 +8,14 @@ import ToolsSection from './sections/ToolsSection';
 import FaqSection from './sections/FaqSection';
 import ContactSection from './sections/ContactSection';
 import TestimonialsSection from './sections/TestimonialsSection';
+import { usePresentation } from '../../context/PresentationContext';
 
 export default function Home() {
+  const { isProfessional } = usePresentation();
+
   return (
     <>
-      <ParticleField />
+      {!isProfessional && <ParticleField />}
       <Hero />
       <Stats />
       <About />
