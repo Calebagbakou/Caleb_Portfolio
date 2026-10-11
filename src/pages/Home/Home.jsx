@@ -3,7 +3,6 @@ import Stats from './sections/Stats';
 import About from './sections/About';
 import ServicesSection from './sections/ServicesSection';
 import PortfolioSection from './sections/PortfolioSection';
-import SketchfabSection from './sections/SketchfabSection';
 import ToolsSection from './sections/ToolsSection';
 import FaqSection from './sections/FaqSection';
 import ContactSection from './sections/ContactSection';
@@ -17,7 +16,6 @@ export default function Home() {
       <About />
       <ServicesSection />
       <PortfolioSection />
-      <SketchfabSection />
       <ToolsSection />
       <FaqSection />
       <ContactSection />
