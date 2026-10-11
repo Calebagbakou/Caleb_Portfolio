@@ -1,4 +1,5 @@
 import Hero from './sections/Hero';
+import ParticleField from '../../components/site/ParticleField';
 import Stats from './sections/Stats';
 import About from './sections/About';
 import ServicesSection from './sections/ServicesSection';
@@ -11,6 +12,7 @@ import TestimonialsSection from './sections/TestimonialsSection';
 export default function Home() {
   return (
     <>
+      <ParticleField />
       <Hero />
       <Stats />
       <About />

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import profileJpg from '../../../assets/profile.jpg';
 import { getSettingValue } from '../../../services/settings';
 import { usePresentation } from '../../../context/PresentationContext';
+import AiCore from '../../../components/site/AiCore';
 
 const BR = '\u0001';
 const EM_S = '\u0002';
@@ -165,10 +166,13 @@ export default function Hero() {
         <span className="hero-badge">
           <span className="dot"></span>{isProfessional ? 'CRÉATEUR VISUEL · BÉNIN' : 'CALEB CREATIVE'}
         </span>
-        <h1>
-          <span>{renderTyped(typedCount)}</span>
-          <span className="type-cursor">|</span>
-        </h1>
+        <div className="hero-title-row">
+          <h1>
+            <span>{renderTyped(typedCount)}</span>
+            <span className="type-cursor">|</span>
+          </h1>
+          <AiCore />
+        </div>
         <p className="sub">
           Vidéo IA, Design, montage vidéo et Visuels IA{' '}
           <strong>au service de vos projets, au Bénin et au-delà.</strong>
