@@ -110,3 +110,14 @@ libellé de son bouton et saisir un prix normal ainsi qu’un prix promotionnel.
 Sur les cartes de la boutique, le prix normal apparaît barré à gauche du prix
 promotionnel. Le prix promo est le seul montant utilisé dans les formules, le
 panier et le checkout; le prix normal barré sert uniquement à l’affichage.
+
+## 6. Gérer les compétences et les services
+
+Dans `/admin/competences`, les compétences affichées sur la page d’accueil
+peuvent être ajoutées, modifiées, supprimées et réordonnées. Dans
+`/admin/services`, les prestations peuvent être gérées de la même manière,
+avec une description et une icône sélectionnable. Les listes sont enregistrées
+dans la table `settings` sous `site_competencies` et `site_services`; aucune
+migration supplémentaire n’est nécessaire. Si aucune liste n’a encore été
+enregistrée, le site reprend les éléments de départ déjà présents dans le
+portfolio.

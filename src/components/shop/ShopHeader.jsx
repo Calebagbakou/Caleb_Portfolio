@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
+import useSiteLogo from '../../hooks/useSiteLogo';
 
 /**
  * showFullNav / showMobileButton : sur commande.html et confirmation.html,
@@ -9,6 +10,7 @@ import { useCart } from '../../context/CartContext';
  */
 export default function ShopHeader({ showFullNav = true, showMobileButton = true }) {
   const { count } = useCart();
+  const [logoUrl, clearLogoUrl] = useSiteLogo();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -20,7 +22,9 @@ export default function ShopHeader({ showFullNav = true, showMobileButton = true
       <header className="shop-header">
         <div className="shop-header-row">
           <Link to="/boutique" className="shop-brand">
-            <span className="shop-brand-mark">CA</span>
+            <span className={`shop-brand-mark${logoUrl ? ' has-logo' : ''}`}>
+              {logoUrl ? <img src={logoUrl} alt="" onError={clearLogoUrl} /> : 'CA'}
+            </span>
             <span className="shop-brand-text">
               Caleb Creative<span>Boutique</span>
             </span>
@@ -72,7 +76,9 @@ export default function ShopHeader({ showFullNav = true, showMobileButton = true
         <div className={`mobile-nav${mobileOpen ? ' open' : ''}`}>
           <div className="mobile-nav-top">
             <Link to="/boutique" className="shop-brand" onClick={() => setMobileOpen(false)}>
-              <span className="shop-brand-mark">CA</span>
+              <span className={`shop-brand-mark${logoUrl ? ' has-logo' : ''}`}>
+                {logoUrl ? <img src={logoUrl} alt="" onError={clearLogoUrl} /> : 'CA'}
+              </span>
               <span className="shop-brand-text">
                 Caleb Creative<span>Boutique</span>
               </span>

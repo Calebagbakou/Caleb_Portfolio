@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { usePresentation } from '../../context/PresentationContext';
+import useSiteLogo from '../../hooks/useSiteLogo';
 
 const SUN_PATH = (
   <>
@@ -12,11 +13,12 @@ const MOON_PATH = <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" />
 
 const NAV_LINKS = [
   { href: '#about', label: 'À propos', idx: '01' },
-  { href: '#services', label: 'Services', idx: '02' },
-  { href: '#portfolio', label: 'Portfolio', idx: '03' },
-  { href: '#tools', label: 'Outils', idx: '04' },
-  { href: '#faq', label: 'FAQ', idx: '05' },
-  { href: '#contact', label: 'Contact', idx: '06' },
+  { href: '#competences', label: 'Compétences', idx: '02' },
+  { href: '#services', label: 'Services', idx: '03' },
+  { href: '#portfolio', label: 'Portfolio', idx: '04' },
+  { href: '#tools', label: 'Outils', idx: '05' },
+  { href: '#faq', label: 'FAQ', idx: '06' },
+  { href: '#contact', label: 'Contact', idx: '07' },
 ];
 
 // La boutique vit dans le même dépôt/app, sous /boutique.
@@ -42,6 +44,7 @@ function PresentationSwitch({ isProfessional, compact, onToggle }) {
 
 export default function Header() {
   const { isProfessional, togglePresentation } = usePresentation();
+  const [logoUrl, clearLogoUrl] = useSiteLogo();
   const [theme, setTheme] = useState('dark');
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -94,7 +97,9 @@ export default function Header() {
       <header className={`site-header${scrolled ? ' scrolled' : ''}`}>
         <div className="top-row">
           <div className="brand">
-            <span className="brand-mark">CA</span>
+            <span className={`brand-mark${logoUrl ? ' has-logo' : ''}`}>
+              {logoUrl ? <img src={logoUrl} alt="" onError={clearLogoUrl} /> : 'CA'}
+            </span>
             <span className="brand-name">
               Caleb <span className="brand-accent">AGBAKOU</span>
               <span className="brand-sub">CALEB CREATIVE</span>

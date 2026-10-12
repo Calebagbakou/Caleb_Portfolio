@@ -8,6 +8,7 @@ import ToolsSection from './sections/ToolsSection';
 import FaqSection from './sections/FaqSection';
 import ContactSection from './sections/ContactSection';
 import TestimonialsSection from './sections/TestimonialsSection';
+import CompetenciesSection from './sections/CompetenciesSection';
 import { usePresentation } from '../../context/PresentationContext';
 
 export default function Home() {
@@ -19,6 +20,7 @@ export default function Home() {
       <Hero />
       <Stats />
       <About />
+      <CompetenciesSection />
       <ServicesSection />
       <PortfolioSection />
       <ToolsSection />

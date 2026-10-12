@@ -6,6 +6,8 @@ import '../styles/admin.css';
 const PAGES = {
   '/admin': { title: 'Vue d’ensemble', section: 'Espace de gestion' },
   '/admin/projects': { title: 'Projets', section: 'Portfolio' },
+  '/admin/competences': { title: 'Compétences', section: 'Portfolio' },
+  '/admin/services': { title: 'Services', section: 'Portfolio' },
   '/admin/media': { title: 'Médias', section: 'Portfolio' },
   '/admin/shop': { title: 'Boutique', section: 'Commerce' },
   '/admin/orders': { title: 'Commandes', section: 'Commerce' },

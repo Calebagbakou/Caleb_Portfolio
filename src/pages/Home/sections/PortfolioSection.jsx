@@ -208,8 +208,36 @@ function PortfolioRow({ row, indexOffset, onOpen, activePreviewId, lightboxOpen,
   );
 }
 
+function PortfolioLoading() {
+  return (
+    <div className="portfolio-loading" role="status" aria-label="Chargement des réalisations">
+      {[0, 1, 2].map((row) => (
+        <div className="portfolio-loading-row" key={row} aria-hidden="true">
+          <div className="portfolio-loading-heading">
+            <span className="portfolio-skeleton portfolio-skeleton-title" />
+            <span className="portfolio-skeleton portfolio-skeleton-count" />
+          </div>
+          <div className="portfolio-loading-cards">
+            {[0, 1, 2].map((card) => (
+              <div className="portfolio-loading-card" key={card}>
+                <div className="portfolio-skeleton portfolio-skeleton-thumb" />
+                <div className="portfolio-loading-body">
+                  <span className="portfolio-skeleton portfolio-skeleton-label" />
+                  <span className="portfolio-skeleton portfolio-skeleton-name" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      <span className="portfolio-loading-text">Chargement des réalisations…</span>
+    </div>
+  );
+}
+
 export default function PortfolioSection() {
-  const [projects, setProjects] = useState(LEGACY_ITEMS);
+  const [projects, setProjects] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState(null);
   const [lightboxIndex, setLightboxIndex] = useState(null);
   const [activePreviewId, setActivePreviewId] = useState(null);
@@ -232,13 +260,16 @@ export default function PortfolioSection() {
         if (error) {
           console.error('Le portfolio Supabase est indisponible ; affichage des projets historiques :', error);
           setProjects(LEGACY_ITEMS);
+          setLoading(false);
           return;
         }
         setProjects((data || []).map(prepareProject));
+        setLoading(false);
       } catch (error) {
         if (!active) return;
         console.error('Échec inattendu du chargement Supabase ; affichage des projets historiques :', error);
         setProjects(LEGACY_ITEMS);
+        setLoading(false);
       }
     }
     loadPublishedProjects();
@@ -283,7 +314,7 @@ export default function PortfolioSection() {
     <section className="wrap" id="portfolio">
       <RevealHeading eyebrow="PORTFOLIO">Quelques réalisations récentes.</RevealHeading>
 
-      {rows.length > 0 && (
+      {!loading && rows.length > 0 && (
         <div className="filters">
           {rows.map((row) => (
             <button
@@ -297,7 +328,9 @@ export default function PortfolioSection() {
         </div>
       )}
 
-      {rows.length > 0
+      {loading
+        ? <PortfolioLoading />
+        : rows.length > 0
         ? <div className="portfolio-rows" id="grid">
           {rows.map((row) => (
             <PortfolioRow

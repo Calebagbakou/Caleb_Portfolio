@@ -181,6 +181,8 @@
     font-family:'Unbounded', sans-serif; font-weight:800; font-size:14px;
     color:var(--ink); letter-spacing:-0.02em;
   }
+  .brand-mark.has-logo{ background:transparent; overflow:hidden; }
+  .brand-mark.has-logo img{ width:100%; height:100%; object-fit:contain; border-radius:inherit; }
   .brand-name{
     font-family:'Montserrat', sans-serif; font-weight:700;
     font-size:16.5px; letter-spacing:-0.01em; color:var(--paper); white-space:nowrap;
@@ -578,6 +580,25 @@
   .filter-btn.active{ background:var(--paper); color:var(--ink); border-color:var(--paper); }
 
   .portfolio-rows{ display:flex; flex-direction:column; gap:38px; }
+  .portfolio-loading{ display:grid; gap:26px; }
+  .portfolio-loading-row{ min-width:0; }
+  .portfolio-loading-heading{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+  .portfolio-loading-cards{ display:flex; gap:16px; overflow:hidden; }
+  .portfolio-loading-card{ flex:0 0 240px; overflow:hidden; border:1px solid rgba(255,255,255,.08); border-radius:14px; background:#151B22; }
+  .portfolio-skeleton{
+    display:block;
+    background:linear-gradient(105deg,#222A32 8%,#303A45 20%,#222A32 36%);
+    background-size:220% 100%;
+    animation:portfolio-shimmer 1.5s ease-in-out infinite;
+  }
+  .portfolio-skeleton-title{ width:142px; height:16px; border-radius:5px; }
+  .portfolio-skeleton-count{ width:78px; height:10px; border-radius:5px; }
+  .portfolio-skeleton-thumb{ aspect-ratio:4/3; }
+  .portfolio-loading-body{ display:grid; gap:9px; padding:13px 14px 15px; }
+  .portfolio-skeleton-label{ width:72px; height:8px; border-radius:4px; }
+  .portfolio-skeleton-name{ width:68%; height:12px; border-radius:4px; }
+  .portfolio-loading-text{ color:var(--paper-dim); font-size:11px; letter-spacing:.02em; }
+  @keyframes portfolio-shimmer{ to{ background-position-x:-220%; } }
   .p-row-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:14px; }
   .p-row-head h3{ font-family:'Montserrat', sans-serif; font-weight:700; font-size:17px; color:var(--paper); letter-spacing:-0.01em; margin:0; }
   .p-row-count{ font-family:'Poppins', monospace; font-size:11px; color:var(--paper-dim); white-space:nowrap; }
@@ -1059,6 +1080,9 @@
   .professional-presentation .filter-btn.active{ background:#1877F2; border-color:#1877F2; color:#fff; }
   .professional-presentation .portfolio-rows{ gap:26px; }
   .professional-presentation .p-row-head h3{ color:#1C1E21; font-size:16px; }
+  .professional-presentation .portfolio-loading-card{ border-color:#E6EAF0; background:#fff; box-shadow:0 2px 8px rgba(28,30,33,.04); }
+  .professional-presentation .portfolio-skeleton{ background:linear-gradient(105deg,#EDF1F5 8%,#E1E7ED 20%,#EDF1F5 36%); background-size:220% 100%; }
+  .professional-presentation .portfolio-loading-text{ color:#748197; }
   .professional-presentation .p-row-count,
   .professional-presentation .p-cat{ color:#65676B; font-family:'Inter',sans-serif; }
   .professional-presentation .p-card{ border-radius:12px; overflow:hidden; }
@@ -1124,6 +1148,10 @@
     .professional-presentation .about-cards{ grid-template-columns:1fr; }
     .professional-presentation .contact-grid{ grid-template-columns:1fr; }
   }
+  @media (prefers-reduced-motion:reduce){
+    .portfolio-skeleton{ animation:none; background:#29333E; }
+    .professional-presentation .portfolio-skeleton{ background:#E8EDF2; }
+  }
   @media (max-width:420px){
     .professional-presentation .brand-name{ font-size:12px; }
     .professional-presentation .brand-name .brand-sub{ font-size:7px; }
@@ -1142,4 +1170,36 @@
     .professional-presentation *,
     .professional-presentation *::before,
     .professional-presentation *::after{ animation:none !important; scroll-behavior:auto !important; }
+  }
+
+  /* ---------- EDITABLE COMPETENCIES ---------- */
+  .competencies-section{ position:relative; }
+  .competencies-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:14px; }
+  .competency-card{
+    position:relative; display:grid; grid-template-columns:38px minmax(0,1fr); align-items:center;
+    gap:4px 13px; min-height:100px; padding:17px 18px; overflow:hidden;
+    border:1px solid var(--panel-line); border-radius:15px;
+    background:linear-gradient(145deg,rgba(255,255,255,.04),transparent 70%),var(--panel);
+    transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease;
+  }
+  .competency-card:hover{ transform:translateY(-3px); border-color:var(--teal); box-shadow:0 12px 28px rgba(0,0,0,.1); }
+  .competency-card-index{ position:absolute; top:10px; right:12px; color:var(--paper-faint); font:600 9px 'Poppins',sans-serif; letter-spacing:.08em; }
+  .competency-card-mark{ grid-row:span 2; display:grid; place-items:center; width:36px; height:36px; border:1px solid var(--teal-dim); border-radius:11px; background:var(--teal-dim); color:var(--teal); }
+  .competency-card-mark svg{ width:19px; height:19px; }
+  .competency-card h3{ align-self:end; margin:0; padding-right:17px; color:var(--paper); font:650 13px 'Montserrat',sans-serif; line-height:1.4; }
+  .competency-card-line{ align-self:start; width:29px; height:2px; margin-top:5px; border-radius:2px; background:var(--brand-grad); }
+  .professional-presentation .competency-card{
+    border-color:#DDE3E8; background:#fff; box-shadow:0 2px 8px rgba(28,30,33,.04);
+  }
+  .professional-presentation .competency-card:hover{ border-color:#1877F2; box-shadow:0 8px 22px rgba(28,30,33,.09); }
+  .professional-presentation .competency-card-index{ color:#8A8D91; }
+  .professional-presentation .competency-card-mark{ border-color:#D9E8F8; background:#EAF2FB; color:#1877F2; }
+  .professional-presentation .competency-card h3{ color:#1C1E21; font-family:'Nunito',sans-serif; font-size:14px; }
+  .professional-presentation .competency-card-line{ background:#1877F2; }
+  @media(max-width:560px){
+    .competencies-grid{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+    .competency-card{ grid-template-columns:30px minmax(0,1fr); gap:4px 9px; min-height:89px; padding:14px 11px; }
+    .competency-card-mark{ width:29px; height:29px; border-radius:9px; }
+    .competency-card-mark svg{ width:16px; height:16px; }
+    .competency-card h3{ font-size:11px; }
   }

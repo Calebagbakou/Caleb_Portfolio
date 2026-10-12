@@ -24,6 +24,8 @@ import Projects from './pages/admin/Projects';
 import Shop from './pages/admin/Shop';
 import Orders from './pages/admin/Orders';
 import Media from './pages/admin/Media';
+import Competencies from './pages/admin/Competencies';
+import Services from './pages/admin/Services';
 
 import NotFound from './pages/NotFound';
 
@@ -67,6 +69,8 @@ export default function App() {
       >
         <Route index element={<Dashboard />} />
         <Route path="projects" element={<Projects />} />
+        <Route path="competences" element={<Competencies />} />
+        <Route path="services" element={<Services />} />
         <Route path="media" element={<Media />} />
         <Route path="shop" element={<Shop />} />
         <Route path="orders" element={<Orders />} />

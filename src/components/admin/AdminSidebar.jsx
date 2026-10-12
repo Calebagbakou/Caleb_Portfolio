@@ -33,19 +33,19 @@ export default function AdminSidebar({ onLogout }) {
           </svg>
           Projets
         </NavLink>
-        <a href="#soon-competences" onClick={(e) => e.preventDefault()}>
+        <NavLink to="/admin/competences">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path d="M12 2l2.5 6.5H21l-5.3 4 2 6.5-5.7-4-5.7 4 2-6.5L3 8.5h6.5z" />
           </svg>
-          Compétences<span className="soon">bientôt</span>
-        </a>
-        <a href="#soon-services" onClick={(e) => e.preventDefault()}>
+          Compétences
+        </NavLink>
+        <NavLink to="/admin/services">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <circle cx="12" cy="12" r="9" />
             <path d="M9 12l2 2 4-4" />
           </svg>
-          Services<span className="soon">bientôt</span>
-        </a>
+          Services
+        </NavLink>
 
         <div className="admin-nav-label">Médias</div>
         <NavLink to="/admin/media">
