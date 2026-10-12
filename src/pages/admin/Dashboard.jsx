@@ -30,9 +30,35 @@ export default function Dashboard() {
 
   return (
     <>
+      <section className="dashboard-intro">
+        <div className="dashboard-intro-copy">
+          <span className="dashboard-eyebrow">Votre espace de pilotage</span>
+          <h2>Tout votre site, au même endroit.</h2>
+          <p>Suivez votre activité et gérez votre portfolio et votre boutique en quelques clics.</p>
+        </div>
+        <div className="dashboard-intro-actions">
+          <Link className="btn btn-primary" to="/admin/projects">Ajouter un projet</Link>
+          <Link className="dashboard-text-link" to="/boutique" target="_blank" rel="noreferrer">
+            Voir la boutique <span aria-hidden="true">↗</span>
+          </Link>
+        </div>
+      </section>
+
+      <div className="dashboard-section-heading">
+        <div>
+          <span className="dashboard-eyebrow">En un coup d’œil</span>
+          <h2>Activité du site</h2>
+        </div>
+        <span className="dashboard-live"><span /> Données en direct</span>
+      </div>
+
       <div className="stat-grid">
         {CARD_LABELS.map(({ key, label }) => (
           <div className="stat-card" key={key}>
+            <div className="stat-card-top">
+              <span className="stat-card-icon" aria-hidden="true" />
+              <span className="stat-card-dot" aria-hidden="true" />
+            </div>
             <div className="n">{counts ? counts[key] ?? '—' : '—'}</div>
             <div className="l">{label}</div>
           </div>
@@ -40,21 +66,24 @@ export default function Dashboard() {
       </div>
 
       {error && (
-        <div className="panel" style={{ borderColor: 'var(--danger)' }}>
+        <div className="panel dashboard-error">
           <h2>Erreur de chargement</h2>
           <p>Impossible de charger les statistiques depuis Supabase : {error.message}</p>
         </div>
       )}
 
-      <div className="panel">
-        <h2>Gère ton contenu sans modifier le code</h2>
-        <p>Administre ton portfolio, les textes et produits de la boutique ainsi que le suivi des commandes.</p>
-        <div className="row-actions" style={{ marginTop: 16 }}>
-          <Link className="btn btn-primary" to="/admin/projects">Gérer les projets</Link>
-          <Link className="btn btn-secondary" to="/admin/shop">Gérer la boutique</Link>
-          <Link className="btn btn-secondary" to="/admin/orders">Voir les commandes</Link>
+      <section className="dashboard-quick-panel">
+        <div>
+          <span className="dashboard-eyebrow">Accès rapide</span>
+          <h2>Que souhaitez-vous faire ?</h2>
+          <p>Les outils essentiels pour garder votre site à jour.</p>
         </div>
-      </div>
+        <div className="dashboard-quick-links">
+          <Link to="/admin/projects"><span className="dashboard-quick-icon">↗</span><span><strong>Gérer les projets</strong><small>Portfolio et réalisations</small></span><span className="dashboard-quick-arrow">→</span></Link>
+          <Link to="/admin/shop"><span className="dashboard-quick-icon">◆</span><span><strong>Gérer la boutique</strong><small>Produits et tarifs</small></span><span className="dashboard-quick-arrow">→</span></Link>
+          <Link to="/admin/orders"><span className="dashboard-quick-icon">↳</span><span><strong>Suivre les commandes</strong><small>Paiements et activations</small></span><span className="dashboard-quick-arrow">→</span></Link>
+        </div>
+      </section>
     </>
   );
 }
