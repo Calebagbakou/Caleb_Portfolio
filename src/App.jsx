@@ -28,8 +28,11 @@ import Competencies from './pages/admin/Competencies';
 import Services from './pages/admin/Services';
 
 import NotFound from './pages/NotFound';
+import useSiteFavicon from './hooks/useSiteFavicon';
 
 export default function App() {
+  useSiteFavicon();
+
   return (
     <Routes>
       {/* ================= SITE PUBLIC (portfolio one-page) ================= */}
