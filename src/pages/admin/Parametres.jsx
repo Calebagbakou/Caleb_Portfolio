@@ -71,7 +71,7 @@ export default function Parametres() {
     setSaveMsg('');
     setSaveError(false);
 
-    const rows = SIMPLE_KEYS.map((key) => ({ key, value: form[key].trim() || null }));
+    const rows = SIMPLE_KEYS.map((key) => ({ key, value: form[key].trim() }));
 
     const social = {};
     for (const [inputId, socialKey] of Object.entries(SOCIAL_FIELDS)) {
@@ -80,15 +80,17 @@ export default function Parametres() {
     }
     rows.push({ key: 'social_links', value: social });
 
-    const { error } = await saveSettings(rows);
-    setSaving(false);
-
-    if (error) {
-      console.error(error);
+    try {
+      const { error } = await saveSettings(rows);
+      if (error) throw error;
+    } catch (error) {
+      console.error('Impossible d’enregistrer les paramètres :', error);
       setSaveMsg('Erreur : ' + error.message);
       setSaveError(true);
+      setSaving(false);
       return;
     }
+    setSaving(false);
 
     setSaveMsg('✓ Paramètres enregistrés.');
     setTimeout(() => setSaveMsg(''), 4000);
