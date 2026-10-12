@@ -106,8 +106,8 @@ export default function Produit() {
                     <span>{pl.label}{!pl.active && <small className="plan-unavailable-label">Indisponible pour le moment</small>}</span>
                   </span>
                   <span className="price">
-                    {formatPrice(pl.price)}
-                    {pl.priceEur && (
+                    {formatPrice(product.promo_price ?? pl.price)}
+                    {product.promo_price == null && pl.priceEur && (
                       <small style={{ display: 'block', fontWeight: 500, color: 'var(--ink-faint)', fontSize: 11 }}>
                         {pl.priceEur}
                       </small>

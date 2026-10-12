@@ -93,6 +93,7 @@ export function CartProvider({ children }) {
         if (!product) return null;
         const plan = findPlan(product, it.planId);
         if (!plan || plan.active === false) return null;
+        const unitPrice = product.promo_price ?? plan.price;
         return {
           productId: product.id,
           planId: plan.id,
@@ -101,10 +102,10 @@ export function CartProvider({ children }) {
           planLabel: plan.label,
           avatar: product.avatar,
           gradient: product.gradient,
-          unitPrice: plan.price,
+          unitPrice,
           currency: plan.currency,
           qty: it.qty,
-          lineTotal: plan.price * it.qty,
+          lineTotal: unitPrice * it.qty,
         };
       })
       .filter(Boolean);

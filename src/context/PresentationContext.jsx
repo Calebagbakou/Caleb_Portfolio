@@ -6,10 +6,10 @@ const PresentationContext = createContext(null);
 export function PresentationProvider({ children }) {
   const [presentation, setPresentation] = useState(() => {
     try {
-      return localStorage.getItem(PRESENTATION_KEY) === 'professional' ? 'professional' : 'creative';
+      return localStorage.getItem(PRESENTATION_KEY) === 'creative' ? 'creative' : 'professional';
     } catch (error) {
       console.warn('Impossible de lire la présentation mémorisée :', error);
-      return 'creative';
+      return 'professional';
     }
   });
 

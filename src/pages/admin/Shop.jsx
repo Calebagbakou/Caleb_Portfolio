@@ -21,6 +21,9 @@ const EMPTY_PRODUCT = {
   highlights: '',
   category_id: '',
   badge: '',
+  cta_label: 'Acheter maintenant',
+  regular_price: '',
+  promo_price: '',
   status: 'active',
   featured: false,
   avatar: '',
@@ -32,7 +35,7 @@ const EMPTY_PRODUCT = {
   delivery_type: 'activate',
   download_filename: '',
   download_size: '',
-  plans: [{ id: null, slug: '', label: '', price: '', old_price: '', currency: 'XOF', active: true }],
+  plans: [{ id: null, slug: '', label: '', currency: 'XOF', active: true }],
 };
 
 const CONTENT_FIELDS = [
@@ -57,6 +60,9 @@ function productForm(product) {
     ...product,
     highlights: (product.highlights || []).join('\n'),
     badge: product.badge || '',
+    cta_label: product.cta_label || 'Acheter maintenant',
+    regular_price: product.regular_price ?? '',
+    promo_price: product.promo_price ?? '',
     avatar: product.avatar || '',
     gradient: product.gradient || EMPTY_PRODUCT.gradient,
     logo_url: product.logo_url || '',
@@ -67,7 +73,7 @@ function productForm(product) {
     download_filename: product.download_filename || '',
     download_size: product.download_size || '',
     plans: product.plans.length
-      ? product.plans.map((plan) => ({ ...plan, old_price: plan.old_price ?? '' }))
+      ? product.plans.map((plan) => ({ ...plan }))
       : EMPTY_PRODUCT.plans,
   };
 }
@@ -146,8 +152,17 @@ export default function Shop() {
       return;
     }
     const activePlans = form.plans.filter((plan) => plan.active);
-    if (!activePlans.length || activePlans.some((plan) => !plan.label.trim() || Number(plan.price) <= 0)) {
-      setError('Ajoute au moins une formule active avec un libellé et un prix supérieur à zéro.');
+    if (!activePlans.length || activePlans.some((plan) => !plan.label.trim())) {
+      setError('Ajoute au moins une formule active avec un libellé.');
+      return;
+    }
+    if (!form.regular_price || !form.promo_price
+      || Number(form.regular_price) <= 0 || Number(form.promo_price) <= 0) {
+      setError('Renseigne le prix normal et le prix promotionnel du produit.');
+      return;
+    }
+    if (Number(form.promo_price) >= Number(form.regular_price)) {
+      setError('Le prix promotionnel doit être inférieur au prix normal du produit.');
       return;
     }
     if (form.delivery_type === 'download'
@@ -175,6 +190,9 @@ export default function Shop() {
       tagline: form.tagline.trim() || null,
       highlights: form.highlights.split('\n').map((line) => line.trim()).filter(Boolean),
       badge: form.badge.trim() || null,
+      cta_label: form.cta_label,
+      regular_price: Number(form.regular_price),
+      promo_price: Number(form.promo_price),
       avatar: form.avatar.trim() || null,
       gradient: form.gradient.trim() || null,
       logo_url: form.logo_url.trim() || null,
@@ -373,6 +391,15 @@ export default function Shop() {
               </select>
             </div>
             <div className="form-group">
+              <label htmlFor="shop-product-regular-price">Prix normal du produit (FCFA)</label>
+              <input id="shop-product-regular-price" type="number" min="1" step="1" name="regular_price" value={form.regular_price} onChange={updateProductField} required />
+            </div>
+            <div className="form-group">
+              <label htmlFor="shop-product-promo-price">Prix promotionnel du produit (FCFA)</label>
+              <input id="shop-product-promo-price" type="number" min="1" step="1" name="promo_price" value={form.promo_price} onChange={updateProductField} required />
+              <small className="project-form-hint">Le prix normal sera affiché barré à gauche; celui-ci sera affiché à droite.</small>
+            </div>
+            <div className="form-group">
               <label htmlFor="shop-product-tagline">Accroche</label>
               <input id="shop-product-tagline" name="tagline" value={form.tagline || ''} onChange={updateProductField} />
             </div>
@@ -387,6 +414,17 @@ export default function Shop() {
             <div className="form-group">
               <label htmlFor="shop-product-badge">Badge (facultatif)</label>
               <input id="shop-product-badge" name="badge" value={form.badge || ''} onChange={updateProductField} />
+            </div>
+            <div className="form-group">
+              <label htmlFor="shop-product-cta">Bouton sur l’affiche</label>
+              <select id="shop-product-cta" name="cta_label" value={form.cta_label} onChange={updateProductField}>
+                <option>Acheter maintenant</option>
+                <option>Payer maintenant</option>
+                <option>Activer maintenant</option>
+                <option>Profiter de l'offre</option>
+                <option>Obtenir le fichier</option>
+                <option>Télécharger maintenant</option>
+              </select>
             </div>
             <div className="form-group">
               <label htmlFor="shop-product-avatar">Initiales visuelles</label>
@@ -475,10 +513,11 @@ export default function Shop() {
 
           <div className="shop-admin-plans">
             <div className="shop-admin-plans-heading">
-              <h3>Formules et prix</h3>
+              <h3>Formules</h3>
+              <small className="project-form-hint">Le prix promo saisi plus haut s’applique à toutes les formules et sera facturé.</small>
               <button className="btn btn-secondary btn-sm" type="button" onClick={() => setForm((current) => ({
                 ...current,
-                plans: [...current.plans, { id: null, slug: '', label: '', price: '', old_price: '', currency: 'XOF', active: true }],
+                plans: [...current.plans, { id: null, slug: '', label: '', currency: 'XOF', active: true }],
               }))}>Ajouter une formule</button>
             </div>
             {form.plans.map((plan, index) => (
@@ -486,14 +525,6 @@ export default function Shop() {
                 <div className="form-group">
                   <label htmlFor={`plan-label-${index}`}>Formule</label>
                   <input id={`plan-label-${index}`} value={plan.label} onChange={(event) => updatePlan(index, 'label', event.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label htmlFor={`plan-price-${index}`}>Prix (FCFA)</label>
-                  <input id={`plan-price-${index}`} type="number" min="1" step="1" value={plan.price} onChange={(event) => updatePlan(index, 'price', event.target.value)} />
-                </div>
-                <div className="form-group">
-                  <label htmlFor={`plan-old-price-${index}`}>Ancien prix (facultatif)</label>
-                  <input id={`plan-old-price-${index}`} type="number" min="0" step="1" value={plan.old_price} onChange={(event) => updatePlan(index, 'old_price', event.target.value)} />
                 </div>
                 <label className="shop-admin-check">
                   <input type="checkbox" checked={plan.active} onChange={(event) => updatePlan(index, 'active', event.target.checked)} />
@@ -539,7 +570,10 @@ export default function Shop() {
                     {product.featured && <span className="badge badge-unread">À la une</span>}
                   </div>
                   <h3>{product.name}</h3>
-                  <p>{product.plans.filter((plan) => plan.active).map((plan) => `${plan.label} · ${plan.price.toLocaleString('fr-FR')} FCFA`).join(' / ') || 'Aucune formule active'}</p>
+                  <p>
+                    {product.plans.filter((plan) => plan.active).map((plan) => plan.label).join(' / ') || 'Aucune formule active'}
+                    {product.promo_price ? ` · Promo ${Number(product.promo_price).toLocaleString('fr-FR')} FCFA` : ''}
+                  </p>
                 </div>
                 <div className="row-actions">
                   <button className="btn btn-secondary btn-sm" type="button" onClick={() => editProduct(product)}>Modifier</button>

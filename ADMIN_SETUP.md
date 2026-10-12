@@ -98,3 +98,15 @@ Le public ne reçoit que les projets `published = true`. La lecture publique et
 les droits admin sont aussi contrôlés par RLS, pas seulement par le routage
 React. Les données portfolio historiques restent affichées en secours si
 Supabase ne répond pas, sans masquer les erreurs dans la console.
+
+## 5. Choisir le bouton d’appel à l’action de la boutique
+
+Avant de déployer la mise à jour, exécute
+[`supabase/migrations/015_shop_product_cta_label.sql`](./supabase/migrations/015_shop_product_cta_label.sql)
+et [`supabase/migrations/016_shop_product_prices.sql`](./supabase/migrations/016_shop_product_prices.sql),
+puis [`supabase/migrations/017_shop_checkout_uses_product_promo_price.sql`](./supabase/migrations/017_shop_checkout_uses_product_promo_price.sql)
+dans SQL Editor. Dans `/admin/shop`, chaque produit peut ensuite choisir le
+libellé de son bouton et saisir un prix normal ainsi qu’un prix promotionnel.
+Sur les cartes de la boutique, le prix normal apparaît barré à gauche du prix
+promotionnel. Le prix promo est le seul montant utilisé dans les formules, le
+panier et le checkout; le prix normal barré sert uniquement à l’affichage.

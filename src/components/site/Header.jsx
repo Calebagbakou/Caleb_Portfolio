@@ -25,11 +25,11 @@ const SHOP_URL = '/boutique';
 function PresentationSwitch({ isProfessional, compact, onToggle }) {
   return (
     <button
-      className={`presentation-switch${compact ? ' presentation-switch-compact' : ' presentation-switch-creative'}${isProfessional ? ' is-on' : ''}`}
+      className={`presentation-switch${compact ? ' presentation-switch-compact' : ' presentation-switch-creative'}${!isProfessional ? ' is-on' : ''}`}
       type="button"
       role="switch"
       aria-label="Bascule rendu"
-      aria-checked={isProfessional}
+      aria-checked={!isProfessional}
       onClick={onToggle}
     >
       {!compact && <span className="presentation-switch-label">Bascule rendu</span>}
