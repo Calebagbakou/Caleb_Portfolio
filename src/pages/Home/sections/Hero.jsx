@@ -42,7 +42,7 @@ function renderTyped(n) {
 
 export default function Hero() {
   const { isProfessional } = usePresentation();
-  const [profileImage, setProfileImage] = useState(null);
+  const [profileImage, setProfileImage] = useState(profileJpg);
   const [typedCount, setTypedCount] = useState(prefersReducedMotion ? FULL_TEXT.length : 0);
   const [activeChapter, setActiveChapter] = useState(0);
   const [scrubPct, setScrubPct] = useState(0);
@@ -211,6 +211,9 @@ export default function Hero() {
                   alt="Photo de profil de Caleb Jesugnon AGBAKOU"
                   loading="eager"
                   fetchpriority="high"
+                  onError={() => {
+                    if (profileImage !== profileJpg) setProfileImage(profileJpg);
+                  }}
                 />
               )}
             </div>
