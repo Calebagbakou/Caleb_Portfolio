@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import profileJpg from '../../../assets/profile.jpg';
+import profileJpg from '../../../assets/profile1.jpg';
 import { getSettingValue } from '../../../services/settings';
 import { usePresentation } from '../../../context/PresentationContext';
 import AiCore from '../../../components/site/AiCore';
