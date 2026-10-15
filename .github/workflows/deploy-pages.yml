@@ -36,7 +36,7 @@ jobs:
           fi
           echo "KKiaPay public key is configured."
       - name: Build site
-        run: npm run build -- --base=/Caleb_Portfolio/
+        run: npm run build -- --base=/
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}

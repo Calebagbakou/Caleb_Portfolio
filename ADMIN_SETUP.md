@@ -68,7 +68,7 @@ Il ne faut jamais y mettre la clé `service_role`. Relance ensuite le workflow
 **Deploy portfolio to GitHub Pages**. La copie `404.html` permet aussi aux
 routes React comme `/admin` de s'ouvrir directement sur GitHub Pages.
 
-Pour utiliser `calebcreative.com/admin`, le domaine doit déjà être relié à
+Pour utiliser `calebcreative.online/admin`, le domaine doit déjà être relié à
 l'hébergement du site et être autorisé comme URL de redirection dans
 **Supabase → Authentication → URL Configuration**. Le code seul ne configure
 pas le DNS du domaine. Si le domaine est relié directement à GitHub Pages, le
