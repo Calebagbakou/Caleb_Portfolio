@@ -302,6 +302,10 @@ export function getBuyerAccount() {
   return supabase.functions.invoke('shop-account', { body: {} });
 }
 
+export function deleteBuyerAccount() {
+  return supabase.functions.invoke('delete-buyer-account');
+}
+
 async function getFunctionErrorMessage(error) {
   const response = error?.context;
   if (response && typeof response.clone === 'function') {

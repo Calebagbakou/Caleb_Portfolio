@@ -15,3 +15,6 @@ verify_jwt = false
 
 [functions.verify-saspay-payment]
 verify_jwt = false
+
+[functions.delete-buyer-account]
+verify_jwt = false

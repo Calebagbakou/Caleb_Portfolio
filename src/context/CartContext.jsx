@@ -102,6 +102,8 @@ export function CartProvider({ children }) {
           planLabel: plan.label,
           avatar: product.avatar,
           gradient: product.gradient,
+          logoUrl: product.logo_url || '',
+          imageUrl: product.image_url || '',
           unitPrice,
           currency: plan.currency,
           qty: it.qty,

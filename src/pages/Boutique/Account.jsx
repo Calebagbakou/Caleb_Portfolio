@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getBuyerAccount, getShopOrderDeliveries } from '../../services/shop';
+import { deleteBuyerAccount, getBuyerAccount, getShopOrderDeliveries } from '../../services/shop';
 import { formatPrice } from '../../data/products';
 
 export default function Account() {
@@ -24,7 +24,28 @@ export default function Account() {
   }, []);
 
   async function handleLogout() {
+    if (!window.confirm('Es-tu sûr de vouloir te déconnecter ?')) return;
     await logout();
+    navigate('/boutique', { replace: true });
+  }
+
+  async function handleDeleteAccount() {
+    const confirmed = window.confirm(
+      'Es-tu sûr de vouloir supprimer ton compte ? Cette action supprimera ta connexion et anonymisera les informations personnelles liées à tes commandes.',
+    );
+    if (!confirmed) return;
+    setError('');
+    const { error: deleteError } = await deleteBuyerAccount();
+    if (deleteError) {
+      console.error('Suppression du compte client impossible :', deleteError);
+      setError(deleteError.message || 'Le compte n’a pas pu être supprimé.');
+      return;
+    }
+    try {
+      localStorage.removeItem('caleb_boutique_cart_v1');
+    } catch (storageError) {
+      console.error('Impossible de vider le panier local après suppression du compte :', storageError);
+    }
     navigate('/boutique', { replace: true });
   }
 
@@ -63,6 +84,9 @@ export default function Account() {
             onClick={() => navigate('/boutique/connexion?mode=reset')}
           >
             Modifier mon mot de passe
+          </button>
+          <button type="button" className="account-danger-action" onClick={handleDeleteAccount}>
+            Supprimer mon compte
           </button>
         </section>
 

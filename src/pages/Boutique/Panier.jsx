@@ -40,7 +40,13 @@ export default function Panier() {
             {details.map((line) => (
               <div className="cart-line" key={`${line.productId}-${line.planId}`}>
                 <div className="cart-line-avatar" style={{ background: line.gradient }}>
-                  <span>{line.avatar}</span>
+                  {line.logoUrl ? (
+                    <img src={line.logoUrl} alt="" />
+                  ) : line.imageUrl ? (
+                    <img src={line.imageUrl} alt="" />
+                  ) : (
+                    <span>{line.avatar}</span>
+                  )}
                 </div>
                 <div className="cart-line-info">
                   <div className="cart-line-name">{line.name}</div>
