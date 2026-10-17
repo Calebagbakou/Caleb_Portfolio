@@ -16,8 +16,13 @@ export default function BuyerAuth() {
   const [mode, setMode] = useState(searchParams.get('mode') === 'reset' ? 'reset' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [confirmationCode, setConfirmationCode] = useState('');
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
+  const [isRecoveryFlow, setIsRecoveryFlow] = useState(
+    () => new URLSearchParams(window.location.hash.replace(/^#/, '')).get('type') === 'recovery',
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -27,7 +32,20 @@ export default function BuyerAuth() {
   }, []);
 
   useEffect(() => {
-    if (authLoading || !user?.email_confirmed_at) return;
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecoveryFlow(true);
+        setMode('reset');
+        setError('');
+        setNotice('');
+      }
+    });
+
+    return () => listener?.subscription?.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (authLoading || isRecoveryFlow || !user?.email_confirmed_at) return;
     if (!isAllowedBuyerEmail(user.email)) {
       setError('Seules les adresses @gmail.com et @outlook.com sont autorisées pour commander.');
       supabase.auth.signOut().catch((signOutError) => {
@@ -36,7 +54,7 @@ export default function BuyerAuth() {
       return;
     }
     navigate(nextPath, { replace: true });
-  }, [authLoading, navigate, nextPath, user]);
+  }, [authLoading, isRecoveryFlow, navigate, nextPath, user]);
 
   function validateEmail() {
     if (!isAllowedBuyerEmail(email)) {
@@ -156,6 +174,32 @@ export default function BuyerAuth() {
     }
   }
 
+  async function handleNewPassword(event) {
+    event.preventDefault();
+    setError('');
+    setNotice('');
+    if (newPassword.length < 8) {
+      setError('Le nouveau mot de passe doit contenir au moins 8 caractères.');
+      return;
+    }
+    if (newPassword !== passwordConfirmation) {
+      setError('Les deux mots de passe ne correspondent pas.');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+      if (updateError) throw updateError;
+      setIsRecoveryFlow(false);
+      navigate('/boutique/compte', { replace: true });
+    } catch (updateError) {
+      console.error('Mise à jour du mot de passe client impossible :', updateError);
+      setError(updateError.message || 'Le nouveau mot de passe n’a pas pu être enregistré.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   async function handleGoogleSignIn() {
     setError('');
     setNotice('');
@@ -178,8 +222,11 @@ export default function BuyerAuth() {
 
   function changeMode(nextMode) {
     setMode(nextMode);
+    setIsRecoveryFlow(false);
     setAwaitingConfirmation(false);
     setConfirmationCode('');
+    setNewPassword('');
+    setPasswordConfirmation('');
     setError('');
     setNotice('');
   }
@@ -193,12 +240,14 @@ export default function BuyerAuth() {
       <section className="buyer-auth-card">
         <Link className="buyer-auth-back" to="/boutique/panier">← Retour au panier</Link>
         <div className="eyebrow">COMPTE CLIENT</div>
-        <h1>{awaitingConfirmation ? 'Confirme ton e-mail' : mode === 'reset' ? 'Réinitialiser ton mot de passe' : 'Connecte-toi pour commander'}</h1>
+        <h1>{awaitingConfirmation ? 'Confirme ton e-mail' : mode === 'reset' && isRecoveryFlow ? 'Choisis un nouveau mot de passe' : mode === 'reset' ? 'Réinitialiser ton mot de passe' : 'Connecte-toi pour commander'}</h1>
         <p className="buyer-auth-intro">
           {awaitingConfirmation
             ? `Saisis le code reçu à ${email.trim()} pour confirmer ton adresse.`
             : mode === 'reset'
-              ? 'Renseigne ton adresse et nous t’enverrons un lien sécurisé.'
+              ? isRecoveryFlow
+                ? 'Ton lien est valide. Définis un nouveau mot de passe pour sécuriser ton compte.'
+                : 'Renseigne ton adresse et nous t’enverrons un lien sécurisé.'
             : 'Connecte-toi ou crée un compte pour continuer vers le paiement sécurisé.'}
         </p>
 
@@ -243,6 +292,37 @@ export default function BuyerAuth() {
             </button>
             <button className="buyer-auth-resend" type="button" onClick={resendConfirmationCode} disabled={submitting}>
               Renvoyer le code
+            </button>
+          </form>
+        ) : mode === 'reset' && isRecoveryFlow ? (
+          <form className="buyer-auth-form" onSubmit={handleNewPassword}>
+            <div className="form-group">
+              <label htmlFor="buyer-new-password">Nouveau mot de passe</label>
+              <input
+                autoComplete="new-password"
+                id="buyer-new-password"
+                type="password"
+                minLength={8}
+                required
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+              />
+              <small>8 caractères minimum.</small>
+            </div>
+            <div className="form-group">
+              <label htmlFor="buyer-password-confirmation">Confirmer le mot de passe</label>
+              <input
+                autoComplete="new-password"
+                id="buyer-password-confirmation"
+                type="password"
+                minLength={8}
+                required
+                value={passwordConfirmation}
+                onChange={(event) => setPasswordConfirmation(event.target.value)}
+              />
+            </div>
+            <button className="btn btn-primary btn-full" type="submit" disabled={submitting}>
+              {submitting ? 'Enregistrement…' : 'Enregistrer le nouveau mot de passe'}
             </button>
           </form>
         ) : mode === 'reset' ? (
