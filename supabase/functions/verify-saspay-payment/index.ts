@@ -14,40 +14,19 @@ Deno.serve(async (request) => {
     const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
     const { apiBaseUrl, authorizationHeader } = getSasPayConfig();
     const { orderId, sessionId: requestedSessionId } = await request.json();
-
-    // If no orderId or it's invalid, abort early
-    if (typeof orderId !== 'string') {
-      return jsonResponse({ error: 'Requête invalide.' }, 400);
+    if (!accessToken || typeof orderId !== 'string') {
+      return jsonResponse({ error: 'Session de paiement invalide.' }, 400);
     }
 
     const client = getServiceClient();
-    // Try to authenticate the caller. If there's no access token or user, allow an
-    // unauthenticated verification only when a saspay session id is provided by
-    // the redirect (preuve de flux de paiement).
-    let userEmail = null;
-    if (accessToken) {
-      const { data: userData, error: authError } = await client.auth.getUser(accessToken);
-      if (!authError && userData?.user?.email) userEmail = userData.user.email.trim().toLowerCase();
-    }
-
-    // Fetch the order. If the caller is authenticated, ensure the order belongs to them.
-    let orderQuery = client.from('orders').select('id, ref, total, currency, payment_status, payment_transaction_id, customers!inner(email)').eq('id', orderId).maybeSingle();
-    let orderResult;
-    if (userEmail) {
-      // Narrow by customer email when authenticated
-      orderQuery = client.from('orders')
-        .select('id, ref, total, currency, payment_status, payment_transaction_id, customers!inner(email)')
-        .eq('id', orderId)
-        .eq('customers.email', userEmail)
-        .maybeSingle();
-      orderResult = await orderQuery;
-    } else {
-      // Unauthenticated: require a sessionId from the redirect to avoid exposing orders
-      if (!requestedSessionId) return jsonResponse({ error: 'Session client non authentifiée. Le saspay_session_id est requis.' }, 401);
-      orderResult = await client.from('orders').select('id, ref, total, currency, payment_status, payment_transaction_id').eq('id', orderId).maybeSingle();
-    }
-
-    const { data: order, error: orderError } = orderResult;
+    const { data: { user }, error: authError } = await client.auth.getUser(accessToken);
+    if (authError || !user?.email) return jsonResponse({ error: 'Session client invalide.' }, 401);
+    const { data: order, error: orderError } = await client
+      .from('orders')
+      .select('id, ref, total, currency, payment_status, payment_transaction_id, customers!inner(email)')
+      .eq('id', orderId)
+      .eq('customers.email', user.email.trim().toLowerCase())
+      .maybeSingle();
     if (orderError) throw orderError;
     if (!order) return jsonResponse({ error: 'Cette commande est introuvable.' }, 404);
 
@@ -66,6 +45,23 @@ Deno.serve(async (request) => {
         order: await getOrderReceipt(client, order.id),
         message: 'SasPay n’a pas encore confirmé ce paiement.',
       });
+    }
+    const providerSessionId = String(payload?.id || payload?.session_id || payload?.data?.id || sessionId);
+    if (providerSessionId !== sessionId) {
+      return jsonResponse({ error: 'La session SasPay ne correspond pas à cette commande.' }, 409);
+    }
+    const providerAmount = payload?.amount ?? payload?.data?.amount ?? payload?.total ?? payload?.data?.total;
+    if (providerAmount !== undefined && Number(providerAmount) !== Number(order.total)) {
+      console.error('Montant SasPay différent du montant de la commande :', {
+        orderId: order.id,
+        orderAmount: order.total,
+        providerAmount,
+      });
+      return jsonResponse({ error: 'Le montant confirmé ne correspond pas à la commande.' }, 409);
+    }
+    const providerCurrency = String(payload?.currency || payload?.data?.currency || '').toUpperCase();
+    if (providerCurrency && providerCurrency !== String(order.currency || 'XOF').toUpperCase()) {
+      return jsonResponse({ error: 'La devise confirmée ne correspond pas à la commande.' }, 409);
     }
     const transactionId = String(payload.transaction_id || sessionId);
     if (order.payment_transaction_id && order.payment_transaction_id !== sessionId) {
