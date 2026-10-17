@@ -34,11 +34,12 @@ async function createSignatures(secret: string, body: string, hash: 'SHA-256' | 
 function getSignature(request: Request) {
   const value = request.headers.get('x-sasapay-signature')
     || request.headers.get('x-saspay-signature')
+    || request.headers.get('x-sasapay-webhook-signature')
     || request.headers.get('x-webhook-signature')
     || request.headers.get('x-signature')
     || request.headers.get('signature')
     || '';
-  return value.replace(/^sha(?:256|512)=/i, '').trim();
+  return value.replace(/^(?:hmac\s+|sha(?:256|512)=)/i, '').trim();
 }
 
 Deno.serve(async (request) => {
@@ -66,9 +67,24 @@ Deno.serve(async (request) => {
       firstValue(payload.amount, nested.amount),
     ];
     const signatureMessage = signatureParts.map((value) => String(value ?? '')).join('-');
-    const signatureInputs = signatureParts.every((value) => value !== undefined && value !== null && String(value).trim() !== '')
-      ? [signatureMessage, rawBody]
-      : [rawBody];
+    const compactPayload = [
+      payload.reference,
+      payload.amount,
+      payload.currency,
+    ].map((value) => String(value ?? '')).join('-');
+    const transactionPayload = [
+      payload.msisdn,
+      payload.reference,
+      payload.amount,
+    ].map((value) => String(value ?? '')).join('-');
+    const signatureInputs = [
+      signatureParts.every((value) => value !== undefined && value !== null && String(value).trim() !== '')
+        ? signatureMessage
+        : '',
+      compactPayload,
+      transactionPayload,
+      rawBody,
+    ].filter((input, index, inputs) => input && inputs.indexOf(input) === index);
     const expectedSignatures = [];
     for (const input of signatureInputs) {
       expectedSignatures.push(...await createSignatures(webhookSecret, input, 'SHA-512'));
