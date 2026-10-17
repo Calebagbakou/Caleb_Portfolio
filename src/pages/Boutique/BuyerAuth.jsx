@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import ShopAlert from '../../components/shop/ShopAlert';
+import { getShopErrorMessage } from '../../utils/shopErrors';
 import { supabase } from '../../services/supabase';
 import {
   getBuyerAuthRedirectUrl,
@@ -148,7 +150,7 @@ export default function BuyerAuth() {
       setNotice(`Un nouveau code a été envoyé à ${email.trim()}.`);
     } catch (resendError) {
       console.error('Impossible de renvoyer le code de confirmation :', resendError);
-      setError(resendError.message || 'Le code n’a pas pu être renvoyé.');
+      setError(getShopErrorMessage(resendError, 'Le code n’a pas pu être renvoyé.'));
     } finally {
       setSubmitting(false);
     }
@@ -168,7 +170,7 @@ export default function BuyerAuth() {
       setNotice('Un lien de réinitialisation a été envoyé à cette adresse.');
     } catch (resetError) {
       console.error('Réinitialisation du mot de passe impossible :', resetError);
-      setError(resetError.message || 'Le lien de réinitialisation n’a pas pu être envoyé.');
+      setError(getShopErrorMessage(resetError, 'Le lien de réinitialisation n’a pas pu être envoyé.'));
     } finally {
       setSubmitting(false);
     }
@@ -194,7 +196,7 @@ export default function BuyerAuth() {
       navigate('/boutique/compte', { replace: true });
     } catch (updateError) {
       console.error('Mise à jour du mot de passe client impossible :', updateError);
-      setError(updateError.message || 'Le nouveau mot de passe n’a pas pu être enregistré.');
+      setError(getShopErrorMessage(updateError, 'Le nouveau mot de passe n’a pas pu être enregistré.'));
     } finally {
       setSubmitting(false);
     }
@@ -215,7 +217,7 @@ export default function BuyerAuth() {
       if (oauthError) throw oauthError;
     } catch (oauthError) {
       console.error('Connexion Google impossible :', oauthError);
-      setError(oauthError.message || 'La connexion avec Google a échoué.');
+      setError(getShopErrorMessage(oauthError, 'La connexion avec Google a échoué.'));
       setSubmitting(false);
     }
   }
@@ -251,7 +253,7 @@ export default function BuyerAuth() {
             : 'Connecte-toi ou crée un compte pour continuer vers le paiement sécurisé.'}
         </p>
 
-        {error && <div className="shop-admin-alert error" role="alert">{error}</div>}
+        {error && <ShopAlert message={error} action="Réessayer" onAction={() => setError('')} />}
         {notice && <div className="shop-admin-alert success" role="status">{notice}</div>}
 
         {!awaitingConfirmation && mode !== 'reset' && (

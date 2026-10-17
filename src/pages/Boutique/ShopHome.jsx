@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import ProductCard from '../../components/shop/ProductCard';
+import ShopAlert from '../../components/shop/ShopAlert';
 import { useReveal } from '../../hooks/useReveal';
 import { useShop } from '../../context/ShopContext';
 
@@ -64,7 +65,7 @@ export default function ShopHome() {
             </Link>
           </div>
           {loading && <div className="shop-state">Chargement des produits…</div>}
-          {error && <div className="shop-state error">Impossible de charger la boutique : {error}</div>}
+          {error && <ShopAlert message={error} action="Réessayer" onAction={() => window.location.reload()} />}
           {!loading && !error && featured.length === 0 && (
             <div className="shop-state">Les produits phares seront bientôt disponibles.</div>
           )}

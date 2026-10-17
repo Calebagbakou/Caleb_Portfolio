@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { listShopCatalog, getShopContent } from '../services/shop';
+import { getShopErrorMessage } from '../utils/shopErrors';
 
 export const DEFAULT_SHOP_CONTENT = {
   shop_hero_title: 'Des outils IA et créatifs premium, activés rapidement.',
@@ -30,7 +31,7 @@ export function ShopProvider({ children }) {
         const loadError = catalogResult.error || contentResult.error;
         if (loadError) {
           console.error('Impossible de charger le catalogue de la boutique depuis Supabase :', loadError);
-          setError(loadError.message);
+          setError(getShopErrorMessage(loadError, 'La boutique est momentanément indisponible. Réessaie dans quelques instants.'));
         } else {
           setCatalog(catalogResult.data);
           setContent({ ...DEFAULT_SHOP_CONTENT, ...contentResult.data });
@@ -39,7 +40,7 @@ export function ShopProvider({ children }) {
       } catch (loadError) {
         if (!active) return;
         console.error('Erreur inattendue pendant le chargement de la boutique :', loadError);
-        setError(loadError instanceof Error ? loadError.message : String(loadError));
+        setError(getShopErrorMessage(loadError, 'La boutique est momentanément indisponible. Réessaie dans quelques instants.'));
       } finally {
         if (active) setLoading(false);
       }

@@ -4,6 +4,8 @@ import { useCart } from '../../context/CartContext';
 import { formatPrice } from '../../data/products';
 import { createSasPayCheckout, createShopCheckout } from '../../services/shop';
 import { useAuth } from '../../context/AuthContext';
+import ShopAlert from '../../components/shop/ShopAlert';
+import { getShopErrorMessage } from '../../utils/shopErrors';
 
 export default function Commande() {
   const { details, total } = useCart();
@@ -82,7 +84,7 @@ export default function Commande() {
       window.location.assign(payment.checkoutUrl);
     } catch (checkoutError) {
       console.error('Le checkout SasPay a échoué :', checkoutError);
-      setError(checkoutError.message || 'Le paiement a échoué ou a été annulé. Ta commande reste en attente.');
+      setError(getShopErrorMessage(checkoutError, 'Le paiement n’a pas pu être lancé. Tu peux réessayer sans risque de double débit.'));
     } finally {
       setSaving(false);
     }
@@ -95,13 +97,13 @@ export default function Commande() {
         <h1 style={{ fontSize: 'clamp(1.7rem,4vw,2.2rem)', margin: '0 0 8px' }}>Finaliser ma commande</h1>
         <p style={{ color: 'var(--ink-dim)', maxWidth: '56ch', margin: '0 0 6px' }}>
           Renseigne tes coordonnées. Le prix est recalculé à partir du catalogue enregistré, puis le paiement est
-          sécurisé par le widget officiel KKiaPay.
+          sécurisé par SasPay.
         </p>
       </div>
 
       <form className="checkout-layout" onSubmit={handleSubmit}>
         <div className="form-card">
-          {error && <div className="shop-admin-alert error" role="alert">{error}</div>}
+          <ShopAlert message={error} action="Retour au panier" actionTo="/boutique/panier" />
           <h2 style={{ fontSize: 16, margin: '0 0 16px' }}>Tes informations</h2>
           <div className="form-row-2">
             <div className="form-group">

@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { deleteBuyerAccount, getBuyerAccount, getShopOrderDeliveries } from '../../services/shop';
 import { formatPrice } from '../../data/products';
+import ShopAlert from '../../components/shop/ShopAlert';
+import { getShopErrorMessage } from '../../utils/shopErrors';
 
 export default function Account() {
   const { user, logout } = useAuth();
@@ -16,7 +18,7 @@ export default function Account() {
     let active = true;
     getBuyerAccount().then(({ data, error: accountError }) => {
       if (!active) return;
-      if (accountError) setError(accountError.message);
+      if (accountError) setError(getShopErrorMessage(accountError, 'Ton espace client est momentanément indisponible.'));
       else setAccount(data);
       setLoading(false);
     });
@@ -38,7 +40,7 @@ export default function Account() {
     const { error: deleteError } = await deleteBuyerAccount();
     if (deleteError) {
       console.error('Suppression du compte client impossible :', deleteError);
-      setError(deleteError.message || 'Le compte n’a pas pu être supprimé.');
+      setError(getShopErrorMessage(deleteError, 'Le compte n’a pas pu être supprimé. Tu peux réessayer ou nous contacter.'));
       return;
     }
     try {
@@ -54,7 +56,9 @@ export default function Account() {
     const { data, error: deliveryError } = await getShopOrderDeliveries({ orderId: order.id, orderRef: order.ref });
     setDeliveryState((current) => ({
       ...current,
-      [order.id]: deliveryError ? { error: deliveryError.message } : { data },
+      [order.id]: deliveryError
+        ? { error: getShopErrorMessage(deliveryError, 'Tes accès sont momentanément indisponibles.') }
+        : { data },
     }));
   }
 
@@ -77,7 +81,13 @@ export default function Account() {
   }
 
   if (loading) return <main className="wrap"><div className="shop-state">Chargement de ton espace client…</div></main>;
-  if (error) return <main className="wrap"><div className="shop-state error">{error}</div></main>;
+  if (error) return (
+    <main className="wrap">
+      <div className="shop-state-error-wrap">
+        <ShopAlert message={error} action="Retour à la boutique" actionTo="/boutique" />
+      </div>
+    </main>
+  );
 
   return (
     <main className="wrap account-page">
@@ -157,7 +167,7 @@ export default function Account() {
                   {delivery?.loading ? 'Préparation…' : 'Voir mes accès et téléchargements'}
                 </button>
               )}
-              {delivery?.error && <p className="account-error">{delivery.error}</p>}
+              {delivery?.error && <ShopAlert message={delivery.error} action="Retour à la boutique" actionTo="/boutique" />}
               {delivery?.data?.deliveries?.length > 0 && (
                 <div className="account-deliveries">
                   {delivery.data.deliveries.map((item) => (

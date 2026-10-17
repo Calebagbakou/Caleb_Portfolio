@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../../components/shop/ProductCard';
+import ShopAlert from '../../components/shop/ShopAlert';
 import { useShop } from '../../context/ShopContext';
 
 export default function Catalogue() {
@@ -42,7 +43,7 @@ export default function Catalogue() {
         </div>
 
         {loading && <div className="shop-state">Chargement des produits…</div>}
-        {error && <div className="shop-state error">Impossible de charger la boutique : {error}</div>}
+        {error && <ShopAlert message={error} action="Réessayer" onAction={() => window.location.reload()} />}
         {!loading && !error && list.length > 0 && (
           <div className="product-grid" style={{ marginTop: 22 }}>
             {list.map((product) => <ProductCard product={product} key={product.id} />)}

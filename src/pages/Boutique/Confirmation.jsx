@@ -4,6 +4,8 @@ import { LAST_ORDER_KEY, useCart } from '../../context/CartContext';
 import { formatPrice } from '../../data/products';
 import { getShopOrderDeliveries, listShopCatalog, verifySasPayPayment } from '../../services/shop';
 import { supabase } from '../../services/supabase';
+import ShopAlert from '../../components/shop/ShopAlert';
+import { getShopErrorMessage } from '../../utils/shopErrors';
 
 async function readDeliveryResponse(error, data) {
   if (data) return data;
@@ -113,7 +115,7 @@ export default function Confirmation() {
     const { data, error } = await getShopOrderDeliveries({ orderId: order.id, orderRef: order.ref });
     if (error || data?.error) {
       const response = await readDeliveryResponse(error, data);
-      setShopDeliveryError(response.error || 'La livraison n’a pas pu être préparée.');
+      setShopDeliveryError(getShopErrorMessage(response.error, 'La livraison n’a pas pu être préparée.'));
       setShopDeliveryStatus('failed');
       return;
     }
@@ -228,7 +230,7 @@ export default function Confirmation() {
               {shopDeliveryStatus === 'loading' && <p>Préparation de tes liens temporaires…</p>}
               {shopDeliveryStatus === 'failed' && (
                 <>
-                  <div className="shop-admin-alert error" role="alert">{shopDeliveryError}</div>
+                  <ShopAlert message={shopDeliveryError} action="Réessayer" onAction={requestShopDeliveries} />
                   <button type="button" className="btn btn-primary download-button" onClick={requestShopDeliveries}>
                     Réessayer
                   </button>
@@ -342,9 +344,11 @@ export default function Confirmation() {
             )}
             {['insufficient_balance', 'retryable'].includes(deliveryStatus) && (
               <>
-                <div className="shop-admin-alert error" role="alert">
-                  {deliveryError || 'La génération de ton lien a rencontré un problème temporaire. Tu peux réessayer sans risque de relancer le paiement.'}
-                </div>
+                <ShopAlert
+                  message={getShopErrorMessage(deliveryError, 'La génération de ton lien a rencontré un problème temporaire. Tu peux réessayer sans risque de relancer le paiement.')}
+                  action="Réessayer"
+                  onAction={() => requestPixverifyLink('retry')}
+                />
                 <button
                   type="button"
                   className="btn btn-outline"
@@ -358,9 +362,11 @@ export default function Confirmation() {
               </>
             )}
             {deliveryStatus === 'failed' && (
-              <div className="shop-admin-alert error" role="alert">
-                {deliveryError || 'Le lien d’activation n’a pas pu être généré. Contacte Caleb avec ta référence de commande.'}
-              </div>
+              <ShopAlert
+                message={getShopErrorMessage(deliveryError, 'Le lien d’activation n’a pas pu être généré. Contacte Caleb avec ta référence de commande.')}
+                action="Réessayer"
+                onAction={() => requestPixverifyLink('retry')}
+              />
             )}
           </section>
         )}

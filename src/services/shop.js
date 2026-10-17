@@ -285,7 +285,10 @@ export function updateShopOrderFulfillment(id, fulfillmentStatus) {
 }
 
 export function createShopCheckout({ customer, items, note }) {
-  return supabase.functions.invoke('checkout-shop', { body: { customer, items, note } });
+  return supabase.functions.invoke('checkout-shop', { body: { customer, items, note } }).then(async (result) => {
+    if (!result.error) return result;
+    return { ...result, error: new Error(await getFunctionErrorMessage(result.error)) };
+  });
 }
 
 export function createSasPayCheckout({ orderId }) {
