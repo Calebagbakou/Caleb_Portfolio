@@ -1,5 +1,20 @@
 import { getSasPayConfig, getServiceClient, jsonResponse } from '../_shared/shop.ts';
 
+function formatProviderError(value: unknown) {
+  if (typeof value === 'string' && value.trim()) return value.trim();
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    const nested = record.message || record.detail || record.error || record.code;
+    if (typeof nested === 'string' && nested.trim()) return nested.trim();
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return 'Réponse d’erreur structurée reçue.';
+    }
+  }
+  return '';
+}
+
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return jsonResponse({}, 200);
   if (request.method !== 'POST') return jsonResponse({ error: 'Méthode non autorisée.' }, 405);
@@ -47,7 +62,9 @@ Deno.serve(async (request) => {
     const payload = await response.json();
     if (!response.ok || !payload?.data?.checkout_url || !payload?.data?.id) {
       console.error('Réponse SasPay invalide :', response.status, payload);
-      const providerMessage = payload?.error || payload?.message || payload?.detail;
+      const providerMessage = formatProviderError(payload?.error)
+        || formatProviderError(payload?.message)
+        || formatProviderError(payload?.detail);
       return jsonResponse({
         error: providerMessage
           ? `SasPay a refusé le paiement : ${String(providerMessage).slice(0, 300)}`
