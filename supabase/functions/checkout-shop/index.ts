@@ -5,6 +5,22 @@ Deno.serve(async (request) => {
   if (request.method !== 'POST') return jsonResponse({ error: 'Méthode non autorisée.' }, 405);
 
   try {
+    const authorization = request.headers.get('authorization') || '';
+    const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
+    if (!accessToken) {
+      return jsonResponse({ error: 'Connecte-toi avant de créer une commande.' }, 401);
+    }
+
+    const authClient = getServiceClient();
+    const { data: { user }, error: authError } = await authClient.auth.getUser(accessToken);
+    if (authError || !user?.email || !user.email_confirmed_at) {
+      return jsonResponse({ error: 'Une session avec une adresse e-mail confirmée est obligatoire.' }, 401);
+    }
+    const buyerDomain = user.email.trim().toLowerCase().split('@').at(-1);
+    if (buyerDomain !== 'gmail.com' && buyerDomain !== 'outlook.com') {
+      return jsonResponse({ error: 'Les commandes sont réservées aux adresses Gmail et Outlook.' }, 403);
+    }
+
     const body = await request.json();
     const customer = body?.customer;
     const items = body?.items;
@@ -15,7 +31,7 @@ Deno.serve(async (request) => {
     const normalizedCustomer = {
       name: String(customer.name || '').trim().slice(0, 160),
       contact: String(customer.contact || '').trim().slice(0, 40),
-      email: String(customer.email || '').trim().slice(0, 254),
+      email: user.email.trim().toLowerCase(),
     };
     if (!normalizedCustomer.name || !normalizedCustomer.contact) {
       return jsonResponse({ error: 'Le nom et le téléphone sont obligatoires.' }, 400);

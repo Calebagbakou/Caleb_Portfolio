@@ -1,14 +1,17 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { findProduct, formatPrice } from '../../data/products';
 import { useCart } from '../../context/CartContext';
 import { useShop } from '../../context/ShopContext';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Produit() {
   const { id } = useParams();
   const { products, loading, error } = useShop();
   const product = findProduct(id, products);
   const { add } = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [selectedPlanId, setSelectedPlanId] = useState(
     product?.plans.find((plan) => plan.active)?.id ?? null
@@ -49,6 +52,10 @@ export default function Produit() {
     const selectedPlan = product.plans.find((plan) => plan.id === selectedPlanId);
     if (!selectedPlan?.active) return;
     add(product.id, selectedPlanId, qty);
+    if (!user) {
+      navigate(`/boutique/connexion?next=${encodeURIComponent('/boutique/commande')}`);
+      return;
+    }
     setToast(product.name + ' ajouté au panier');
   }
 

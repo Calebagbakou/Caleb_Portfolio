@@ -74,6 +74,13 @@ Deno.serve(async (request) => {
     }
 
     const client = getServiceClient();
+    const authorization = request.headers.get('authorization') || '';
+    const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
+    if (!accessToken) return jsonResponse({ error: 'Connecte-toi pour accéder à ta livraison.' }, 401);
+    const { data: { user }, error: authError } = await client.auth.getUser(accessToken);
+    if (authError || !user?.email || !user.email_confirmed_at) {
+      return jsonResponse({ error: 'Une adresse e-mail confirmée est obligatoire.' }, 401);
+    }
     const { data: order, error: orderError } = await client
       .from('orders')
       .select(`
@@ -87,6 +94,10 @@ Deno.serve(async (request) => {
       .maybeSingle();
     if (orderError) throw orderError;
     if (!order) return jsonResponse({ error: 'Cette commande est introuvable.' }, 404);
+    const customer = Array.isArray(order.customers) ? order.customers[0] : order.customers;
+    if (customer?.email?.trim().toLowerCase() !== user.email.trim().toLowerCase()) {
+      return jsonResponse({ error: 'Cette commande ne correspond pas à ton compte.' }, 403);
+    }
     if (order.payment_status !== 'confirme') {
       return jsonResponse({ error: 'Le paiement doit être confirmé avant la livraison.' }, 409);
     }
@@ -155,7 +166,6 @@ Deno.serve(async (request) => {
     }
 
     const downloads = generated.filter((item) => item.type === 'download');
-    const customer = Array.isArray(order.customers) ? order.customers[0] : order.customers;
     let email = { sent: true, message: '' };
     if (downloads.length) {
       if (!customer?.email) {

@@ -123,6 +123,11 @@ body.shop-theme .brand-name{ font-family:'Nunito', sans-serif; letter-spacing:-0
   transition: border-color .2s ease, color .2s ease;
 }
 .portfolio-link:hover{ border-color:var(--border-strong); color:var(--ink); }
+.shop-account-link{
+  font-size:13px; font-weight:700; color:var(--ink-dim); padding:9px 12px;
+  border:1px solid var(--border); border-radius:999px; white-space:nowrap;
+}
+.shop-account-link:hover{ color:var(--ink); border-color:var(--border-strong); }
 @media(min-width:720px){ .portfolio-link{ display:inline-flex; align-items:center; gap:6px; } }
 
 .mobile-nav-btn{ display:flex; }
@@ -172,6 +177,39 @@ body.shop-theme .brand-name{ font-family:'Nunito', sans-serif; letter-spacing:-0
 .shop-hero-cta{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
 .shop-state{ padding:28px 16px; text-align:center; color:var(--ink-dim); }
 .shop-state.error{ color:var(--danger); }
+
+/* ---------- CUSTOMER ACCOUNT ---------- */
+.account-page{ padding-bottom:64px; }
+.account-heading{ padding-top:42px; display:flex; align-items:flex-end; justify-content:space-between; gap:24px; }
+.account-heading h1{ margin:0 0 8px; font-size:clamp(2rem,5vw,3rem); }
+.account-heading p{ color:var(--ink-dim); margin:0; }
+.account-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:28px 0 44px; }
+.account-card,.account-order{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; box-shadow:var(--shadow-sm); }
+.account-card h2,.account-orders h2{ margin:0 0 8px; font-size:1.35rem; }
+.account-card p{ color:var(--ink-dim); margin:0 0 16px; }
+.account-status{ display:inline-flex; color:#167447; background:#e9f7ef; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+.account-support-card{ background:linear-gradient(135deg,var(--surface),var(--accent-dim)); }
+.account-small-action{ padding:10px 14px; font-size:13px; margin-top:18px; }
+.account-empty{ border:1px dashed var(--border-strong); border-radius:var(--radius-md); padding:24px; color:var(--ink-dim); }
+.account-empty a{ color:var(--accent); font-weight:700; }
+.account-order{ margin-top:14px; }
+.account-order-top{ display:flex; justify-content:space-between; gap:16px; }
+.account-order-top strong,.account-order-top span{ display:block; }
+.account-order-top span{ color:var(--ink-faint); font-size:13px; margin-top:3px; }
+.account-order-total{ text-align:right; }
+.account-pill{ display:inline-flex !important; margin-top:7px; padding:4px 8px; border-radius:999px; background:var(--surface-alt); font-size:11px !important; }
+.account-pill.success{ color:#167447; background:#e9f7ef; }
+.account-items{ margin:18px 0 0; padding-left:18px; color:var(--ink-dim); font-size:14px; }
+.account-deliveries{ display:grid; gap:8px; margin-top:14px; padding-top:14px; border-top:1px solid var(--border); }
+.account-deliveries div{ display:flex; justify-content:space-between; gap:12px; align-items:center; font-size:13px; }
+.account-deliveries a{ color:var(--accent); font-weight:700; }
+.account-deliveries span,.account-error{ color:var(--danger); font-size:13px; }
+@media(max-width:700px){
+  .account-heading{ align-items:flex-start; flex-direction:column; }
+  .account-grid{ grid-template-columns:1fr; }
+  .account-order-top{ flex-direction:column; }
+  .account-total{ text-align:left; }
+}
 
 /* ---------- CATEGORY CHIPS / FILTERS ---------- */
 .chip-row{ display:flex; gap:10px; flex-wrap:wrap; padding:28px 0 8px; }
@@ -332,6 +370,23 @@ body.shop-theme .product-name{ font-family:'Nunito', sans-serif; font-weight:800
 .empty-cart p{ color:var(--ink-dim); margin-bottom:22px; }
 
 /* ---------- CHECKOUT ---------- */
+.buyer-auth-wrap{ display:grid; place-items:center; min-height:calc(100svh - 150px); padding-block:48px; }
+.buyer-auth-card{ width:min(100%,480px); padding:clamp(22px,5vw,34px); border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--surface); box-shadow:var(--shadow-md); }
+.buyer-auth-back{ display:inline-flex; margin-bottom:26px; color:var(--ink-dim); font-size:13px; font-weight:600; }
+.buyer-auth-card h1{ margin:8px 0 10px; font-size:clamp(1.6rem,5vw,2rem); line-height:1.15; }
+.buyer-auth-intro{ margin:0 0 22px; color:var(--ink-dim); line-height:1.55; }
+.buyer-auth-tabs{ display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; margin-bottom:14px; border-radius:var(--radius-sm); background:var(--surface-alt); }
+.buyer-auth-tabs button{ min-height:40px; border:0; border-radius:calc(var(--radius-sm) - 2px); background:transparent; color:var(--ink-dim); font:600 13px 'Inter',sans-serif; cursor:pointer; }
+.buyer-auth-tabs button.active{ background:var(--surface); color:var(--ink); box-shadow:0 1px 4px rgba(15,23,42,.1); }
+.buyer-google-btn{ width:100%; justify-content:center; gap:10px; }
+.buyer-google-btn svg{ width:19px; height:19px; flex:none; }
+.buyer-auth-divider{ display:flex; align-items:center; gap:12px; margin:18px 0; color:var(--ink-faint); font-size:11px; }
+.buyer-auth-divider::before,.buyer-auth-divider::after{ content:""; height:1px; flex:1; background:var(--border); }
+.buyer-auth-form .form-group small{ display:block; margin-top:7px; color:var(--ink-faint); font-size:11px; line-height:1.45; }
+.buyer-auth-form input[autocomplete="one-time-code"]{ letter-spacing:.24em; font-size:20px; }
+.buyer-auth-resend{ display:block; margin:14px auto 0; border:0; background:transparent; color:var(--ink-dim); font:600 12px 'Inter',sans-serif; text-decoration:underline; cursor:pointer; }
+.buyer-auth-resend:disabled{ opacity:.55; cursor:wait; }
+.buyer-auth-footnote{ margin:18px 0 0; color:var(--ink-faint); font-size:11px; text-align:center; }
 .checkout-layout{ display:grid; grid-template-columns:1fr; gap:32px; padding:36px 0 60px; }
 @media(min-width:900px){ .checkout-layout{ grid-template-columns:1.5fr 1fr; align-items:start; } }
 .form-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; }

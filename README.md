@@ -97,6 +97,16 @@ ajoute aussi le format portrait 3:4.
 Ne passe pas en production avant d'avoir effectué un paiement de test complet
 et vérifié la commande dans `/admin/orders`.
 
+Les commandes de la boutique demandent désormais une session client Supabase
+confirmée. Les inscriptions e-mail sont limitées aux domaines `gmail.com` et
+`outlook.com` et utilisent un code OTP : active **Confirm email** dans
+Supabase Auth et configure le modèle **Confirm signup** pour afficher
+`{{ .Token }}`. Pour Google, active le fournisseur Google et configure son
+client OAuth ainsi que les URLs de redirection autorisées vers
+`/boutique/connexion` en local et sur le site publié. Une adresse Google est
+acceptée comme vérifiée sans code supplémentaire. Le checkout vérifie aussi le
+JWT et l'e-mail confirmé côté serveur; une commande anonyme est refusée.
+
 ### Bibliothèque de médias
 
 La section **Admin → Médias → Images** permet d’importer la photo principale

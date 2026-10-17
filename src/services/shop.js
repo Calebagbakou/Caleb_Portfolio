@@ -288,6 +288,10 @@ export function createShopCheckout({ customer, items, note }) {
   return supabase.functions.invoke('checkout-shop', { body: { customer, items, note } });
 }
 
+export function getBuyerAccount() {
+  return supabase.functions.invoke('shop-account', { body: {} });
+}
+
 async function getFunctionErrorMessage(error) {
   const response = error?.context;
   if (response && typeof response.clone === 'function') {

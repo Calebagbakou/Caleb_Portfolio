@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import useSiteLogo from '../../hooks/useSiteLogo';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * showFullNav / showMobileButton : sur commande.html et confirmation.html,
@@ -10,6 +11,7 @@ import useSiteLogo from '../../hooks/useSiteLogo';
  */
 export default function ShopHeader({ showFullNav = true, showMobileButton = true }) {
   const { count } = useCart();
+  const { user } = useAuth();
   const [logoUrl, clearLogoUrl] = useSiteLogo();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -46,6 +48,9 @@ export default function ShopHeader({ showFullNav = true, showMobileButton = true
           <div className="shop-actions">
             <Link className="portfolio-link" to="/">
               ← Portfolio
+            </Link>
+            <Link className="shop-account-link" to={user?.email_confirmed_at ? '/boutique/compte' : '/boutique/connexion?next=%2Fboutique%2Fcompte'}>
+              {user?.email_confirmed_at ? 'Mon compte' : 'Se connecter'}
             </Link>
             {showMobileButton && (
               <button
@@ -97,6 +102,9 @@ export default function ShopHeader({ showFullNav = true, showMobileButton = true
           </Link>
           <Link to="/boutique/panier" onClick={() => setMobileOpen(false)}>
             Panier
+          </Link>
+          <Link to={user?.email_confirmed_at ? '/boutique/compte' : '/boutique/connexion?next=%2Fboutique%2Fcompte'} onClick={() => setMobileOpen(false)}>
+            {user?.email_confirmed_at ? 'Mon compte' : 'Se connecter'}
           </Link>
           <Link to="/" onClick={() => setMobileOpen(false)}>
             ← Retour au portfolio

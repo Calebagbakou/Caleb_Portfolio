@@ -1,22 +1,28 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LAST_ORDER_KEY, useCart } from '../../context/CartContext';
 import { formatPrice } from '../../data/products';
 import { createShopCheckout, verifyShopPayment } from '../../services/shop';
 import { isKkiaPayConfigured, isKkiaPaySandbox, startKkiaPayPayment } from '../../services/kkiapay';
+import { useAuth } from '../../context/AuthContext';
 
 export default function Commande() {
   const { details, total, clear } = useCart();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [fname, setFname] = useState('');
   const [fcontact, setFcontact] = useState('');
-  const [femail, setFemail] = useState('');
+  const [femail, setFemail] = useState(user?.email || '');
   const [fnote, setFnote] = useState('');
   const [pendingOrder, setPendingOrder] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const needsEmail = details.some((line) => line.deliveryType === 'download');
+
+  useEffect(() => {
+    setFemail(user?.email || '');
+  }, [user?.email]);
 
   if (!details.length) {
     return (
@@ -45,6 +51,10 @@ export default function Commande() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
+    if (!user?.email || !user.email_confirmed_at) {
+      setError('Connecte-toi avec une adresse e-mail confirmée avant de commander.');
+      return;
+    }
     if (needsEmail && !femail.trim()) {
       setError('Une adresse e-mail est obligatoire pour recevoir le lien de téléchargement sécurisé.');
       return;
@@ -58,7 +68,7 @@ export default function Commande() {
       let order = pendingOrder;
       if (!order) {
         const { data, error: createError } = await createShopCheckout({
-          customer: { name: fname.trim(), contact: fcontact.trim(), email: femail.trim() },
+          customer: { name: fname.trim(), contact: fcontact.trim(), email: user.email },
           items: details.map((line) => ({ product_id: line.productId, plan_id: line.planId, qty: line.qty })),
           note: fnote.trim(),
         });
@@ -72,7 +82,7 @@ export default function Commande() {
 
       const paymentResponse = await startKkiaPayPayment({
         order,
-        customer: order.customer || { name: fname.trim(), contact: fcontact.trim(), email: femail.trim() },
+        customer: order.customer || { name: fname.trim(), contact: fcontact.trim(), email: user.email },
       });
       const transactionId = paymentResponse?.transactionId;
       if (!transactionId) throw new Error('KKiaPay n’a pas renvoyé de référence de transaction.');
@@ -141,15 +151,15 @@ export default function Commande() {
             </div>
           </div>
           <div className="form-group">
-            <label htmlFor="femail">Email {needsEmail ? '(obligatoire pour le téléchargement)' : '(optionnel)'}</label>
+            <label htmlFor="femail">Adresse e-mail confirmée</label>
             <input
               type="email"
               id="femail"
-              placeholder="vous@exemple.com"
-              required={needsEmail}
+              required
+              readOnly
               value={femail}
-              onChange={(e) => setFemail(e.target.value)}
             />
+            <small>Utilisée pour associer la commande à ton compte et envoyer les fichiers si nécessaire.</small>
           </div>
           <div className="form-group">
             <label htmlFor="fnote">Note pour la commande (optionnel)</label>

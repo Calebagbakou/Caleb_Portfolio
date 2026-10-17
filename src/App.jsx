@@ -26,6 +26,9 @@ import Orders from './pages/admin/Orders';
 import Media from './pages/admin/Media';
 import Competencies from './pages/admin/Competencies';
 import Services from './pages/admin/Services';
+import BuyerAuth from './pages/Boutique/BuyerAuth';
+import Account from './pages/Boutique/Account';
+import BuyerAuthGate from './components/shop/BuyerAuthGate';
 
 import NotFound from './pages/NotFound';
 import useSiteFavicon from './hooks/useSiteFavicon';
@@ -47,10 +50,12 @@ export default function App() {
         <Route path="/boutique/catalogue" element={<Catalogue />} />
         <Route path="/boutique/produit/:id" element={<Produit />} />
         <Route path="/boutique/panier" element={<Panier />} />
+        <Route path="/boutique/connexion" element={<BuyerAuth />} />
+        <Route path="/boutique/compte" element={<BuyerAuthGate><Account /></BuyerAuthGate>} />
       </Route>
       {/* commande.html / confirmation.html avaient une nav réduite (pas de menu mobile) */}
       <Route element={<ShopLayout showFullNav={false} showMobileButton={false} />}>
-        <Route path="/boutique/commande" element={<Commande />} />
+        <Route path="/boutique/commande" element={<BuyerAuthGate><Commande /></BuyerAuthGate>} />
         <Route path="/boutique/confirmation" element={<Confirmation />} />
       </Route>
 
