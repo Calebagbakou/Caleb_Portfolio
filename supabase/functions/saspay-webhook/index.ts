@@ -13,11 +13,11 @@ function constantTimeEqual(left: string, right: string) {
   return result === 0;
 }
 
-async function createSignature(secret: string, body: string) {
+async function createSignature(secret: string, body: string, hash = 'SHA-512') {
   const key = await crypto.subtle.importKey(
     'raw',
     new TextEncoder().encode(secret),
-    { name: 'HMAC', hash: 'SHA-256' },
+    { name: 'HMAC', hash },
     false,
     ['sign'],
   );
@@ -28,7 +28,8 @@ async function createSignature(secret: string, body: string) {
 }
 
 function getSignature(request: Request) {
-  const value = request.headers.get('x-saspay-signature')
+  const value = request.headers.get('x-sasapay-signature')
+    || request.headers.get('x-saspay-signature')
     || request.headers.get('x-webhook-signature')
     || request.headers.get('x-signature')
     || request.headers.get('signature')
@@ -48,16 +49,25 @@ Deno.serve(async (request) => {
     }
 
     const rawBody = await request.text();
-    const receivedSignature = getSignature(request);
-    const expectedSignature = await createSignature(webhookSecret, rawBody);
-    if (!receivedSignature || !constantTimeEqual(receivedSignature.toLowerCase(), expectedSignature)) {
-      return jsonResponse({ error: 'Signature du webhook invalide.' }, 401);
-    }
-
     const payload = JSON.parse(rawBody) as Record<string, unknown>;
     const nested = (payload.data && typeof payload.data === 'object')
       ? payload.data as Record<string, unknown>
       : {};
+    const receivedSignature = getSignature(request);
+    const signatureParts = [
+      firstValue(payload.sasapay_transaction_code, payload.transaction_code, payload.transaction_id, nested.sasapay_transaction_code, nested.transaction_code, nested.transaction_id),
+      firstValue(payload.merchant_code, payload.merchant, nested.merchant_code, nested.merchant),
+      firstValue(payload.account_number, payload.account, nested.account_number, nested.account),
+      firstValue(payload.payment_reference, payload.reference, payload.order_ref, nested.payment_reference, nested.reference, nested.order_ref),
+      firstValue(payload.amount, nested.amount),
+    ];
+    const signatureMessage = signatureParts.map((value) => String(value ?? '')).join('-');
+    const expectedSignature = signatureParts.every((value) => value !== undefined && value !== null && String(value).trim() !== '')
+      ? await createSignature(webhookSecret, signatureMessage)
+      : await createSignature(webhookSecret, rawBody);
+    if (!receivedSignature || !constantTimeEqual(receivedSignature.toLowerCase(), expectedSignature)) {
+      return jsonResponse({ error: 'Signature du webhook invalide.' }, 401);
+    }
     const reference = String(firstValue(
       payload.reference,
       payload.order_ref,
