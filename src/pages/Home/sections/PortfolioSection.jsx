@@ -30,6 +30,7 @@ const LEGACY_ITEMS = PORTFOLIO_ROWS.flatMap((row) => row.items.map((item) => ({
   ...item,
 })));
 const LEGACY_DECORATIONS = new Map(LEGACY_ITEMS.map((item) => [item.title.trim().toLowerCase(), item]));
+const VIDEO_THUMBNAIL_BACKGROUND = '#151B22';
 const CATEGORY_LABELS = {
   images: 'Images IA',
   videos: 'Vidéos IA',
@@ -138,7 +139,7 @@ function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisi
         className={`p-thumb${item.media_type !== 'image' ? ' video' : ''}${image && item.media_type === 'image' ? ' has-project-image' : ''}`}
         onPointerMove={image && item.media_type === 'image' ? handleThumbnailPointerMove : undefined}
         style={{
-          background: item.gradient,
+          background: item.media_type === 'image' ? item.gradient : VIDEO_THUMBNAIL_BACKGROUND,
           ...(item.media_type === 'image' ? { aspectRatio: PROJECT_IMAGE_THUMBNAIL_RATIO } : {}),
         }}
       >
