@@ -75,24 +75,23 @@ des réalisations dans l'administration. La migration
 [`supabase/migrations/011_project_image_ratio_three_four.sql`](./supabase/migrations/011_project_image_ratio_three_four.sql)
 ajoute aussi le format portrait 3:4.
 
-### Mise en service de la boutique et de KKiaPay
+### Mise en service de la boutique et de SasPay
 
 1. Exécute `supabase/migrations/003_shop_admin_kkiapay.sql` dans le SQL Editor
    Supabase après avoir vérifié que le schéma correspond aux tables existantes.
-2. Déploie les Edge Functions `checkout-shop`, `verify-kkiapay-payment` et
-   `kkiapay-webhook`. Les fonctions serveur nécessitent les secrets
-   `KKIAPAY_PRIVATE_KEY`, `KKIAPAY_PUBLIC_KEY`, `KKIAPAY_SECRET_KEY` et
-   `KKIAPAY_WEBHOOK_SECRET`; `KKIAPAY_SANDBOX=true` active le mode test.
+2. Déploie les Edge Functions `checkout-shop`, `saspay-checkout` et
+   `verify-saspay-payment`. Le checkout de la boutique utilise actuellement
+   SasPay en mode hébergé et vérifie la session côté serveur au retour sur
+   `/boutique/confirmation`.
+3. Ajoute le secret Supabase `SAASPAY_API_KEY` avec une clé `sk_test_...`
+   pour les essais. Cette clé reste uniquement dans les Edge Functions et ne
+   doit jamais être ajoutée à une variable `VITE_*` ou au frontend.
    `SUPABASE_URL` et `SUPABASE_SERVICE_ROLE_KEY` sont les secrets habituels
    fournis à une Edge Function Supabase. La clé `service_role` ne doit jamais
    être mise dans les variables `VITE_*`.
-3. Dans les **Variables** du dépôt GitHub, renseigne
-   `VITE_KKIAPAY_PUBLIC_KEY` avec la clé publique et
-   `VITE_KKIAPAY_SANDBOX` à `true` pour les tests. Ces variables ne contiennent
-   aucune clé serveur; la clé publique est destinée au widget navigateur.
-4. Configure dans le tableau de bord KKiaPay le webhook vers l'URL de la
-   fonction `kkiapay-webhook`, avec le secret correspondant à
-   `KKIAPAY_WEBHOOK_SECRET`.
+4. Le checkout hébergé SasPay permet au client de choisir le pays et le
+   réseau disponibles sur le compte marchand. Vérifie le résultat dans
+   `/admin/orders` avant de passer à une clé `sk_live_...`.
 
 Ne passe pas en production avant d'avoir effectué un paiement de test complet
 et vérifié la commande dans `/admin/orders`.
