@@ -9,3 +9,9 @@ verify_jwt = false
 
 [functions.gemini-pro-activate]
 verify_jwt = false
+
+[functions.saspay-checkout]
+verify_jwt = false
+
+[functions.verify-saspay-payment]
+verify_jwt = false

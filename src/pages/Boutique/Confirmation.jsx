@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LAST_ORDER_KEY } from '../../context/CartContext';
+import { LAST_ORDER_KEY, useCart } from '../../context/CartContext';
 import { formatPrice } from '../../data/products';
-import { getShopOrderDeliveries, listShopCatalog } from '../../services/shop';
+import { getShopOrderDeliveries, listShopCatalog, verifySasPayPayment } from '../../services/shop';
 import { supabase } from '../../services/supabase';
 
 async function readDeliveryResponse(error, data) {
@@ -19,6 +19,7 @@ async function readDeliveryResponse(error, data) {
 
 export default function Confirmation() {
   const location = useLocation();
+  const { clear } = useCart();
   const [order, setOrder] = useState(undefined); // undefined = pas encore lu, null = absent
   const [products, setProducts] = useState(null);
   const [deliveryStatus, setDeliveryStatus] = useState('idle');
@@ -30,6 +31,35 @@ export default function Confirmation() {
   const [shopDeliveryError, setShopDeliveryError] = useState('');
   const [downloadEmail, setDownloadEmail] = useState(null);
   const requestedShopDelivery = useRef('');
+  const paymentVerificationStarted = useRef(false);
+
+  useEffect(() => {
+    const orderId = new URLSearchParams(location.search).get('order_id');
+    const sessionId = new URLSearchParams(location.search).get('saspay_session_id') || undefined;
+    if (!orderId || paymentVerificationStarted.current) return;
+    paymentVerificationStarted.current = true;
+    let cancelled = false;
+    async function verifyPayment() {
+      const { data, error } = await verifySasPayPayment({ orderId, sessionId });
+      if (cancelled) return;
+      if (error || !data?.verified || !data.order) {
+        console.error('La vérification SasPay a échoué :', error || data?.message);
+        setOrder(data?.order || { id: orderId, ref: '', payment_status: 'non_confirme' });
+        return;
+      }
+      try {
+        localStorage.setItem(LAST_ORDER_KEY, JSON.stringify(data.order));
+      } catch (storageError) {
+        console.error('Le reçu ne peut pas être conservé sur cet appareil :', storageError);
+      }
+      clear();
+      setOrder(data.order);
+    }
+    verifyPayment();
+    return () => {
+      cancelled = true;
+    };
+  }, [location.search]);
 
   useEffect(() => {
     if (location.state?.order) {
@@ -163,7 +193,7 @@ export default function Confirmation() {
         <div className="confirm-wrap">
           <h1 style={{ fontSize: '1.6rem' }}>Paiement en attente</h1>
           <p style={{ color: 'var(--ink-dim)', marginBottom: 22 }}>
-            La commande {order.ref} n’a pas encore été confirmée par KKiaPay. Si tu viens de payer, actualise la
+            La commande {order.ref} n’a pas encore été confirmée par SasPay. Si tu viens de payer, actualise la
             page dans quelques instants ou contacte Caleb avec cette référence.
           </p>
           <Link to="/boutique/catalogue" className="btn btn-dark">Retour à la boutique</Link>
@@ -182,7 +212,7 @@ export default function Confirmation() {
         </div>
         <h1 style={{ fontSize: 'clamp(1.6rem,4vw,2.1rem)', margin: '0 0 8px' }}>Paiement confirmé</h1>
         <p style={{ color: 'var(--ink-dim)' }}>
-          Merci {order.customer?.name} ! Ton paiement KKiaPay a été vérifié.
+          Merci {order.customer?.name} ! Ton paiement SasPay a été vérifié.
         </p>
         <div className="confirm-ref">
           Référence : <strong>{order.ref}</strong>

@@ -1,15 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { LAST_ORDER_KEY, useCart } from '../../context/CartContext';
+import { Link } from 'react-router-dom';
+import { useCart } from '../../context/CartContext';
 import { formatPrice } from '../../data/products';
-import { createShopCheckout, verifyShopPayment } from '../../services/shop';
-import { isKkiaPayConfigured, isKkiaPaySandbox, startKkiaPayPayment } from '../../services/kkiapay';
+import { createSasPayCheckout, createShopCheckout } from '../../services/shop';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Commande() {
-  const { details, total, clear } = useCart();
+  const { details, total } = useCart();
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   const [fname, setFname] = useState('');
   const [fcontact, setFcontact] = useState('');
@@ -59,10 +57,6 @@ export default function Commande() {
       setError('Une adresse e-mail est obligatoire pour recevoir le lien de téléchargement sécurisé.');
       return;
     }
-    if (!isKkiaPayConfigured()) {
-      setError('Le paiement n’est pas encore configuré. Réessaie plus tard ou contacte Caleb.');
-      return;
-    }
     setSaving(true);
     try {
       let order = pendingOrder;
@@ -80,31 +74,14 @@ export default function Commande() {
         setPendingOrder(order);
       }
 
-      const paymentResponse = await startKkiaPayPayment({
-        order,
-        customer: order.customer || { name: fname.trim(), contact: fcontact.trim(), email: user.email },
-      });
-      const transactionId = paymentResponse?.transactionId;
-      if (!transactionId) throw new Error('KKiaPay n’a pas renvoyé de référence de transaction.');
-
-      const { data: verification, error: verificationError } = await verifyShopPayment({
-        orderId: order.id,
-        transactionId,
-      });
-      if (verificationError) throw verificationError;
-      if (!verification?.verified || !verification.order) {
-        throw new Error(verification?.message || 'Le paiement n’a pas pu être confirmé. La commande reste en attente.');
+      const { data: payment, error: paymentError } = await createSasPayCheckout({ orderId: order.id });
+      if (paymentError) throw paymentError;
+      if (!payment?.checkoutUrl) {
+        throw new Error('SasPay n’a pas renvoyé de lien de paiement.');
       }
-
-      try {
-        localStorage.setItem(LAST_ORDER_KEY, JSON.stringify(verification.order));
-      } catch (storageError) {
-        console.error('Le reçu ne peut pas être conservé sur cet appareil :', storageError);
-      }
-      clear();
-      navigate('/boutique/confirmation', { state: { order: verification.order } });
+      window.location.assign(payment.checkoutUrl);
     } catch (checkoutError) {
-      console.error('Le checkout KKiaPay a échoué :', checkoutError);
+      console.error('Le checkout SasPay a échoué :', checkoutError);
       setError(checkoutError.message || 'Le paiement a échoué ou a été annulé. Ta commande reste en attente.');
     } finally {
       setSaving(false);
@@ -173,19 +150,12 @@ export default function Commande() {
           </div>
 
           <p className="pay-note">
-            Le paiement ne sera marqué comme confirmé qu’après validation serveur de la transaction KKiaPay.
-            Les moyens proposés par le widget dépendent des options activées sur ton compte marchand.
-          </p>
-          {isKkiaPaySandbox() && (
-            <p className="pay-note" role="note">
-              Mode test KKiaPay : les vrais numéros Mobile Money sont refusés. Pour tester un paiement Moov réussi,
-              sélectionne Moov dans le widget et utilise <strong>68000000</strong> ou <strong>95000000</strong>.
-              Garde ton vrai numéro dans le champ téléphone ci-dessus pour être contacté.
+            Le paiement ne sera marqué comme confirmé qu’après validation serveur de la transaction SasPay.
+            Les moyens proposés dépendent du pays et des réseaux disponibles sur ton compte.
             </p>
-          )}
 
-          <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 22 }} disabled={saving}>
-            {saving ? 'Connexion sécurisée à KKiaPay…' : pendingOrder ? `Reprendre le paiement · ${pendingOrder.ref}` : 'Commander et payer avec KKiaPay'}
+            <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 22 }} disabled={saving}>
+              {saving ? 'Ouverture du paiement SasPay…' : pendingOrder ? `Reprendre le paiement · ${pendingOrder.ref}` : 'Commander et payer avec SasPay'}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>

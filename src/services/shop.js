@@ -288,6 +288,16 @@ export function createShopCheckout({ customer, items, note }) {
   return supabase.functions.invoke('checkout-shop', { body: { customer, items, note } });
 }
 
+export function createSasPayCheckout({ orderId }) {
+  return supabase.functions.invoke('saspay-checkout', { body: { orderId } });
+}
+
+export function verifySasPayPayment({ orderId, sessionId }) {
+  return supabase.functions.invoke('verify-saspay-payment', {
+    body: { orderId, sessionId },
+  });
+}
+
 export function getBuyerAccount() {
   return supabase.functions.invoke('shop-account', { body: {} });
 }
