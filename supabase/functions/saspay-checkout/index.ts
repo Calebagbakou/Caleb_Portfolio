@@ -47,7 +47,12 @@ Deno.serve(async (request) => {
     const payload = await response.json();
     if (!response.ok || !payload?.data?.checkout_url || !payload?.data?.id) {
       console.error('Réponse SasPay invalide :', response.status, payload);
-      return jsonResponse({ error: 'SasPay n’a pas pu créer la session de paiement.' }, 502);
+      const providerMessage = payload?.error || payload?.message || payload?.detail;
+      return jsonResponse({
+        error: providerMessage
+          ? `SasPay a refusé le paiement : ${String(providerMessage).slice(0, 300)}`
+          : `SasPay n’a pas pu créer la session de paiement (HTTP ${response.status}).`,
+      }, 502);
     }
 
     const { error: updateError } = await client

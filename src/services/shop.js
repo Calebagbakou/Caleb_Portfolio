@@ -289,12 +289,24 @@ export function createShopCheckout({ customer, items, note }) {
 }
 
 export function createSasPayCheckout({ orderId }) {
-  return supabase.functions.invoke('saspay-checkout', { body: { orderId } });
+  return supabase.functions.invoke('saspay-checkout', { body: { orderId } }).then(async (result) => {
+    if (!result.error) return result;
+    return {
+      ...result,
+      error: new Error(await getFunctionErrorMessage(result.error)),
+    };
+  });
 }
 
 export function verifySasPayPayment({ orderId, sessionId }) {
   return supabase.functions.invoke('verify-saspay-payment', {
     body: { orderId, sessionId },
+  }).then(async (result) => {
+    if (!result.error) return result;
+    return {
+      ...result,
+      error: new Error(await getFunctionErrorMessage(result.error)),
+    };
   });
 }
 
