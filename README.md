@@ -79,10 +79,11 @@ ajoute aussi le format portrait 3:4.
 
 1. Exécute `supabase/migrations/003_shop_admin_kkiapay.sql` dans le SQL Editor
    Supabase après avoir vérifié que le schéma correspond aux tables existantes.
-2. Déploie les Edge Functions `checkout-shop`, `saspay-checkout` et
-   `verify-saspay-payment`. Le checkout de la boutique utilise actuellement
-   SasPay en mode hébergé et vérifie la session côté serveur au retour sur
-   `/boutique/confirmation`.
+2. Déploie les Edge Functions `checkout-shop`, `saspay-checkout`,
+   `saspay-webhook` et `verify-saspay-payment`. Le checkout de la boutique
+   utilise SasPay en mode hébergé. Le webhook confirme les paiements côté
+   serveur ; la page `/boutique/confirmation` sert uniquement à afficher
+   l’état de la commande et à demander une vérification serveur.
 3. Ajoute le secret Supabase `SAASPAY_API_KEY` avec une clé `sk_test_...`
    pour les essais. Cette clé reste uniquement dans les Edge Functions et ne
    doit jamais être ajoutée à une variable `VITE_*` ou au frontend.
@@ -92,6 +93,13 @@ ajoute aussi le format portrait 3:4.
 4. Le checkout hébergé SasPay permet au client de choisir le pays et le
    réseau disponibles sur le compte marchand. Vérifie le résultat dans
    `/admin/orders` avant de passer à une clé `sk_live_...`.
+5. Dans SasPay, ajoute l’URL webhook suivante :
+   `https://umzjknzxigigyxxjnzlc.supabase.co/functions/v1/saspay-webhook`.
+   Configure un secret de signature, puis enregistre exactement la même valeur
+   dans Supabase sous `SAASPAY_WEBHOOK_SECRET`. Ne mets jamais ce secret dans
+   le frontend. Le webhook vérifie la signature HMAC-SHA256, puis revalide la
+   session, le montant et la devise directement auprès de SasPay avant de
+   confirmer la commande.
 
 Ne passe pas en production avant d'avoir effectué un paiement de test complet
 et vérifié la commande dans `/admin/orders`.

@@ -13,6 +13,9 @@ verify_jwt = false
 [functions.saspay-checkout]
 verify_jwt = false
 
+[functions.saspay-webhook]
+verify_jwt = false
+
 [functions.verify-saspay-payment]
 verify_jwt = false
 
