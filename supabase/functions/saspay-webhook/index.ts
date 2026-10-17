@@ -13,7 +13,7 @@ function constantTimeEqual(left: string, right: string) {
   return result === 0;
 }
 
-async function createSignature(secret: string, body: string, hash = 'SHA-512') {
+async function createSignatures(secret: string, body: string, hash: 'SHA-256' | 'SHA-512') {
   const key = await crypto.subtle.importKey(
     'raw',
     new TextEncoder().encode(secret),
@@ -22,9 +22,13 @@ async function createSignature(secret: string, body: string, hash = 'SHA-512') {
     ['sign'],
   );
   const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body));
-  return Array.from(new Uint8Array(signature))
+  const bytes = new Uint8Array(signature);
+  const hex = Array.from(bytes)
     .map((byte) => byte.toString(16).padStart(2, '0'))
     .join('');
+  let binary = '';
+  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+  return [hex, btoa(binary)];
 }
 
 function getSignature(request: Request) {
@@ -34,7 +38,7 @@ function getSignature(request: Request) {
     || request.headers.get('x-signature')
     || request.headers.get('signature')
     || '';
-  return value.replace(/^sha256=/i, '').trim();
+  return value.replace(/^sha(?:256|512)=/i, '').trim();
 }
 
 Deno.serve(async (request) => {
@@ -62,10 +66,19 @@ Deno.serve(async (request) => {
       firstValue(payload.amount, nested.amount),
     ];
     const signatureMessage = signatureParts.map((value) => String(value ?? '')).join('-');
-    const expectedSignature = signatureParts.every((value) => value !== undefined && value !== null && String(value).trim() !== '')
-      ? await createSignature(webhookSecret, signatureMessage)
-      : await createSignature(webhookSecret, rawBody);
-    if (!receivedSignature || !constantTimeEqual(receivedSignature.toLowerCase(), expectedSignature)) {
+    const signatureInputs = signatureParts.every((value) => value !== undefined && value !== null && String(value).trim() !== '')
+      ? [signatureMessage, rawBody]
+      : [rawBody];
+    const expectedSignatures = [];
+    for (const input of signatureInputs) {
+      expectedSignatures.push(...await createSignatures(webhookSecret, input, 'SHA-512'));
+      expectedSignatures.push(...await createSignatures(webhookSecret, input, 'SHA-256'));
+    }
+    const validSignature = expectedSignatures.some((signature) => (
+      receivedSignature
+      && constantTimeEqual(receivedSignature.toLowerCase(), signature.toLowerCase())
+    ));
+    if (!validSignature) {
       return jsonResponse({ error: 'Signature du webhook invalide.' }, 401);
     }
     const reference = String(firstValue(
