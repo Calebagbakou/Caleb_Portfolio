@@ -58,26 +58,54 @@ export default function Account() {
     }));
   }
 
+  const orders = account?.orders || [];
+  const paidOrders = orders.filter((order) => order.payment_status === 'confirme');
+  const itemCount = orders.reduce(
+    (total, order) => total + (order.order_items || []).reduce((sum, item) => sum + Number(item.qty || 0), 0),
+    0,
+  );
+  const displayName = account?.profile?.name || 'Client Caleb Creative';
+  const initials = displayName
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+  function getPaymentLabel(status) {
+    return status === 'confirme' ? 'Payée' : 'En attente';
+  }
+
   if (loading) return <main className="wrap"><div className="shop-state">Chargement de ton espace client…</div></main>;
   if (error) return <main className="wrap"><div className="shop-state error">{error}</div></main>;
 
   return (
     <main className="wrap account-page">
-      <div className="section account-heading">
+      <div className="account-hero">
         <div>
-          <div className="eyebrow">ESPACE CLIENT</div>
-          <h1>Mon compte</h1>
-          <p>Retrouve tes commandes, tes accès et les informations de ton compte.</p>
+          <div className="account-kicker">TABLEAU DE BORD CLIENT</div>
+          <h1>Bonjour, {displayName.split(' ')[0]}.</h1>
+          <p>Gère tes commandes, retrouve tes accès et garde le contrôle de ton compte.</p>
         </div>
-        <button type="button" className="btn btn-outline" onClick={handleLogout}>Se déconnecter</button>
+        <button type="button" className="btn btn-outline account-logout" onClick={handleLogout}>
+          Se déconnecter
+        </button>
+      </div>
+
+      <div className="account-stat-grid">
+        <div className="account-stat-card"><span>Commandes</span><strong>{orders.length}</strong><small>Historique total</small></div>
+        <div className="account-stat-card"><span>Commandes payées</span><strong>{paidOrders.length}</strong><small>Transactions confirmées</small></div>
+        <div className="account-stat-card"><span>Articles achetés</span><strong>{itemCount}</strong><small>Produits dans tes commandes</small></div>
       </div>
 
       <div className="account-grid">
-        <section className="account-card">
-          <div className="eyebrow">PROFIL</div>
-          <h2>{account?.profile?.name || 'Client Caleb Creative'}</h2>
-          <p>{user?.email}</p>
-          <span className="account-status">Adresse e-mail confirmée</span>
+        <section className="account-card account-profile-card">
+          <div className="account-card-label">MON PROFIL</div>
+          <div className="account-profile-head">
+            <div className="account-avatar">{initials}</div>
+            <div><h2>{displayName}</h2><p>{user?.email}</p></div>
+          </div>
+          <div className="account-status"><span className="account-status-dot" /> Adresse e-mail confirmée</div>
           <button
             type="button"
             className="btn btn-outline account-small-action"
@@ -91,30 +119,32 @@ export default function Account() {
         </section>
 
         <section className="account-card account-support-card">
-          <div className="eyebrow">BESOIN D’AIDE ?</div>
-          <h2>On reste disponible</h2>
-          <p>Une question sur une activation ou un téléchargement ? Écris directement à Caleb.</p>
+          <div className="account-card-label">ASSISTANCE</div>
+          <h2>Besoin d’aide ?</h2>
+          <p>Une question sur une activation ou un téléchargement ? Notre équipe est disponible pour t’accompagner.</p>
           <a className="btn btn-primary" href="https://wa.me/2290148135395">Contacter sur WhatsApp</a>
         </section>
       </div>
 
       <section className="account-orders">
-        <div className="eyebrow">HISTORIQUE</div>
-        <h2>Mes commandes</h2>
-        {!account?.orders?.length ? (
+        <div className="account-section-head">
+          <div><div className="account-card-label">ACTIVITÉ RÉCENTE</div><h2>Mes commandes</h2></div>
+          <Link to="/boutique/catalogue" className="btn btn-outline account-catalogue-link">Voir le catalogue</Link>
+        </div>
+        {!orders.length ? (
           <div className="account-empty">Aucune commande pour le moment. <Link to="/boutique/catalogue">Découvrir le catalogue</Link></div>
-        ) : account.orders.map((order) => {
+        ) : orders.map((order) => {
           const delivery = deliveryState[order.id];
           return (
             <article className="account-order" key={order.id}>
               <div className="account-order-top">
-                <div>
-                  <strong>{order.ref}</strong>
-                  <span>{new Date(order.created_at).toLocaleDateString('fr-FR')}</span>
+                <div className="account-order-reference">
+                  <span className="account-order-icon">#</span>
+                  <div><strong>{order.ref}</strong><span>{new Date(order.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span></div>
                 </div>
                 <div className="account-order-total">
                   <strong>{formatPrice(order.total)}</strong>
-                  <span className={`account-pill ${order.payment_status === 'confirme' ? 'success' : ''}`}>{order.payment_status}</span>
+                  <span className={`account-pill ${order.payment_status === 'confirme' ? 'success' : ''}`}>{getPaymentLabel(order.payment_status)}</span>
                 </div>
               </div>
               <ul className="account-items">
