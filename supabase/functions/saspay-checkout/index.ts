@@ -1,6 +1,4 @@
-import { getServiceClient, jsonResponse } from '../_shared/shop.ts';
-
-const SASPAY_API_URL = 'https://api.saspay.me/api/v1';
+import { getSasPayConfig, getServiceClient, jsonResponse } from '../_shared/shop.ts';
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return jsonResponse({}, 200);
@@ -9,9 +7,8 @@ Deno.serve(async (request) => {
   try {
     const authorization = request.headers.get('authorization') || '';
     const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
-    const apiKey = Deno.env.get('SAASPAY_API_KEY');
+    const { apiBaseUrl, authorizationHeader, liveMode } = getSasPayConfig();
     if (!accessToken) return jsonResponse({ error: 'Connecte-toi avant de payer.' }, 401);
-    if (!apiKey) return jsonResponse({ error: 'La clé SasPay test n’est pas configurée dans Supabase.' }, 503);
 
     const client = getServiceClient();
     const { data: { user }, error: authError } = await client.auth.getUser(accessToken);
@@ -32,10 +29,10 @@ Deno.serve(async (request) => {
 
     const siteUrl = Deno.env.get('SITE_URL') || 'https://calebcreative.online';
     const customer = Array.isArray(order.customers) ? order.customers[0] : order.customers;
-    const response = await fetch(`${SASPAY_API_URL}/checkout-sessions/`, {
+    const response = await fetch(`${apiBaseUrl}/checkout-sessions/`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${apiKey}`,
+        Authorization: authorizationHeader,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -66,7 +63,7 @@ Deno.serve(async (request) => {
 
     const separator = payload.data.checkout_url.includes('?') ? '&' : '?';
     const checkoutUrl = `${payload.data.checkout_url}${separator}saspay_session_id=${encodeURIComponent(payload.data.id)}&order_id=${encodeURIComponent(order.id)}`;
-    return jsonResponse({ checkoutUrl, sessionId: payload.data.id });
+    return jsonResponse({ checkoutUrl, sessionId: payload.data.id, mode: liveMode ? 'live' : 'test' });
   } catch (error) {
     console.error('Échec de création du checkout SasPay :', error);
     return jsonResponse({ error: error instanceof Error ? error.message : 'Création du paiement impossible.' }, 500);

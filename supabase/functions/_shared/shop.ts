@@ -36,6 +36,23 @@ export function getPaymentClient() {
   });
 }
 
+export function getSasPayConfig() {
+  const apiKey = Deno.env.get('SAASPAY_API_KEY');
+  const liveMode = Deno.env.get('SAASPAY_LIVE') === 'true';
+  if (!apiKey) {
+    throw new Error('La clé SAASPAY_API_KEY n’est pas configurée.');
+  }
+  if (liveMode && !apiKey.startsWith('sk_live_')) {
+    throw new Error('SAASPAY_LIVE=true exige une clé SAASPAY_API_KEY commençant par sk_live_.');
+  }
+  return {
+    apiBaseUrl: Deno.env.get('SAASPAY_API_URL') || 'https://api.saspay.me/api/v1',
+    apiKey,
+    liveMode,
+    authorizationHeader: `Bearer ${apiKey}`,
+  };
+}
+
 export function isPaymentSuccessful(result: Record<string, unknown>) {
   return String(result.status || '').toUpperCase() === 'SUCCESS';
 }

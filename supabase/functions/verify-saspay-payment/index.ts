@@ -1,6 +1,9 @@
-import { getOrderReceipt, getServiceClient, jsonResponse } from '../_shared/shop.ts';
-
-const SASPAY_API_URL = 'https://api.saspay.me/api/v1';
+import {
+  getOrderReceipt,
+  getSasPayConfig,
+  getServiceClient,
+  jsonResponse,
+} from '../_shared/shop.ts';
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return jsonResponse({}, 200);
@@ -9,9 +12,9 @@ Deno.serve(async (request) => {
   try {
     const authorization = request.headers.get('authorization') || '';
     const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
-    const apiKey = Deno.env.get('SAASPAY_API_KEY');
+    const { apiBaseUrl, authorizationHeader } = getSasPayConfig();
     const { orderId, sessionId: requestedSessionId } = await request.json();
-    if (!accessToken || !apiKey || typeof orderId !== 'string') {
+    if (!accessToken || typeof orderId !== 'string') {
       return jsonResponse({ error: 'Session de paiement invalide.' }, 400);
     }
 
@@ -31,8 +34,8 @@ Deno.serve(async (request) => {
       : order.payment_transaction_id;
     if (!sessionId) return jsonResponse({ error: 'Aucune session SasPay n’est associée à cette commande.' }, 400);
 
-    const response = await fetch(`${SASPAY_API_URL}/checkout-sessions/${encodeURIComponent(sessionId)}/status/`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
+    const response = await fetch(`${apiBaseUrl}/checkout-sessions/${encodeURIComponent(sessionId)}/status/`, {
+      headers: { Authorization: authorizationHeader },
     });
     const payload = await response.json();
     if (!response.ok) return jsonResponse({ error: 'SasPay n’a pas pu vérifier cette session.' }, 502);
