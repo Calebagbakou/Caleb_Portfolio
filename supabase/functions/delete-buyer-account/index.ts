@@ -15,6 +15,16 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: 'Session client invalide.' }, 401);
     }
 
+    const { data: adminRecord, error: adminLookupError } = await client
+      .from('admins')
+      .select('id')
+      .eq('id', user.id)
+      .maybeSingle();
+    if (adminLookupError) throw adminLookupError;
+    if (adminRecord) {
+      return jsonResponse({ error: 'Un compte administrateur ne peut pas être supprimé depuis cet espace.' }, 403);
+    }
+
     const anonymizedEmail = `deleted-${user.id}@invalid.local`;
     const { error: anonymizeError } = await client
       .from('customers')
