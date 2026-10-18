@@ -32,7 +32,7 @@ export default function Commande() {
           <div className="eyebrow">COMMANDE</div>
           <h1 style={{ fontSize: 'clamp(1.7rem,4vw,2.2rem)', margin: '0 0 8px' }}>Finaliser ma commande</h1>
         </div>
-        <div className="empty-cart">
+        <div className="empty-purchase">
           <div className="ic">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M3 3h2l2.4 12.4a2 2 0 002 1.6h8.2a2 2 0 002-1.6L21 8H6" />
@@ -40,7 +40,7 @@ export default function Commande() {
               <circle cx="17" cy="20" r="1.4" />
             </svg>
           </div>
-          <p>Votre panier est vide — ajoutez un produit avant de passer commande.</p>
+          <p>Aucun produit n’est sélectionné pour cette commande.</p>
           <Link to="/boutique/catalogue" className="btn btn-primary">
             Voir le catalogue
           </Link>
@@ -102,7 +102,7 @@ export default function Commande() {
       </div>
 
       <nav className="buyer-journey" aria-label="Étapes de la commande">
-        {['Panier', 'Compte', 'Paiement', 'Livraison'].map((step, index) => (
+        {['Produit', 'Compte', 'Paiement', 'Livraison'].map((step, index) => (
           <div className={`buyer-journey-step${index === 2 ? ' active' : ''}`} aria-current={index === 2 ? 'step' : undefined} key={step}>
             <span>{index + 1}</span>{step}
           </div>
@@ -111,7 +111,7 @@ export default function Commande() {
 
       <form className="checkout-layout" onSubmit={handleSubmit}>
         <div className="form-card">
-          <ShopAlert message={error} action="Retour au panier" actionTo="/boutique/panier" />
+          <ShopAlert message={error} action="Voir le catalogue" actionTo="/boutique/catalogue" />
           <h2 style={{ fontSize: 16, margin: '0 0 16px' }}>Vos informations</h2>
           <div className="form-row-2">
             <div className="form-group">
@@ -200,7 +200,6 @@ export default function Commande() {
             <span>Total</span>
             <span>{formatPrice(pendingOrder ? Number(pendingOrder.total) : total)}</span>
           </div>
-          <Link className="checkout-edit-cart" to="/boutique/panier">Modifier le panier</Link>
         </aside>
       </form>
     </main>

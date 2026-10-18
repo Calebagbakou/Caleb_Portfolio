@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { useCart } from '../../context/CartContext';
 import useSiteLogo from '../../hooks/useSiteLogo';
 import { useAuth } from '../../context/AuthContext';
 
 /** showFullNav controls whether category shortcuts are shown in the desktop navigation. */
 export default function ShopHeader({ showFullNav = true, showMobileButton = true }) {
-  const { count } = useCart();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [logoUrl, clearLogoUrl] = useSiteLogo();
@@ -110,16 +108,6 @@ export default function ShopHeader({ showFullNav = true, showMobileButton = true
                 </svg>
               </button>
             )}
-            <Link className="shop-icon-btn" to="/boutique/panier" aria-label="Voir le panier">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                <path d="M3 3h2l2.4 12.4a2 2 0 002 1.6h8.2a2 2 0 002-1.6L21 8H6" />
-                <circle cx="9" cy="20" r="1.4" />
-                <circle cx="17" cy="20" r="1.4" />
-              </svg>
-              <span className="cart-badge" style={{ display: count > 0 ? 'flex' : 'none' }}>
-                {count}
-              </span>
-            </Link>
           </div>
         </div>
       </header>
@@ -146,9 +134,6 @@ export default function ShopHeader({ showFullNav = true, showMobileButton = true
           </Link>
           <Link to="/boutique/catalogue" onClick={() => setMobileOpen(false)}>
             Catalogue
-          </Link>
-          <Link to="/boutique/panier" onClick={() => setMobileOpen(false)}>
-            Panier
           </Link>
           <Link to={user?.email_confirmed_at ? '/boutique/compte' : '/boutique/connexion?next=%2Fboutique%2Fcompte'} onClick={() => setMobileOpen(false)}>
             {user?.email_confirmed_at ? 'Mon compte' : 'Se connecter'}

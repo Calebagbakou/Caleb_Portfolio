@@ -214,7 +214,7 @@ export default function Confirmation() {
     return (
       <main>
         <nav className="buyer-journey" aria-label="Étapes de la commande">
-          {['Panier', 'Compte', 'Paiement', 'Livraison'].map((step, index) => (
+          {['Produit', 'Compte', 'Paiement', 'Livraison'].map((step, index) => (
             <div className={`buyer-journey-step${index === 2 ? ' active' : ''}`} aria-current={index === 2 ? 'step' : undefined} key={step}>
               <span>{index + 1}</span>{step}
             </div>
@@ -243,7 +243,7 @@ export default function Confirmation() {
   return (
     <main>
       <nav className="buyer-journey" aria-label="Étapes de la commande">
-        {['Panier', 'Compte', 'Paiement', 'Livraison'].map((step, index) => (
+        {['Produit', 'Compte', 'Paiement', 'Livraison'].map((step, index) => (
           <div className={`buyer-journey-step${index === 3 ? ' active' : ''}`} aria-current={index === 3 ? 'step' : undefined} key={step}>
             <span>{index + 1}</span>{step}
           </div>

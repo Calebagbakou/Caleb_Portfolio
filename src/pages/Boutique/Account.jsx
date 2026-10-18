@@ -137,6 +137,7 @@ export default function Account() {
       const { error: deleteError } = await deleteBuyerAccount();
       if (deleteError) throw deleteError;
       localStorage.removeItem('caleb_boutique_cart_v1');
+      localStorage.removeItem('caleb_boutique_checkout_v1');
       navigate('/boutique', { replace: true });
     } catch (deleteError) {
       console.error('Suppression du compte client impossible :', deleteError);

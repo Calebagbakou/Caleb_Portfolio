@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom';
+import { Navigate, Routes, Route } from 'react-router-dom';
 
 import PublicLayout from './layouts/PublicLayout';
 import ShopLayout from './layouts/ShopLayout';
@@ -10,7 +10,6 @@ import Home from './pages/Home/Home';
 import ShopHome from './pages/Boutique/ShopHome';
 import Catalogue from './pages/Boutique/Catalogue';
 import Produit from './pages/Boutique/Produit';
-import Panier from './pages/Boutique/Panier';
 import Commande from './pages/Boutique/Commande';
 import Confirmation from './pages/Boutique/Confirmation';
 
@@ -55,7 +54,7 @@ export default function App() {
         <Route path="/boutique/index.html" element={<ShopHome />} />
         <Route path="/boutique/catalogue" element={<Catalogue />} />
         <Route path="/boutique/produit/:id" element={<Produit />} />
-        <Route path="/boutique/panier" element={<Panier />} />
+        <Route path="/boutique/panier" element={<Navigate to="/boutique/catalogue" replace />} />
         <Route path="/boutique/connexion" element={<BuyerAuth />} />
         <Route path="/boutique/compte" element={<BuyerAuthGate><Account /></BuyerAuthGate>} />
       </Route>

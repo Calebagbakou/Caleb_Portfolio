@@ -200,8 +200,21 @@ h1,h2,h3,.brand{ font-family:'Unbounded',sans-serif; letter-spacing:-0.01em; }
 .rich-editor-toolbar .rich-editor-color-picker:hover{ border-color:var(--border); background:var(--surface); }
 .rich-editor-toolbar .rich-editor-color-picker:focus-within{ outline:2px solid var(--accent); outline-offset:2px; }
 .rich-editor-toolbar .rich-editor-color-picker input{ position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
-.rich-editor-toolbar .rich-editor-highlight-button svg path:first-child{ fill:#FFF1A8; }
-.rich-editor-toolbar .rich-editor-highlight-button.active{ border-color:#E7D98A; background:#FFF8D9; color:#67531A; }
+.rich-editor-toolbar .rich-editor-highlight-picker{
+  position:relative; display:inline-flex; width:36px; height:36px; align-items:center; justify-content:center;
+  border:1px solid transparent; border-radius:var(--radius-sm); color:var(--ink-dim); cursor:pointer;
+}
+.rich-editor-toolbar .rich-editor-highlight-picker svg{ width:19px; height:19px; }
+.rich-editor-toolbar .rich-editor-highlight-picker svg path:first-child{ fill:var(--highlight-color); }
+.rich-editor-toolbar .rich-editor-highlight-picker::after{
+  position:absolute; right:8px; bottom:5px; left:8px; height:3px; border-radius:2px;
+  background:var(--highlight-color); content:""; pointer-events:none;
+}
+.rich-editor-toolbar .rich-editor-highlight-picker:hover{ border-color:var(--border); background:var(--surface); }
+.rich-editor-toolbar .rich-editor-highlight-picker:focus-within{ outline:2px solid var(--accent); outline-offset:2px; }
+.rich-editor-toolbar .rich-editor-highlight-picker input{
+  position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer;
+}
 .rich-editor-toolbar select{ min-height:36px; min-width:118px; padding:6px 28px 6px 10px; border:1px solid transparent; border-radius:var(--radius-sm); background:transparent; color:var(--ink); font:500 13px 'Inter',sans-serif; cursor:pointer; }
 .rich-editor-toolbar select:hover,.rich-editor-toolbar select:focus-visible{ border-color:var(--border-strong); background:var(--surface); }
 .rich-editor-toolbar-divider{ width:1px; height:24px; margin-inline:3px; background:var(--border-strong); }

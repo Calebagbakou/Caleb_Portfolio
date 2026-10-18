@@ -1,139 +1,96 @@
-/* =========================================================================
-   CART CONTEXT — CALEB CREATIVE BOUTIQUE
-   -------------------------------------------------------------------------
-   Port direct de l'ancien boutique/assets/cart.js, sous forme de contexte
-   React.    Le panier reste stocké localement. Les commandes et paiements sont
-   enregistrés côté serveur au moment du checkout.
-   ========================================================================= */
-
-import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
 import { findProduct, findPlan } from '../data/products';
 import { useShop } from './ShopContext';
 
-const CART_KEY = 'caleb_boutique_cart_v1';
+const CHECKOUT_KEY = 'caleb_boutique_checkout_v1';
+const LEGACY_CART_KEY = 'caleb_boutique_cart_v1';
 export const LAST_ORDER_KEY = 'caleb_boutique_last_order_v1';
 
-function readCart() {
+function readCheckoutItem() {
   try {
-    const raw = localStorage.getItem(CART_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
+    const raw = localStorage.getItem(CHECKOUT_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed.productId === 'string' && typeof parsed.planId === 'string'
+      ? parsed
+      : null;
   } catch {
-    return [];
+    return null;
   }
 }
 
-function writeCart(items) {
+function writeCheckoutItem(item) {
   try {
-    localStorage.setItem(CART_KEY, JSON.stringify(items));
-  } catch {
-    /* stockage indisponible (navigation privée, quota...) : on ignore silencieusement */
+    if (item) localStorage.setItem(CHECKOUT_KEY, JSON.stringify(item));
+    else localStorage.removeItem(CHECKOUT_KEY);
+  } catch (error) {
+    console.error('La sélection de commande ne peut pas être conservée sur cet appareil :', error);
   }
 }
 
 const CartContext = createContext(null);
 
 export function CartProvider({ children }) {
-  const [items, setItems] = useState(() => readCart());
+  const [item, setItem] = useState(readCheckoutItem);
   const { products, loading: shopLoading, error: shopError } = useShop();
 
   useEffect(() => {
-    writeCart(items);
-  }, [items]);
+    localStorage.removeItem(LEGACY_CART_KEY);
+  }, []);
 
   useEffect(() => {
-    if (shopLoading || shopError || !products.length) return;
-    setItems((current) => {
-      const normalized = current.flatMap((item) => {
-        const product = findProduct(item.productId, products);
-        const plan = findPlan(product, item.planId);
-        const maxQty = product?.allow_multiple_qty ? 20 : 1;
-        const qty = Math.min(maxQty, Math.max(1, parseInt(item.qty, 10) || 1));
-        return product && plan?.active !== false
-          ? [{ ...item, productId: product.id, planId: plan.id, qty }]
-          : [];
-      });
-      return JSON.stringify(current) === JSON.stringify(normalized) ? current : normalized;
-    });
-  }, [products, shopLoading, shopError]);
+    writeCheckoutItem(item);
+  }, [item]);
 
-  const add = useCallback((productId, planId, qty = 1) => {
-    const product = findProduct(productId, products);
-    const maxQty = product?.allow_multiple_qty ? 20 : 1;
-    const safeQty = Math.min(maxQty, Math.max(1, parseInt(qty, 10) || 1));
-    setItems((prev) => {
-      const existing = prev.find((it) => it.productId === productId && it.planId === planId);
-      if (existing) {
-        return prev.map((it) =>
-          it.productId === productId && it.planId === planId
-            ? { ...it, qty: Math.min(maxQty, it.qty + safeQty) }
-            : it
-        );
-      }
-      return [...prev, { productId, planId, qty: safeQty }];
-    });
-  }, [products]);
+  useEffect(() => {
+    if (!item || shopLoading || shopError || !products.length) return;
+    const product = findProduct(item.productId, products);
+    const plan = findPlan(product, item.planId);
+    if (!product || plan?.active === false) {
+      setItem(null);
+      return;
+    }
+    const maxQty = product.allow_multiple_qty ? 20 : 1;
+    const qty = Math.min(maxQty, Math.max(1, parseInt(item.qty, 10) || 1));
+    if (item.productId !== product.id || item.planId !== plan.id || item.qty !== qty) {
+      setItem({ productId: product.id, planId: plan.id, qty });
+    }
+  }, [item, products, shopLoading, shopError]);
 
   const buyNow = useCallback((productId, planId, qty = 1) => {
     const product = findProduct(productId, products);
     const maxQty = product?.allow_multiple_qty ? 20 : 1;
     const safeQty = Math.min(maxQty, Math.max(1, parseInt(qty, 10) || 1));
-    setItems([{ productId, planId, qty: safeQty }]);
+    setItem({ productId, planId, qty: safeQty });
   }, [products]);
 
-  const updateQty = useCallback((productId, planId, qty) => {
-    const parsed = parseInt(qty, 10);
-    setItems((prev) => {
-      if (!parsed || parsed < 1) {
-        return prev.filter((it) => !(it.productId === productId && it.planId === planId));
-      }
-      const product = findProduct(productId, products);
-      const maxQty = product?.allow_multiple_qty ? 20 : 1;
-      return prev.map((it) =>
-        it.productId === productId && it.planId === planId
-          ? { ...it, qty: Math.min(maxQty, parsed) }
-          : it
-      );
-    });
-  }, [products]);
-
-  const remove = useCallback((productId, planId) => {
-    setItems((prev) => prev.filter((it) => !(it.productId === productId && it.planId === planId)));
-  }, []);
-
-  const clear = useCallback(() => setItems([]), []);
+  const clear = useCallback(() => setItem(null), []);
 
   const details = useMemo(() => {
-    return items
-      .map((it) => {
-        const product = findProduct(it.productId, products);
-        if (!product) return null;
-        const plan = findPlan(product, it.planId);
-        if (!plan || plan.active === false) return null;
-        const unitPrice = product.promo_price ?? plan.price;
-        return {
-          productId: product.id,
-          planId: plan.id,
-          name: product.name,
-          deliveryType: product.delivery_type || 'activate',
-          planLabel: plan.label,
-          avatar: product.avatar,
-          gradient: product.gradient,
-          logoUrl: product.logo_url || '',
-          imageUrl: product.image_url || '',
-          unitPrice,
-          currency: plan.currency,
-          qty: it.qty,
-          lineTotal: unitPrice * it.qty,
-        };
-      })
-      .filter(Boolean);
-  }, [items, products]);
+    if (!item) return [];
+    const product = findProduct(item.productId, products);
+    if (!product) return [];
+    const plan = findPlan(product, item.planId);
+    if (!plan || plan.active === false) return [];
+    const unitPrice = product.promo_price ?? plan.price;
+    return [{
+      productId: product.id,
+      planId: plan.id,
+      name: product.name,
+      deliveryType: product.delivery_type || 'activate',
+      planLabel: plan.label,
+      avatar: product.avatar,
+      gradient: product.gradient,
+      logoUrl: product.logo_url || '',
+      imageUrl: product.image_url || '',
+      unitPrice,
+      currency: plan.currency,
+      qty: item.qty,
+      lineTotal: unitPrice * item.qty,
+    }];
+  }, [item, products]);
 
-  const count = useMemo(() => details.reduce((sum, it) => sum + it.qty, 0), [details]);
   const total = useMemo(() => details.reduce((sum, line) => sum + line.lineTotal, 0), [details]);
-
-  const value = { items, details, count, total, add, buyNow, updateQty, remove, clear };
+  const value = { item, details, total, buyNow, clear };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

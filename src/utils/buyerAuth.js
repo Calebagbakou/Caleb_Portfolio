@@ -10,7 +10,7 @@ export function getBuyerAuthRedirectUrl(nextPath) {
 }
 
 export function getBuyerNextPath(value) {
-  return ['/boutique/commande', '/boutique/panier', '/boutique/compte'].includes(value)
+  return ['/boutique/commande', '/boutique/compte'].includes(value)
     ? value
     : '/boutique/commande';
 }

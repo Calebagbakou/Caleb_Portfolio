@@ -5,7 +5,6 @@ import { useCart } from '../../context/CartContext';
 import { formatPrice } from '../../data/products';
 import ShopAlert from '../../components/shop/ShopAlert';
 import { getShopErrorMessage } from '../../utils/shopErrors';
-import ShopArrow from '../../components/shop/ShopArrow';
 import { supabase } from '../../services/supabase';
 import {
   getBuyerAuthRedirectUrl,
@@ -326,14 +325,14 @@ export default function BuyerAuth() {
   return (
     <main className="wrap buyer-auth-wrap">
       <nav className="buyer-journey" aria-label="Étapes de la commande">
-        {['Panier', 'Compte', 'Paiement', 'Livraison'].map((step, index) => (
+        {['Produit', 'Compte', 'Paiement', 'Livraison'].map((step, index) => (
           <div className={`buyer-journey-step${index === 1 ? ' active' : ''}`} aria-current={index === 1 ? 'step' : undefined} key={step}>
             <span>{index + 1}</span>{step}
           </div>
         ))}
       </nav>
       <section className="buyer-auth-card">
-        <Link className="buyer-auth-back" to="/boutique/panier"><ShopArrow direction="left" /> Retour au panier</Link>
+        <Link className="buyer-auth-back" to="/boutique/catalogue">Retour au catalogue</Link>
         <div className="eyebrow">COMPTE CLIENT</div>
         <h1>
           <span className="buyer-auth-lock" aria-hidden="true">🔒</span>
@@ -525,20 +524,20 @@ export default function BuyerAuth() {
       <aside className="buyer-auth-aside">
         <h2>Votre compte, vos achats</h2>
         <p>Retrouvez vos commandes et leurs reçus au même endroit. Votre adresse sert à associer vos achats à votre compte.</p>
-        <div className="buyer-auth-mini-cart">
-          <h3>Votre panier</h3>
+        <div className="buyer-auth-purchase-summary">
+          <h3>Votre achat</h3>
           {details.length ? details.map((line) => (
-            <div className="buyer-auth-cart-line" key={`${line.productId}-${line.planId}`}>
-              <span className="buyer-auth-cart-image" style={{ background: line.gradient || 'var(--surface-alt)' }}>
+            <div className="buyer-auth-purchase-line" key={`${line.productId}-${line.planId}`}>
+              <span className="buyer-auth-purchase-image" style={{ background: line.gradient || 'var(--surface-alt)' }}>
                 {line.imageUrl || line.logoUrl
                   ? <img src={line.imageUrl || line.logoUrl} alt="" />
                   : line.avatar}
               </span>
-              <span className="buyer-auth-cart-name">{line.name} · {line.planLabel} ×{line.qty}</span>
+              <span className="buyer-auth-purchase-name">{line.name} · {line.planLabel} ×{line.qty}</span>
               <strong>{formatPrice(line.lineTotal)}</strong>
             </div>
-          )) : <p>Votre panier est vide.</p>}
-          <div className="buyer-auth-cart-total"><span>Total</span><strong>{formatPrice(total)}</strong></div>
+          )) : <p>Aucun produit sélectionné.</p>}
+          <div className="buyer-auth-purchase-total"><span>Total</span><strong>{formatPrice(total)}</strong></div>
         </div>
         <p className="buyer-auth-footnote">Le paiement s’effectue sur une page sécurisée de notre prestataire.</p>
       </aside>

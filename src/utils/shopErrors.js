@@ -28,7 +28,7 @@ export function getShopErrorMessage(error, fallback = 'Une erreur temporaire est
     return 'Cette commande est déjà payée. Consultez votre historique pour retrouver son reçu.';
   }
   if (normalized.includes('session') || normalized.includes('jwt') || normalized.includes('authent')) {
-    return 'Votre session a expiré. Reconnectez-vous pour continuer ; vos articles resteront dans votre panier.';
+    return 'Votre session a expiré. Reconnectez-vous pour continuer votre commande.';
   }
   if (normalized.includes('confirm') && normalized.includes('email')) {
     return 'Confirmez votre adresse e-mail depuis le message reçu, puis réessayez.';
@@ -40,7 +40,7 @@ export function getShopErrorMessage(error, fallback = 'Une erreur temporaire est
     return 'La connexion semble momentanément indisponible. Vérifiez Internet et réessayez dans quelques instants.';
   }
   if (normalized.includes('commande') || normalized.includes('order')) {
-    return 'Votre commande n’a pas pu être préparée. Vérifiez votre panier et réessayez ; vous pouvez aussi nous contacter.';
+    return 'Votre commande n’a pas pu être préparée. Vérifiez votre sélection et réessayez ; vous pouvez aussi nous contacter.';
   }
   if (normalized.includes('download') || normalized.includes('télécharg')) {
     return 'Votre accès n’est pas encore disponible. Réessayez dans quelques instants ou contactez-nous avec votre référence.';

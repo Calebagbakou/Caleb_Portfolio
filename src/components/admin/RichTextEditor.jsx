@@ -59,6 +59,7 @@ export default function RichTextEditor({ value, onChange }) {
   const selectionRef = useRef(null);
   const [message, setMessage] = useState('');
   const [textColor, setTextColor] = useState('#1877f2');
+  const [highlightColor, setHighlightColor] = useState('#fff1a8');
   onChangeRef.current = onChange;
 
   const editor = useEditor({
@@ -111,8 +112,10 @@ export default function RichTextEditor({ value, onChange }) {
     applyMark((chain) => chain.setColor(color).run());
   }
 
-  function toggleHighlight() {
-    applyMark((chain) => chain.toggleHighlight({ color: '#FFF1A8' }).run());
+  function changeHighlightColor(event) {
+    const color = event.target.value;
+    setHighlightColor(color);
+    applyMark((chain) => chain.setHighlight({ color }).run());
   }
 
   function addLink() {
@@ -199,16 +202,23 @@ export default function RichTextEditor({ value, onChange }) {
             onChange={changeTextColor}
           />
         </label>
-        <button
-          type="button"
-          aria-label="Surligner en jaune"
-          title="Surligner en jaune"
-          aria-pressed={editor.isActive('highlight')}
-          className={editor.isActive('highlight') ? 'active rich-editor-highlight-button' : 'rich-editor-highlight-button'}
-          onClick={toggleHighlight}
+        <label
+          className="rich-editor-highlight-picker"
+          title="Couleur du surlignage"
+          style={{ '--highlight-color': highlightColor }}
         >
           <ToolbarIcon name="highlight" />
-        </button>
+          <input
+            type="color"
+            aria-label="Couleur du surlignage"
+            value={highlightColor}
+            onMouseDown={() => {
+              const { from, to } = editor.state.selection;
+              selectionRef.current = { from, to };
+            }}
+            onChange={changeHighlightColor}
+          />
+        </label>
         <span className="rich-editor-toolbar-divider" aria-hidden="true" />
         {TOOLBAR_ACTIONS.slice(0, 4).map(({ label, icon, action, active }) => (
           <button
