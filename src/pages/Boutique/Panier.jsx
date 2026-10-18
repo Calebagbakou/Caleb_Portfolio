@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { formatPrice } from '../../data/products';
+import ShopArrow from '../../components/shop/ShopArrow';
 
 export default function Panier() {
   const { details, total, updateQty, remove } = useCart();
@@ -20,8 +21,8 @@ export default function Panier() {
               </svg>
             </div>
             <p>Votre panier est vide pour le moment.</p>
-            <Link to="/boutique/catalogue" className="btn btn-dark">
-              Découvrir le catalogue
+            <Link to="/boutique/catalogue" className="btn btn-primary">
+              Voir le catalogue
             </Link>
           </div>
         </div>
@@ -96,12 +97,10 @@ export default function Panier() {
               style={{ marginTop: 18 }}
             >
               Passer commande
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
+              <ShopArrow />
             </Link>
-            <Link to="/boutique/catalogue" className="btn btn-outline btn-full" style={{ marginTop: 10 }}>
-              Continuer mes achats
+            <Link to="/boutique/catalogue" className="cart-continue-link">
+              Continuer mes achats <ShopArrow />
             </Link>
           </aside>
         </div>

@@ -59,7 +59,7 @@ export default function App() {
         <Route path="/boutique/compte" element={<BuyerAuthGate><Account /></BuyerAuthGate>} />
       </Route>
       {/* commande.html / confirmation.html avaient une nav réduite (pas de menu mobile) */}
-      <Route element={<ShopLayout showFullNav={false} showMobileButton={false} />}>
+      <Route element={<ShopLayout showFullNav={false} showMobileButton />}>
         <Route path="/boutique/commande" element={<BuyerAuthGate><Commande /></BuyerAuthGate>} />
         <Route path="/boutique/confirmation" element={<Confirmation />} />
       </Route>

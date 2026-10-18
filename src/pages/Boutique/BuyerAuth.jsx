@@ -5,6 +5,7 @@ import { useCart } from '../../context/CartContext';
 import { formatPrice } from '../../data/products';
 import ShopAlert from '../../components/shop/ShopAlert';
 import { getShopErrorMessage } from '../../utils/shopErrors';
+import ShopArrow from '../../components/shop/ShopArrow';
 import { supabase } from '../../services/supabase';
 import {
   getBuyerAuthRedirectUrl,
@@ -332,7 +333,7 @@ export default function BuyerAuth() {
         ))}
       </nav>
       <section className="buyer-auth-card">
-        <Link className="buyer-auth-back" to="/boutique/panier">← Retour au panier</Link>
+        <Link className="buyer-auth-back" to="/boutique/panier"><ShopArrow direction="left" /> Retour au panier</Link>
         <div className="eyebrow">COMPTE CLIENT</div>
         <h1>
           <span className="buyer-auth-lock" aria-hidden="true">🔒</span>

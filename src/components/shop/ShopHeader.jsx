@@ -4,11 +4,7 @@ import { useCart } from '../../context/CartContext';
 import useSiteLogo from '../../hooks/useSiteLogo';
 import { useAuth } from '../../context/AuthContext';
 
-/**
- * showFullNav / showMobileButton : sur commande.html et confirmation.html,
- * l'ancien projet n'affichait qu'une nav réduite (Accueil/Catalogue) et pas
- * de bouton menu mobile — on reproduit cette différence ici.
- */
+/** showFullNav controls whether category shortcuts are shown in the desktop navigation. */
 export default function ShopHeader({ showFullNav = true, showMobileButton = true }) {
   const { count } = useCart();
   const { user, logout } = useAuth();
@@ -74,23 +70,21 @@ export default function ShopHeader({ showFullNav = true, showMobileButton = true
                 <Link to="/boutique/catalogue?cat=logiciels">Logiciels créatifs</Link>
               </>
             )}
+            <Link className="portfolio-menu-link" to="/">Voir le portfolio</Link>
           </nav>
 
           <div className="shop-actions">
-            <Link className="portfolio-link" to="/">
-              ← Portfolio
-            </Link>
             {user?.email_confirmed_at ? (
               <div className="shop-account-menu" ref={accountMenuRef}>
                 <button
                   type="button"
                   className="shop-account-trigger"
+                  aria-label="Mon compte"
                   aria-expanded={accountMenuOpen}
                   aria-haspopup="menu"
                   onClick={() => setAccountMenuOpen((open) => !open)}
                 >
                   <span className="shop-account-avatar">{initials}</span>
-                  <span>Mon compte</span>
                 </button>
                 {accountMenuOpen && (
                   <div className="shop-account-dropdown" role="menu">
@@ -159,8 +153,8 @@ export default function ShopHeader({ showFullNav = true, showMobileButton = true
           <Link to={user?.email_confirmed_at ? '/boutique/compte' : '/boutique/connexion?next=%2Fboutique%2Fcompte'} onClick={() => setMobileOpen(false)}>
             {user?.email_confirmed_at ? 'Mon compte' : 'Se connecter'}
           </Link>
-          <Link to="/" onClick={() => setMobileOpen(false)}>
-            ← Retour au portfolio
+          <Link className="mobile-portfolio-link" to="/" onClick={() => setMobileOpen(false)}>
+            Voir le portfolio
           </Link>
         </div>
       )}

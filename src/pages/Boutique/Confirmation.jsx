@@ -202,8 +202,8 @@ export default function Confirmation() {
           <p style={{ color: 'var(--ink-dim)', marginBottom: 22 }}>
             Nous n'avons pas trouvé de commande à afficher.
           </p>
-          <Link to="/boutique/catalogue" className="btn btn-dark">
-            Découvrir le catalogue
+          <Link to="/boutique/catalogue" className="btn btn-primary">
+            Voir le catalogue
           </Link>
         </div>
       </main>
@@ -234,7 +234,7 @@ export default function Confirmation() {
             </div>
           </div>
           <Link to="/boutique/compte" className="btn btn-outline">Voir vos commandes</Link>
-          <Link to="/boutique/catalogue" className="btn btn-dark">Retour à la boutique</Link>
+          <Link to="/boutique" className="btn btn-primary">Retour à la boutique</Link>
         </div>
       </main>
     );
@@ -420,14 +420,17 @@ export default function Confirmation() {
             : 'Votre commande est enregistrée. Caleb préparera l’activation du produit et pourra vous contacter si une information complémentaire est nécessaire.'}
         </p>
 
-        <div className="shop-hero-cta">
-          <Link to="/boutique/catalogue" className="btn btn-primary">
-            Retour à la boutique
+        <div className="confirm-actions">
+          <Link to="/boutique/compte" className="btn btn-primary">
+            Voir mes accès
           </Link>
-          <Link to="/" className="btn btn-outline">
-            Retour au portfolio
+          <Link to="/boutique/catalogue" className="btn btn-outline">
+            Continuer mes achats
           </Link>
         </div>
+        <footer className="confirm-footer-link">
+          <Link to="/">Voir le portfolio</Link>
+        </footer>
       </div>
     </main>
   );

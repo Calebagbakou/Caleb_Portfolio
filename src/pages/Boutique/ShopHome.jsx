@@ -4,6 +4,7 @@ import ShopAlert from '../../components/shop/ShopAlert';
 import { useReveal } from '../../hooks/useReveal';
 import { useShop } from '../../context/ShopContext';
 import Seo from '../../components/site/Seo';
+import ShopArrow from '../../components/shop/ShopArrow';
 
 function TrustItem({ icon, title, desc }) {
   const [ref, visible] = useReveal();
@@ -39,16 +40,12 @@ export default function ShopHome() {
         <h1 className={`reveal${heroVisible ? ' in' : ''}`}>{content.shop_hero_title}</h1>
         <p className={`reveal${heroVisible ? ' in' : ''}`}>{content.shop_hero_description}</p>
         <div className={`shop-hero-cta reveal${heroVisible ? ' in' : ''}`}>
-          <Link to="/boutique/catalogue" className="btn btn-dark">
+          <Link to="/boutique/catalogue" className="btn btn-primary">
             Voir le catalogue
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
-          </Link>
-          <Link to="/" className="btn btn-outline">
-            ← Retour au portfolio
+            <ShopArrow />
           </Link>
         </div>
+        <Link to="/" className="shop-portfolio-text">Voir le portfolio <ShopArrow /></Link>
       </section>
 
       <main className="wrap">
@@ -67,7 +64,7 @@ export default function ShopHome() {
           <div className="sec-head">
             <h2>Produits phares</h2>
             <Link to="/boutique/catalogue" className="see-all">
-              Voir tout le catalogue →
+              Voir le catalogue <ShopArrow />
             </Link>
           </div>
           {loading && <div className="shop-state">Chargement des produits…</div>}

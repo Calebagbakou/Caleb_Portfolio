@@ -234,7 +234,7 @@ export default function Account() {
                   </span>
                   <h2>Aucune commande pour le moment</h2>
                   <p>Vos commandes, reçus et accès apparaîtront ici.</p>
-                  <Link to="/boutique/catalogue" className="btn btn-primary">Découvrir le catalogue</Link>
+                  <Link to="/boutique/catalogue" className="btn btn-primary">Voir le catalogue</Link>
                 </div>
               ) : orders.map((order) => {
                 const delivery = deliveryState[order.id];

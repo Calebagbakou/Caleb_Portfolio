@@ -6,6 +6,7 @@ import { createSasPayCheckout, createShopCheckout } from '../../services/shop';
 import { useAuth } from '../../context/AuthContext';
 import ShopAlert from '../../components/shop/ShopAlert';
 import { getShopErrorMessage } from '../../utils/shopErrors';
+import ShopArrow from '../../components/shop/ShopArrow';
 
 export default function Commande() {
   const { details, total } = useCart();
@@ -40,8 +41,8 @@ export default function Commande() {
             </svg>
           </div>
           <p>Votre panier est vide — ajoutez un produit avant de passer commande.</p>
-          <Link to="/boutique/catalogue" className="btn btn-dark">
-            Découvrir le catalogue
+          <Link to="/boutique/catalogue" className="btn btn-primary">
+            Voir le catalogue
           </Link>
         </div>
       </main>
@@ -171,9 +172,7 @@ export default function Commande() {
             {saving
               ? 'Ouverture du paiement…'
               : `Payer ${formatPrice(pendingOrder ? Number(pendingOrder.total) : total)}`}
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M5 12h14M13 6l6 6-6 6" />
-            </svg>
+            <ShopArrow />
           </button>
           <p className="pay-redirect-note">Vous serez redirigé vers la page de paiement sécurisée de notre prestataire.</p>
         </div>

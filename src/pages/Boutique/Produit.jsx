@@ -5,6 +5,7 @@ import { useCart } from '../../context/CartContext';
 import { useShop } from '../../context/ShopContext';
 import { useAuth } from '../../context/AuthContext';
 import Seo from '../../components/site/Seo';
+import ShopArrow from '../../components/shop/ShopArrow';
 
 export default function Produit() {
   const { id } = useParams();
@@ -42,8 +43,8 @@ export default function Produit() {
         <p style={{ color: 'var(--ink-dim)', marginBottom: 22 }}>
           {error || "Ce produit n'existe pas ou a été retiré du catalogue."}
         </p>
-        <Link to="/boutique/catalogue" className="btn btn-dark">
-          Retour au catalogue
+        <Link to="/boutique/catalogue" className="btn btn-primary">
+          Voir le catalogue
         </Link>
       </div>
     );
@@ -76,6 +77,14 @@ export default function Produit() {
         path={`/boutique/produit/${product.slug}`}
         product={product}
       />
+      <nav className="product-breadcrumb" aria-label="Fil d’Ariane">
+        <Link className="product-breadcrumb-home" to="/boutique">Boutique</Link>
+        <span aria-hidden="true">/</span>
+        <Link to="/boutique/catalogue">Catalogue</Link>
+        <span aria-hidden="true">/</span>
+        <span className="product-breadcrumb-current" aria-current="page">{product.name}</span>
+      </nav>
+      <Link to="/boutique/catalogue" className="product-mobile-back"><ShopArrow direction="left" /> Catalogue</Link>
       <div className="product-detail">
         <div
           className="product-visual reveal in"
@@ -162,9 +171,7 @@ export default function Produit() {
               disabled={!product.plans.some((plan) => plan.id === selectedPlanId && plan.active)}
             >
               Acheter maintenant
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
+              <ShopArrow />
             </button>
             {product.slug !== 'capcut-pro' && (
               <button

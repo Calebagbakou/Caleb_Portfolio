@@ -117,7 +117,7 @@ body.shop-theme .brand-name{ font-family:'Nunito', sans-serif; letter-spacing:-0
 
 .shop-actions{ display:flex; align-items:center; gap:8px; }
 .shop-icon-btn{
-  position:relative; width:40px;height:40px; border-radius:50%; border:1px solid var(--border);
+  position:relative; width:44px;height:44px; border-radius:50%; border:1px solid var(--border);
   background:var(--surface); display:flex; align-items:center; justify-content:center; cursor:pointer;
   transition: border-color .2s ease, transform .15s ease;
 }
@@ -129,21 +129,16 @@ body.shop-theme .brand-name{ font-family:'Nunito', sans-serif; letter-spacing:-0
   background:var(--accent); color:#fff; font-size:10.5px; font-weight:700; font-family:'Inter',sans-serif;
   display:none; align-items:center; justify-content:center;
 }
-.portfolio-link{
-  font-size:13px; font-weight:600; color:var(--ink-dim); display:none;
-  padding:9px 14px; border:1px solid var(--border); border-radius:999px;
-  transition: border-color .2s ease, color .2s ease;
-}
-.portfolio-link:hover{ border-color:var(--border-strong); color:var(--ink); }
+.shop-nav .portfolio-menu-link{ margin-left:6px; padding-left:18px; border-left:1px solid var(--border-strong); }
 .shop-account-link{
-  font-size:13px; font-weight:700; color:var(--ink-dim); padding:9px 12px;
+  display:inline-flex; align-items:center; min-height:44px; font-size:13px; font-weight:700; color:var(--ink-dim); padding:9px 12px;
   border:1px solid var(--border); border-radius:999px; white-space:nowrap;
 }
 .shop-account-link:hover{ color:var(--ink); border-color:var(--border-strong); }
 .shop-account-menu{ position:relative; }
-.shop-account-trigger{ display:inline-flex; align-items:center; gap:8px; min-height:40px; padding:4px 12px 4px 5px; border:1px solid var(--border); border-radius:999px; background:var(--surface); color:var(--ink); font:600 13px 'Inter',sans-serif; cursor:pointer; }
+.shop-account-trigger{ display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; padding:0; border:1px solid var(--border); border-radius:50%; background:var(--surface); color:var(--ink); cursor:pointer; }
 .shop-account-trigger:hover{ border-color:var(--border-strong); }
-.shop-account-avatar{ display:grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--accent-dim); color:var(--accent); font-size:11px; font-weight:800; }
+.shop-account-avatar{ display:grid; place-items:center; width:28px; height:28px; border-radius:50%; background:var(--accent-dim); color:var(--accent); font-size:11px; font-weight:800; }
 .shop-account-dropdown{ position:absolute; top:calc(100% + 9px); right:0; z-index:180; display:grid; min-width:200px; padding:7px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--surface); box-shadow:var(--shadow-md); }
 .shop-account-dropdown a,.shop-account-dropdown button{ display:block; width:100%; padding:11px 12px; border:0; border-radius:8px; background:transparent; color:var(--ink); text-align:left; font:500 13px 'Inter',sans-serif; cursor:pointer; }
 .shop-account-dropdown a:hover,.shop-account-dropdown button:hover{ background:var(--surface-alt); }
@@ -152,9 +147,9 @@ body.shop-theme .brand-name{ font-family:'Nunito', sans-serif; letter-spacing:-0
 @media(min-width:720px){ .portfolio-link{ display:inline-flex; align-items:center; gap:6px; } }
 
 .mobile-nav-btn{ display:flex; }
-@media(min-width:860px){ .mobile-nav-btn{ display:none; } }
+@media(min-width:1024px){ .mobile-nav-btn{ display:none; } }
 .shop-nav{ display:none; }
-@media(min-width:860px){ .shop-nav{ display:flex; } }
+@media(min-width:1024px){ .shop-nav{ display:flex; } }
 
 .mobile-nav{
   position:fixed; inset:0; z-index:150; background:var(--surface);
@@ -164,25 +159,28 @@ body.shop-theme .brand-name{ font-family:'Nunito', sans-serif; letter-spacing:-0
 }
 .mobile-nav.open{ transform:none; visibility:visible; transition-delay:0s; }
 .mobile-nav-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:30px; }
-.mobile-nav-close{ width:38px;height:38px; border-radius:50%; border:1px solid var(--border); background:var(--surface); display:flex; align-items:center; justify-content:center; cursor:pointer; }
-.mobile-nav a{ font-family:'Nunito', sans-serif; font-size:1.35rem; font-weight:800; letter-spacing:-.025em; line-height:1.2; padding:10px 0; border-bottom:1px solid var(--border); }
+.mobile-nav-close{ width:44px;height:44px; border-radius:50%; border:1px solid var(--border); background:var(--surface); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+.mobile-nav a{ display:flex; align-items:center; min-height:48px; font-family:'Nunito', sans-serif; font-size:1.35rem; font-weight:800; letter-spacing:-.025em; line-height:1.2; padding:10px 0; border-bottom:1px solid var(--border); }
+.mobile-nav .mobile-portfolio-link{ margin-top:auto; border-top:1px solid var(--border-strong); border-bottom:0; padding-top:18px; font-family:'Inter',sans-serif; font-size:14px; font-weight:600; letter-spacing:0; }
 
 /* ---------- BUTTONS ---------- */
 .btn{
   display:inline-flex; align-items:center; justify-content:center; gap:8px;
-  font-weight:600; font-size:14.5px; padding:14px 22px; border-radius:999px; border:none;
+  min-height:44px; font-weight:600; font-size:14.5px; padding:12px 22px; border-radius:999px; border:none;
   cursor:pointer; text-align:center; transition: transform .15s var(--ease), filter .2s ease, background-color .2s ease, border-color .2s ease;
 }
 .btn:active{ transform:scale(.97); }
 .btn-primary{ background:var(--accent); color:var(--accent-ink); }
 .btn-primary:hover{ filter:brightness(0.96); }
-.btn-dark{ background:var(--accent); color:#fff; }
-.btn-dark:hover{ filter:brightness(1.15); }
 .btn-outline{ background:transparent; color:var(--ink); border:1px solid var(--border-strong); }
 .btn-outline:hover{ background:var(--surface-alt); }
 .btn-full{ width:100%; }
 .btn[disabled]{ opacity:.45; cursor:not-allowed; pointer-events:none; }
-.btn svg{ width:16px; height:16px; }
+.btn svg{ width:18px; height:18px; }
+.shop-arrow{ flex:none; width:16px !important; height:16px !important; transition:transform .2s var(--ease); }
+.btn:hover .shop-arrow,.see-all:hover .shop-arrow,.shop-portfolio-text:hover .shop-arrow,.cart-continue-link:hover .shop-arrow,.shop-footer-row a:hover .shop-arrow{ transform:translateX(3px); }
+.shop-arrow-left{ transform:rotate(180deg); }
+.buyer-auth-back:hover .shop-arrow-left,.product-mobile-back:hover .shop-arrow-left{ transform:rotate(180deg) translateX(3px); }
 
 /* ---------- HERO (accueil boutique) ---------- */
 .shop-hero{
@@ -196,6 +194,8 @@ body.shop-theme .brand-name{ font-family:'Nunito', sans-serif; letter-spacing:-0
 }
 .shop-hero p{ color:var(--ink-dim); max-width:52ch; margin:0 auto 28px; font-size:16.5px; }
 .shop-hero-cta{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+.shop-portfolio-text{ display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:44px; margin-top:8px; color:var(--ink-dim); font-size:13px; font-weight:600; }
+.shop-portfolio-text:hover{ color:var(--ink); }
 .shop-state{ padding:28px 16px; text-align:center; color:var(--ink-dim); }
 .shop-state.error{ color:var(--danger); }
 .shop-alert{ display:flex; gap:12px; align-items:flex-start; padding:15px 16px; border:1px solid rgba(255,92,92,.28); border-radius:14px; background:rgba(255,92,92,.08); color:var(--ink); margin:0 0 18px; text-align:left; }
@@ -285,6 +285,7 @@ body.shop-theme .brand-name{ font-family:'Nunito', sans-serif; letter-spacing:-0
 .sec-head{ display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin:0 0 20px; flex-wrap:wrap; }
 .sec-head h2{ font-size:clamp(1.4rem, 3vw, 1.9rem); margin:0; font-weight:700; }
 .sec-head .see-all{ font-size:13.5px; font-weight:600; color:var(--ink-dim); white-space:nowrap; }
+.sec-head .see-all{ display:inline-flex; align-items:center; gap:6px; min-height:44px; }
 .sec-head .see-all:hover{ color:var(--ink); }
 
 /* ---------- PRODUCT GRID / CARD ---------- */
@@ -363,6 +364,11 @@ body.shop-theme .product-name{ font-family:'Nunito', sans-serif; font-weight:800
 
 /* ---------- PRODUCT PAGE ---------- */
 .product-detail{ display:grid; grid-template-columns:1fr; gap:36px; padding:36px 0 60px; }
+.product-breadcrumb{ display:flex; align-items:center; gap:9px; padding-top:24px; color:var(--ink-faint); font-size:13px; }
+.product-breadcrumb a{ color:var(--ink-dim); }
+.product-breadcrumb a:hover{ color:var(--ink); }
+.product-breadcrumb-current{ color:var(--ink); font-weight:600; }
+.product-mobile-back{ display:none; }
 @media(min-width:840px){ .product-detail{ grid-template-columns:1fr 1fr; gap:52px; align-items:start; } }
 .product-visual{
   aspect-ratio:4/3; border-radius:var(--radius-lg); display:flex; align-items:center; justify-content:center;
@@ -448,6 +454,7 @@ body.shop-theme .product-name{ font-family:'Nunito', sans-serif; font-weight:800
 .buyer-auth-wrap{ display:grid; place-items:center; min-height:calc(100svh - 150px); padding-block:48px; }
 .buyer-auth-card{ width:min(100%,480px); padding:clamp(22px,5vw,34px); border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--surface); box-shadow:var(--shadow-md); }
 .buyer-auth-back{ display:inline-flex; margin-bottom:26px; color:var(--ink-dim); font-size:13px; font-weight:600; }
+.buyer-auth-back{ align-items:center; gap:6px; min-height:44px; }
 .buyer-auth-card h1{ margin:8px 0 10px; font-size:clamp(1.6rem,5vw,2rem); line-height:1.15; }
 .buyer-auth-intro{ margin:0 0 22px; color:var(--ink-dim); line-height:1.55; }
 .buyer-auth-tabs{ display:grid; grid-template-columns:1fr 1fr; gap:4px; padding:4px; margin-bottom:14px; border-radius:var(--radius-sm); background:var(--surface-alt); }
@@ -516,6 +523,13 @@ body.shop-theme .product-name{ font-family:'Nunito', sans-serif; font-weight:800
 .shop-footer{ border-top:1px solid var(--border); padding:32px 0; margin-top:40px; }
 .shop-footer-row{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:13px; color:var(--ink-dim); }
 .shop-footer-row a{ font-weight:600; color:var(--ink); }
+.shop-footer-row a{ display:inline-flex; align-items:center; gap:5px; min-height:44px; }
+.cart-continue-link{ display:flex; align-items:center; justify-content:center; gap:6px; min-height:44px; margin-top:10px; color:var(--ink-dim); font-size:13px; font-weight:600; }
+.cart-continue-link:hover{ color:var(--ink); }
+.confirm-actions{ display:flex; flex-wrap:wrap; justify-content:center; gap:10px; }
+.confirm-footer-link{ margin-top:20px; }
+.confirm-footer-link a{ display:inline-flex; align-items:center; min-height:44px; color:var(--ink-dim); font-size:13px; }
+.confirm-footer-link a:hover{ color:var(--ink); }
 
 /* ---------- MISC ---------- */
 .section{ padding:8px 0 40px; }
@@ -540,17 +554,21 @@ body.shop-theme .product-name{ font-family:'Nunito', sans-serif; font-weight:800
   .btn{ max-width:100%; overflow-wrap:anywhere; }
   .mobile-nav{ justify-content:flex-start; padding-top:14px; }
   .mobile-nav-top{ margin-bottom:18px; }
+  .product-breadcrumb{ display:none; }
+  .product-mobile-back{ display:inline-flex; align-items:center; gap:7px; min-height:44px; margin-top:18px; color:var(--ink-dim); font-size:13px; font-weight:600; }
+  .product-detail{ padding-top:16px; }
+  .confirm-actions{ flex-direction:column; align-items:stretch; }
 }
 
 @media(max-width:360px){
   .shop-header-row{ padding-inline:12px; }
   .shop-brand-mark{ width:30px; height:30px; font-size:11px; }
   .shop-brand-text{ font-size:11px; }
-  .shop-icon-btn{ width:36px; height:36px; }
+  .shop-icon-btn{ width:44px; height:44px; }
 }
-  :where(a, button, input, textarea, select, [tabindex]):focus-visible{
-    outline:2px solid #1877F2; outline-offset:3px;
-  }
+body.shop-theme :where(a, button, input, textarea, select, [tabindex]):focus-visible{
+  outline:2px solid var(--accent); outline-offset:3px;
+}
 
 .buyer-auth-wrap{
   display:grid;
