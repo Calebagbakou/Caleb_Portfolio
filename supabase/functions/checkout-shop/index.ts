@@ -1,4 +1,5 @@
 import { getServiceClient, jsonResponse } from '../_shared/shop.ts';
+import { isAllowedBuyerEmail } from '../_shared/buyer-email.ts';
 
 Deno.serve(async (request) => {
   if (request.method === 'OPTIONS') return jsonResponse({}, 200);
@@ -8,7 +9,7 @@ Deno.serve(async (request) => {
     const authorization = request.headers.get('authorization') || '';
     const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
     if (!accessToken) {
-      return jsonResponse({ error: 'Connecte-toi avant de créer une commande.' }, 401);
+      return jsonResponse({ error: 'Connectez-vous avant de créer une commande.' }, 401);
     }
 
     const authClient = getServiceClient();
@@ -16,9 +17,8 @@ Deno.serve(async (request) => {
     if (authError || !user?.email || !user.email_confirmed_at) {
       return jsonResponse({ error: 'Une session avec une adresse e-mail confirmée est obligatoire.' }, 401);
     }
-    const buyerDomain = user.email.trim().toLowerCase().split('@').at(-1);
-    if (buyerDomain !== 'gmail.com' && buyerDomain !== 'outlook.com') {
-      return jsonResponse({ error: 'Les commandes sont réservées aux adresses Gmail et Outlook.' }, 403);
+    if (!isAllowedBuyerEmail(user.email)) {
+      return jsonResponse({ error: 'Cette adresse n’est pas acceptée. Utilisez une adresse personnelle d’un fournisseur courant.' }, 403);
     }
 
     const body = await request.json();

@@ -18,7 +18,7 @@ export default function Account() {
     let active = true;
     getBuyerAccount().then(({ data, error: accountError }) => {
       if (!active) return;
-      if (accountError) setError(getShopErrorMessage(accountError, 'Ton espace client est momentanément indisponible.'));
+      if (accountError) setError(getShopErrorMessage(accountError, 'Votre espace client est momentanément indisponible.'));
       else setAccount(data);
       setLoading(false);
     });
@@ -26,21 +26,21 @@ export default function Account() {
   }, []);
 
   async function handleLogout() {
-    if (!window.confirm('Es-tu sûr de vouloir te déconnecter ?')) return;
+    if (!window.confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) return;
     await logout();
     navigate('/boutique', { replace: true });
   }
 
   async function handleDeleteAccount() {
     const confirmed = window.confirm(
-      'Es-tu sûr de vouloir supprimer ton compte ? Cette action supprimera ta connexion et anonymisera les informations personnelles liées à tes commandes.',
+      'Êtes-vous sûr de vouloir supprimer votre compte ? Cette action supprimera votre connexion et anonymisera les informations personnelles liées à vos commandes.',
     );
     if (!confirmed) return;
     setError('');
     const { error: deleteError } = await deleteBuyerAccount();
     if (deleteError) {
       console.error('Suppression du compte client impossible :', deleteError);
-      setError(getShopErrorMessage(deleteError, 'Le compte n’a pas pu être supprimé. Tu peux réessayer ou nous contacter.'));
+      setError(getShopErrorMessage(deleteError, 'Le compte n’a pas pu être supprimé. Vous pouvez réessayer ou nous contacter.'));
       return;
     }
     try {
@@ -57,7 +57,7 @@ export default function Account() {
     setDeliveryState((current) => ({
       ...current,
       [order.id]: deliveryError
-        ? { error: getShopErrorMessage(deliveryError, 'Tes accès sont momentanément indisponibles.') }
+        ? { error: getShopErrorMessage(deliveryError, 'Vos accès sont momentanément indisponibles.') }
         : { data },
     }));
   }
@@ -80,7 +80,7 @@ export default function Account() {
     return status === 'confirme' ? 'Payée' : 'En attente';
   }
 
-  if (loading) return <main className="wrap"><div className="shop-state">Chargement de ton espace client…</div></main>;
+  if (loading) return <main className="wrap"><div className="shop-state">Chargement de votre espace client…</div></main>;
   if (error) return (
     <main className="wrap">
       <div className="shop-state-error-wrap">
@@ -95,7 +95,7 @@ export default function Account() {
         <div>
           <div className="account-kicker">TABLEAU DE BORD CLIENT</div>
           <h1>Bonjour, {displayName.split(' ')[0]}.</h1>
-          <p>Gère tes commandes, retrouve tes accès et garde le contrôle de ton compte.</p>
+          <p>Gérez vos commandes, retrouvez vos accès et gardez le contrôle de votre compte.</p>
         </div>
         <button type="button" className="btn btn-outline account-logout" onClick={handleLogout}>
           Se déconnecter
@@ -105,7 +105,7 @@ export default function Account() {
       <div className="account-stat-grid">
         <div className="account-stat-card"><span>Commandes</span><strong>{orders.length}</strong><small>Historique total</small></div>
         <div className="account-stat-card"><span>Commandes payées</span><strong>{paidOrders.length}</strong><small>Transactions confirmées</small></div>
-        <div className="account-stat-card"><span>Articles achetés</span><strong>{itemCount}</strong><small>Produits dans tes commandes</small></div>
+        <div className="account-stat-card"><span>Articles achetés</span><strong>{itemCount}</strong><small>Produits dans vos commandes</small></div>
       </div>
 
       <div className="account-grid">

@@ -168,10 +168,10 @@ export default function Confirmation() {
       const status = response.status
         || (error?.context?.status === 402 ? 'insufficient_balance' : '');
       const message = status === 'insufficient_balance'
-        ? 'La génération de ton lien d’activation est temporairement indisponible. Réessaie plus tard ou contacte Caleb avec ta référence de commande.'
+        ? 'La génération de votre lien d’activation est temporairement indisponible. Réessayez plus tard ou contactez Caleb avec votre référence de commande.'
         : status === 'retryable'
-          ? 'La génération de ton lien a rencontré un problème temporaire. Tu peux réessayer sans risque de relancer le paiement.'
-          : 'Le lien d’activation n’a pas pu être généré. Contacte Caleb avec ta référence de commande.';
+          ? 'La génération de votre lien a rencontré un problème temporaire. Vous pouvez réessayer sans relancer le paiement.'
+          : 'Le lien d’activation n’a pas pu être généré. Contactez Caleb avec votre référence de commande.';
       setDeliveryError(message);
       setDeliveryStatus(
         status === 'insufficient_balance' || status === 'retryable'
@@ -213,20 +213,27 @@ export default function Confirmation() {
   if (order.payment_status !== 'confirme') {
     return (
       <main>
+        <nav className="buyer-journey" aria-label="Étapes de la commande">
+          {['Panier', 'Compte', 'Paiement', 'Livraison'].map((step, index) => (
+            <div className={`buyer-journey-step${index === 2 ? ' active' : ''}`} aria-current={index === 2 ? 'step' : undefined} key={step}>
+              <span>{index + 1}</span>{step}
+            </div>
+          ))}
+        </nav>
         <div className="confirm-wrap">
-          <h1 style={{ fontSize: '1.6rem' }}>Confirmation de ton paiement</h1>
+          <h1 style={{ fontSize: '1.6rem' }}>Confirmation de votre paiement</h1>
           <p style={{ color: 'var(--ink-dim)', marginBottom: 22 }}>
-            Nous vérifions encore la confirmation SasPay de la commande {order.ref || order.id}. Cette vérification
-            se fait automatiquement ; tu peux rester sur cette page sans repayer.
+            Nous vérifions la confirmation du paiement pour la commande {order.ref || order.id}. Cette vérification
+            se fait automatiquement ; vous pouvez rester sur cette page sans repayer.
           </p>
           <div className="shop-alert info" role="status">
             <span className="shop-alert-icon" aria-hidden="true">i</span>
             <div className="shop-alert-content">
               <strong>Paiement en cours de vérification</strong>
-              <span>La commande sera actualisée automatiquement dès que SasPay aura confirmé le paiement.</span>
+              <span>La commande sera actualisée automatiquement dès que le prestataire aura confirmé le paiement.</span>
             </div>
           </div>
-          <Link to="/boutique/compte" className="btn btn-outline">Voir mes commandes</Link>
+          <Link to="/boutique/compte" className="btn btn-outline">Voir vos commandes</Link>
           <Link to="/boutique/catalogue" className="btn btn-dark">Retour à la boutique</Link>
         </div>
       </main>
@@ -235,6 +242,13 @@ export default function Confirmation() {
 
   return (
     <main>
+      <nav className="buyer-journey" aria-label="Étapes de la commande">
+        {['Panier', 'Compte', 'Paiement', 'Livraison'].map((step, index) => (
+          <div className={`buyer-journey-step${index === 3 ? ' active' : ''}`} aria-current={index === 3 ? 'step' : undefined} key={step}>
+            <span>{index + 1}</span>{step}
+          </div>
+        ))}
+      </nav>
       <div className="confirm-wrap">
         <div className="confirm-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4">
@@ -243,7 +257,7 @@ export default function Confirmation() {
         </div>
         <h1 style={{ fontSize: 'clamp(1.6rem,4vw,2.1rem)', margin: '0 0 8px' }}>Paiement confirmé</h1>
         <p style={{ color: 'var(--ink-dim)' }}>
-          Merci {order.customer?.name} ! Ton paiement SasPay a été vérifié.
+          Merci {order.customer?.name} ! Votre paiement a été vérifié.
         </p>
         <div className="confirm-ref">
           Référence : <strong>{order.ref}</strong>
@@ -254,9 +268,9 @@ export default function Confirmation() {
           if (!downloads.length && shopDeliveryStatus !== 'loading' && shopDeliveryStatus !== 'failed') return null;
           return (
             <section className="download-delivery" aria-live="polite">
-              <div className="eyebrow">TES FICHIERS SONT PRÊTS</div>
+              <div className="eyebrow">VOS FICHIERS SONT PRÊTS</div>
               <h2>Téléchargement sécurisé</h2>
-              {shopDeliveryStatus === 'loading' && <p>Préparation de tes liens temporaires…</p>}
+              {shopDeliveryStatus === 'loading' && <p>Préparation de vos liens temporaires…</p>}
               {shopDeliveryStatus === 'failed' && (
                 <>
                   <ShopAlert message={shopDeliveryError} action="Réessayer" onAction={requestShopDeliveries} />
@@ -350,14 +364,14 @@ export default function Confirmation() {
           <section className="confirm-summary" aria-live="polite" style={{ marginTop: 16 }}>
             <h2 style={{ fontSize: '1.1rem', marginTop: 0 }}>Lien d’activation Gemini AI Pro · 18 mois</h2>
             {['idle', 'loading'].includes(deliveryStatus) && (
-              <p>Génération automatique de ton lien d’activation en cours…</p>
+              <p>Génération automatique de votre lien d’activation en cours…</p>
             )}
             {deliveryStatus === 'starting' && (
-              <p>Ta demande est en cours de traitement. Actualise cette page dans quelques instants.</p>
+              <p>Votre demande est en cours de traitement. Actualisez cette page dans quelques instants.</p>
             )}
             {deliveryStatus === 'success' && deliveryLinks.length > 0 && (
               <div>
-                <p>Ton lien d’activation est prêt :</p>
+                <p>Votre lien d’activation est prêt :</p>
                 {deliveryLinks.map((link, index) => (
                   <p key={link}>
                     <a href={link} target="_blank" rel="noopener noreferrer" className="gemini-activation-url">
@@ -374,7 +388,7 @@ export default function Confirmation() {
             {['insufficient_balance', 'retryable'].includes(deliveryStatus) && (
               <>
                 <ShopAlert
-                  message={getShopErrorMessage(deliveryError, 'La génération de ton lien a rencontré un problème temporaire. Tu peux réessayer sans risque de relancer le paiement.')}
+                  message={getShopErrorMessage(deliveryError, 'La génération de votre lien a rencontré un problème temporaire. Vous pouvez réessayer sans relancer le paiement.')}
                   action="Réessayer"
                   onAction={() => requestPixverifyLink('retry')}
                 />
@@ -392,7 +406,7 @@ export default function Confirmation() {
             )}
             {deliveryStatus === 'failed' && (
               <ShopAlert
-                message={getShopErrorMessage(deliveryError, 'Le lien d’activation n’a pas pu être généré. Contacte Caleb avec ta référence de commande.')}
+                message={getShopErrorMessage(deliveryError, 'Le lien d’activation n’a pas pu être généré. Contactez Caleb avec votre référence de commande.')}
                 action="Réessayer"
                 onAction={() => requestPixverifyLink('retry')}
               />
@@ -403,7 +417,7 @@ export default function Confirmation() {
         <p style={{ color: 'var(--ink-dim)', fontSize: 14, marginBottom: 22 }}>
           {geminiQuantity > 0
             ? 'La génération du lien est lancée automatiquement après confirmation du paiement.'
-            : 'Ta commande est enregistrée. Caleb préparera l’activation du produit et pourra te contacter si une information complémentaire est nécessaire.'}
+            : 'Votre commande est enregistrée. Caleb préparera l’activation du produit et pourra vous contacter si une information complémentaire est nécessaire.'}
         </p>
 
         <div className="shop-hero-cta">

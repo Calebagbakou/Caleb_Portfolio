@@ -32,7 +32,7 @@ export default function Catalogue() {
         <div className="eyebrow">CATALOGUE</div>
         <h1 style={{ fontSize: 'clamp(1.7rem,4vw,2.4rem)', margin: '0 0 6px' }}>Tous les produits</h1>
         <p style={{ color: 'var(--ink-dim)', margin: '0 0 8px', maxWidth: '56ch' }}>
-          Abonnements IA et logiciels créatifs, activés après commande. Choisis une catégorie pour affiner ta
+          Abonnements IA et logiciels créatifs, activés après commande. Choisissez une catégorie pour affiner votre
           recherche.
         </p>
 

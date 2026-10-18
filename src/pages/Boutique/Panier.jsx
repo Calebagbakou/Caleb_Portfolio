@@ -10,7 +10,7 @@ export default function Panier() {
       <main className="wrap">
         <div className="section" style={{ paddingTop: 32 }}>
           <div className="eyebrow">PANIER</div>
-          <h1 style={{ fontSize: 'clamp(1.7rem,4vw,2.2rem)', margin: '0 0 20px' }}>Ton panier</h1>
+          <h1 style={{ fontSize: 'clamp(1.7rem,4vw,2.2rem)', margin: '0 0 20px' }}>Votre panier</h1>
           <div className="empty-cart">
             <div className="ic">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -19,7 +19,7 @@ export default function Panier() {
                 <circle cx="17" cy="20" r="1.4" />
               </svg>
             </div>
-            <p>Ton panier est vide pour le moment.</p>
+            <p>Votre panier est vide pour le moment.</p>
             <Link to="/boutique/catalogue" className="btn btn-dark">
               Découvrir le catalogue
             </Link>
@@ -33,7 +33,7 @@ export default function Panier() {
     <main className="wrap">
       <div className="section" style={{ paddingTop: 32 }}>
         <div className="eyebrow">PANIER</div>
-        <h1 style={{ fontSize: 'clamp(1.7rem,4vw,2.2rem)', margin: '0 0 20px' }}>Ton panier</h1>
+        <h1 style={{ fontSize: 'clamp(1.7rem,4vw,2.2rem)', margin: '0 0 20px' }}>Votre panier</h1>
 
         <div className="cart-layout">
           <div>

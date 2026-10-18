@@ -1,4 +1,5 @@
 import { getSasPayConfig, getServiceClient, jsonResponse } from '../_shared/shop.ts';
+import { isAllowedBuyerEmail } from '../_shared/buyer-email.ts';
 
 function formatProviderError(value: unknown) {
   if (typeof value === 'string' && value.trim()) return value.trim();
@@ -23,13 +24,16 @@ Deno.serve(async (request) => {
     const authorization = request.headers.get('authorization') || '';
     const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
     const { apiBaseUrl, authorizationHeader, liveMode } = getSasPayConfig();
-    if (!accessToken) return jsonResponse({ error: 'Connecte-toi avant de payer.' }, 401);
+    if (!accessToken) return jsonResponse({ error: 'Connectez-vous avant de payer.' }, 401);
 
     const client = getServiceClient();
     const { data: { user }, error: authError } = await client.auth.getUser(accessToken);
     const { orderId } = await request.json();
-    if (authError || !user?.email || typeof orderId !== 'string') {
+    if (authError || !user?.email || !user.email_confirmed_at || typeof orderId !== 'string') {
       return jsonResponse({ error: 'Session ou commande invalide.' }, 401);
+    }
+    if (!isAllowedBuyerEmail(user.email)) {
+      return jsonResponse({ error: 'Cette adresse n’est pas acceptée pour effectuer un paiement.' }, 403);
     }
 
     const { data: order, error: orderError } = await client

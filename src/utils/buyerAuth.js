@@ -1,12 +1,6 @@
-export const BUYER_EMAIL_DOMAINS = ['gmail.com', 'outlook.com'];
+import { isAllowedBuyerEmail } from '../../supabase/functions/_shared/buyer-email.ts';
 
-export function isAllowedBuyerEmail(value) {
-  if (typeof value !== 'string') return false;
-  const email = value.trim().toLowerCase();
-  const atIndex = email.lastIndexOf('@');
-  if (atIndex < 1) return false;
-  return BUYER_EMAIL_DOMAINS.includes(email.slice(atIndex + 1));
-}
+export { isAllowedBuyerEmail } from '../../supabase/functions/_shared/buyer-email.ts';
 
 export function getBuyerAuthRedirectUrl(nextPath) {
   const baseUrl = import.meta.env.BASE_URL || '/';
