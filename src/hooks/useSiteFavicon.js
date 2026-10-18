@@ -20,7 +20,7 @@ export default function useSiteFavicon() {
           return;
         }
         if (active && typeof data === 'string' && data.trim()) {
-          favicon.href = data.trim();
+          favicon.href = new URL(data.trim(), window.location.origin).href;
         }
       })
       .catch((error) => {
