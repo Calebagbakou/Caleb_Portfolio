@@ -326,7 +326,7 @@ export default function PortfolioSection() {
               className={`filter-btn${activeFilter === row.id ? ' active' : ''}`}
               onClick={() => handleFilterClick(row.id)}
             >
-              Aller à : {row.title}
+              {row.title}
             </button>
           ))}
         </div>
