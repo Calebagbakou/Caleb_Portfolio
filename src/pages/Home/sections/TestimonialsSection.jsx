@@ -1,6 +1,14 @@
+import { useRef } from 'react';
 import RevealHeading from '../../../components/site/RevealHeading';
 
 export default function TestimonialsSection() {
+  const formRef = useRef(null);
+
+  function focusCommentForm() {
+    const nameInput = formRef.current?.querySelector('input[name="nom"]');
+    nameInput?.focus();
+  }
+
   return (
     <section className="alt" id="testimonials">
       <div className="wrap">
@@ -8,10 +16,10 @@ export default function TestimonialsSection() {
 
         {/* Formulaire volontairement inerte (comme dans l'ancienne version : onsubmit="return false;") —
             aucun back-end de commentaires n'existe encore. */}
-        <form className="testimonial-form" onSubmit={(e) => e.preventDefault()}>
+        <form className="testimonial-form" ref={formRef} onSubmit={(e) => e.preventDefault()}>
           <label>
             Nom
-            <input type="text" name="nom" placeholder="Votre nom" required />
+            <input id="testimonial-name" type="text" name="nom" placeholder="Votre nom" required />
           </label>
           <label>
             Commentaire
@@ -29,6 +37,9 @@ export default function TestimonialsSection() {
             </svg>
           </div>
           <p>Aucun commentaire pour le moment. Soyez le premier !</p>
+          <button type="button" className="btn btn-primary empty-state-cta" onClick={focusCommentForm}>
+            Soyez le premier à commenter !
+          </button>
         </div>
       </div>
     </section>

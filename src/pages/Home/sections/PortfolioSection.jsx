@@ -178,7 +178,6 @@ function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisi
         )}
       </div>
       <div className="p-body">
-        <div className="p-cat">{item.catLabel}</div>
         <h3 className="p-title">{item.title}</h3>
       </div>
     </div>

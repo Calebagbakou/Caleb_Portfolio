@@ -438,6 +438,13 @@
   .stat{
     background:var(--panel); padding:22px 18px; position:relative;
   }
+  .stat-icon{
+    display:flex; align-items:center; justify-content:center; width:28px; height:28px;
+    margin-bottom:9px; border-radius:8px; color:var(--teal); background:var(--teal-dim);
+  }
+  .stat:nth-child(2n) .stat-icon{ color:var(--orange); background:var(--orange-dim); }
+  .stat:nth-child(3n) .stat-icon{ color:var(--violet); background:var(--violet-dim); }
+  .stat-icon svg{ width:15px; height:15px; }
   .stat::before, .stat::after{
     content:""; position:absolute; left:0; right:0; height:1px;
     background-image: radial-gradient(circle, var(--ink) 1.5px, transparent 1.5px);
@@ -819,7 +826,7 @@
 
   /* ---------- TESTIMONIALS (empty state) ---------- */
   .empty-state{
-    border:1px dashed var(--panel-line); border-radius:16px; padding:44px 24px;
+    border:1px dashed var(--panel-line); border-radius:16px; padding:28px 24px;
     text-align:center; display:flex; flex-direction:column; align-items:center; gap:14px;
   }
   .empty-state .ic{
@@ -827,6 +834,7 @@
     display:flex; align-items:center; justify-content:center;
   }
   .empty-state p{ color:var(--paper-dim); font-size:14.5px; max-width:34ch; margin:0; line-height:1.5; }
+  .empty-state-cta{ padding:10px 16px; font-size:13px; justify-content:center; }
 
   /* ---------- FOOTER ---------- */
   footer{ padding:32px 24px; border-top:1px solid var(--panel-line); }
@@ -995,10 +1003,11 @@
   .professional-presentation .hero-photo-ring{
     width:100%; height:clamp(190px,25vw,270px); aspect-ratio:1; flex:0 0 auto;
     padding:5px; border-radius:50%;
-    background:#fff; border:1px solid #DDE3E8; box-shadow:0 8px 24px rgba(28,30,33,.12);
+    background:#fff; border:2px solid #1877F2; box-shadow:0 8px 24px rgba(28,30,33,.12), 5px 6px 0 rgba(24,119,242,.08);
+    transform:rotate(-2deg);
   }
-  .professional-presentation .hero-photo-frame{ width:100%; height:100%; border-radius:50%; background:#E4E6EB; }
-  .professional-presentation .hero-photo-frame img{ border-radius:50%; }
+  .professional-presentation .hero-photo-frame{ width:100%; height:100%; border-radius:48% 52% 50% 46%; background:#E4E6EB; }
+  .professional-presentation .hero-photo-frame img{ border-radius:inherit; }
   .professional-presentation .hero-photo-title{ color:#1C1E21; font-size:14px; font-weight:800; }
   .professional-presentation .cta-row{
     position:relative; z-index:2; flex-direction:row; max-width:unset; gap:10px; flex-wrap:wrap;
@@ -1007,6 +1016,7 @@
     min-height:44px; padding:11px 18px; border-radius:9px;
     font-weight:800; justify-content:center; gap:8px; transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
   }
+  .professional-presentation .btn svg{ flex:0 0 auto; margin-left:3px; }
   .professional-presentation .btn:hover{ transform:translateY(-2px); box-shadow:0 5px 14px rgba(24,119,242,.18); }
   .professional-presentation .btn-primary{ background:#1877F2; color:#fff; }
   .professional-presentation .btn-ghost{ color:#1C1E21; border-color:#DDE3E8; background:#F0F2F5; }
@@ -1027,6 +1037,9 @@
   .professional-presentation .stat-num{ color:#1C1E21; font-size:1.8rem; }
   .professional-presentation .stat-num span{ color:#1877F2; }
   .professional-presentation .stat-label{ color:#65676B; font-family:'Inter',sans-serif; font-size:12px; }
+  .professional-presentation .stat-icon{ margin:0 auto 9px; color:#1877F2; background:#E7F0FA; }
+  .professional-presentation .stat:nth-child(2n) .stat-icon,
+  .professional-presentation .stat:nth-child(3n) .stat-icon{ color:#1877F2; background:#E7F0FA; }
   .professional-presentation section{
     padding:58px max(20px,calc((100% - 1120px)/2));
     background:transparent; scroll-margin-top:82px;
@@ -1057,6 +1070,7 @@
     box-shadow:0 2px 8px rgba(28,30,33,.04);
   }
   .professional-presentation .mission-card{ background:#fff; }
+  .professional-presentation .mission-card{ display:flex; flex-direction:column; justify-content:center; min-height:100%; }
   .professional-presentation .mission-card::before{ background:#1877F2; }
   .professional-presentation .mission-card .tag-ic,
   .professional-presentation .contact-item .ic{ background:#E7F0FA; color:#1877F2; }
@@ -1071,6 +1085,7 @@
   .professional-presentation .service-icon{ flex:0 0 40px; height:40px; display:grid; place-items:center; border-radius:10px; background:#E7F0FA; color:#1877F2; }
   .professional-presentation .service-icon svg{ width:20px; height:20px; }
   .professional-presentation .services-note{ color:#65676B; }
+  .professional-presentation .service p{ color:#5F6368; }
   .professional-presentation .filters{ gap:9px; }
   .professional-presentation .filter-btn{
     padding:8px 14px; border-radius:999px; color:#65676B; border-color:#DDE3E8; background:#fff;
@@ -1095,12 +1110,15 @@
   .professional-presentation .tool-avatar.tool-logo{ background:#F0F2F5; }
   .professional-presentation .faq-list{ border-color:#DDE3E8; }
   .professional-presentation .faq-item{ padding:0 18px; border-color:#DDE3E8; border-radius:10px; margin-bottom:10px; }
+  .professional-presentation .faq-item.open{ background:#F4F8FD; }
   .professional-presentation .faq-q{ color:#1C1E21; font-size:15px; }
   .professional-presentation .faq-q .plus{ color:#1877F2; }
   .professional-presentation .contact-item{ border-radius:12px; }
   .professional-presentation .contact-item .label{ color:#65676B; }
   .professional-presentation .contact-form,
   .professional-presentation .testimonial-form{ padding:22px; border-radius:14px; }
+  .professional-presentation .empty-state{ padding:26px 22px; }
+  .professional-presentation .empty-state-cta{ background:#1877F2; color:#fff; border-color:#1877F2; }
   .professional-presentation .contact-form label,
   .professional-presentation .testimonial-form label{ color:#1C1E21; font-weight:700; }
   .professional-presentation .contact-form input,
@@ -1192,7 +1210,7 @@
     border-color:#DDE3E8; background:#fff; box-shadow:0 2px 8px rgba(28,30,33,.04);
   }
   .professional-presentation .competency-card:hover{ border-color:#1877F2; box-shadow:0 8px 22px rgba(28,30,33,.09); }
-  .professional-presentation .competency-card-index{ color:#8A8D91; }
+  .professional-presentation .competency-card-index{ color:#69707A; }
   .professional-presentation .competency-card-mark{ border-color:#D9E8F8; background:#EAF2FB; color:#1877F2; }
   .professional-presentation .competency-card h3{ color:#1C1E21; font-family:'Nunito',sans-serif; font-size:14px; }
   .professional-presentation .competency-card-line{ background:#1877F2; }
