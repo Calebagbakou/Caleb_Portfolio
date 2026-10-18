@@ -45,7 +45,11 @@ function PresentationSwitch({ isProfessional, compact, onToggle }) {
 export default function Header() {
   const { isProfessional, togglePresentation } = usePresentation();
   const [logoUrl, clearLogoUrl] = useSiteLogo();
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState(() => {
+    const saved = window.localStorage.getItem('caleb-theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  });
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const timecodeRef = useRef(null);
@@ -58,6 +62,7 @@ export default function Header() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
+    window.localStorage.setItem('caleb-theme', theme);
   }, [theme]);
 
   useEffect(() => {
@@ -70,7 +75,16 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = menuOpen ? 'hidden' : previousOverflow;
+    function closeOnEscape(event) {
+      if (event.key === 'Escape') setMenuOpen(false);
+    }
+    if (menuOpen) document.addEventListener('keydown', closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', closeOnEscape);
+    };
   }, [menuOpen]);
 
   // Timecode discret dans le header (purement décoratif)
@@ -79,7 +93,7 @@ export default function Header() {
     function fmt(n) {
       return String(n).padStart(2, '0');
     }
-    const id = setInterval(() => {
+    function updateTimecode() {
       framesRef.current++;
       const f = framesRef.current % 30;
       const totalSec = Math.floor(framesRef.current / 30);
@@ -88,7 +102,8 @@ export default function Header() {
       if (timecodeRef.current) {
         timecodeRef.current.textContent = `00:${fmt(m)}:${fmt(s)}:${fmt(f)}`;
       }
-    }, 1000 / 30);
+    }
+    const id = setInterval(updateTimecode, 1000);
     return () => clearInterval(id);
   }, []);
 

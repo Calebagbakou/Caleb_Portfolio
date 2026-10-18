@@ -555,3 +555,6 @@ h1,h2,h3,.brand{ font-family:'Unbounded',sans-serif; letter-spacing:-0.01em; }
 @media(prefers-reduced-motion:reduce){
   .admin-shell *, .login-wrap *{ scroll-behavior:auto !important; transition-duration:.01ms !important; animation-duration:.01ms !important; }
 }
+  :where(a, button, input, textarea, select, [tabindex]):focus-visible{
+    outline:2px solid #1877F2; outline-offset:3px;
+  }

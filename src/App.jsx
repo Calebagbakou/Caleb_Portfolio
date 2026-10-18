@@ -19,6 +19,7 @@ import ForgotPassword from './pages/admin/ForgotPassword';
 import ResetPassword from './pages/admin/ResetPassword';
 import Dashboard from './pages/admin/Dashboard';
 import Messages from './pages/admin/Messages';
+import Testimonials from './pages/admin/Testimonials';
 import Parametres from './pages/admin/Parametres';
 import Projects from './pages/admin/Projects';
 import Shop from './pages/admin/Shop';
@@ -83,6 +84,7 @@ export default function App() {
         <Route path="shop" element={<Shop />} />
         <Route path="orders" element={<Orders />} />
         <Route path="messages" element={<Messages />} />
+        <Route path="temoignages" element={<Testimonials />} />
         <Route path="parametres" element={<Parametres />} />
       </Route>
 

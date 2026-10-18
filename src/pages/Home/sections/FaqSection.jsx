@@ -13,11 +13,11 @@ function FaqItem({ item, isOpen, onToggle }) {
 
   return (
     <div className={`faq-item${isOpen ? ' open' : ''}`}>
-      <button className="faq-q" onClick={onToggle}>
+      <button className="faq-q" onClick={onToggle} aria-expanded={isOpen} aria-controls={`faq-panel-${item.question}`}>
         <span>{item.question}</span>
         <span className="plus">+</span>
       </button>
-      <div className="faq-panel" ref={panelRef}>
+      <div className="faq-panel" id={`faq-panel-${item.question}`} ref={panelRef}>
         <p>{item.answer}</p>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import profileJpg from '../../../assets/profile1.jpg';
+import profileWebp from '../../../assets/profile1.webp';
 import { getSettingValue } from '../../../services/settings';
 import { usePresentation } from '../../../context/PresentationContext';
 import AiCore from '../../../components/site/AiCore';
@@ -206,15 +207,21 @@ export default function Hero() {
           <div className="hero-photo-ring">
             <div className="hero-photo-frame">
               {profileImage && (
-                <img
-                  src={profileImage}
+                <picture>
+                  <source srcSet={profileWebp} type="image/webp" />
+                  <img
+                  src={profileImage === profileJpg ? profileWebp : profileImage}
                   alt="Photo de profil de Caleb Jesugnon AGBAKOU"
+                  width="802"
+                  height="900"
+                  srcSet={`${profileWebp} 802w`}
                   loading="eager"
                   fetchpriority="high"
                   onError={() => {
                     if (profileImage !== profileJpg) setProfileImage(profileJpg);
                   }}
-                />
+                  />
+                </picture>
               )}
             </div>
           </div>

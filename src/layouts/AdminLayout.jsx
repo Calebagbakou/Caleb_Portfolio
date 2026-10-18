@@ -12,6 +12,7 @@ const PAGES = {
   '/admin/shop': { title: 'Boutique', section: 'Commerce' },
   '/admin/orders': { title: 'Commandes', section: 'Commerce' },
   '/admin/messages': { title: 'Messages', section: 'Communication' },
+  '/admin/temoignages': { title: 'Témoignages', section: 'Communication' },
   '/admin/parametres': { title: 'Paramètres', section: 'Configuration' },
 };
 

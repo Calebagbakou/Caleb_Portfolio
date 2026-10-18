@@ -35,15 +35,6 @@ const CONTACT_ITEMS = [
     ),
   },
   {
-    id: 'contact-phone-alt',
-    href: 'tel:+2290195938600',
-    label: 'TÉLÉPHONE (ALT.)',
-    value: '+229 01 95 93 86 00',
-    icon: (
-      <path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1.9.3 1.8.6 2.7a2 2 0 01-.5 2.1L8 9.9a16 16 0 006 6l1.4-1.2a2 2 0 012.1-.5c.9.3 1.8.5 2.7.6a2 2 0 011.8 2z" />
-    ),
-  },
-  {
     id: 'contact-location',
     href: 'https://www.google.com/maps/search/Abomey+B%C3%A9nin',
     external: true,
@@ -75,7 +66,7 @@ const SOCIAL_ITEMS = [
 
 export default function ContactSection() {
   const logos = useSectionLogos();
-  const [form, setForm] = useState({ nom: '', email: '', message: '' });
+  const [form, setForm] = useState({ nom: '', email: '', message: '', website: '' });
   const [status, setStatus] = useState(null); // { kind: 'loading'|'success'|'error', text }
   const [submitting, setSubmitting] = useState(false);
 
@@ -90,6 +81,7 @@ export default function ContactSection() {
     const email = form.email.trim();
     const message = form.message.trim();
 
+    if (form.website.trim()) return;
     if (!nom || !email || !message) {
       setStatus({ kind: 'error', text: 'Merci de remplir tous les champs.' });
       return;
@@ -112,7 +104,7 @@ export default function ContactSection() {
     }
 
     setStatus({ kind: 'success', text: '✓ Message envoyé — je vous répondrai rapidement.' });
-    setForm({ nom: '', email: '', message: '' });
+    setForm({ nom: '', email: '', message: '', website: '' });
   }
 
   return (
@@ -192,7 +184,18 @@ export default function ContactSection() {
             onChange={(e) => updateField('message', e.target.value)}
           />
         </label>
-        {status && <div className={`form-status show ${status.kind}`}>{status.text}</div>}
+        <label className="honeypot" aria-hidden="true">
+          Site web
+          <input
+            type="text"
+            name="website"
+            tabIndex="-1"
+            autoComplete="off"
+            value={form.website || ''}
+            onChange={(e) => updateField('website', e.target.value)}
+          />
+        </label>
+        {status && <div className={`form-status show ${status.kind}`} role="status" aria-live="polite">{status.text}</div>}
         <button type="submit" className="btn btn-primary" style={{ maxWidth: 260 }} disabled={submitting}>
           Envoyer le message
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

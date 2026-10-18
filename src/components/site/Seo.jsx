@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 const SITE_URL = 'https://calebcreative.online';
+const SOCIAL_IMAGE = `${SITE_URL}/favicon.svg`;
 
 function upsertMeta(attribute, value, content) {
   let element = document.head.querySelector(`meta[${attribute}="${value}"]`);
@@ -30,7 +31,10 @@ export default function Seo({
     upsertMeta('property', 'og:title', title);
     upsertMeta('property', 'og:description', description);
     upsertMeta('property', 'og:url', canonicalUrl);
+    upsertMeta('property', 'og:image', SOCIAL_IMAGE);
+    upsertMeta('property', 'og:image:alt', 'Logo Caleb Creative');
     upsertMeta('name', 'twitter:card', 'summary_large_image');
+    upsertMeta('name', 'twitter:image', SOCIAL_IMAGE);
     upsertMeta('name', 'twitter:title', title);
     upsertMeta('name', 'twitter:description', description);
 
