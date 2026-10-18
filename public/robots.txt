@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /boutique/connexion
+Disallow: /boutique/compte
+Disallow: /boutique/commande
+Disallow: /boutique/confirmation
+
+Sitemap: https://calebcreative.online/sitemap.xml

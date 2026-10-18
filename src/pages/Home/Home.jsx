@@ -10,12 +10,14 @@ import ContactSection from './sections/ContactSection';
 import TestimonialsSection from './sections/TestimonialsSection';
 import CompetenciesSection from './sections/CompetenciesSection';
 import { usePresentation } from '../../context/PresentationContext';
+import Seo from '../../components/site/Seo';
 
 export default function Home() {
   const { isProfessional } = usePresentation();
 
   return (
     <>
+      <Seo />
       {!isProfessional && <ParticleField />}
       <Hero />
       <Stats />
