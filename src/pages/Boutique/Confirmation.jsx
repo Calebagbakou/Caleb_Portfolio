@@ -42,20 +42,28 @@ export default function Confirmation() {
     paymentVerificationStarted.current = true;
     let cancelled = false;
     async function verifyPayment() {
-      const { data, error } = await verifySasPayPayment({ orderId, sessionId });
+      let lastData = null;
+      let lastError = null;
+      for (let attempt = 0; attempt < 6 && !cancelled; attempt += 1) {
+        const result = await verifySasPayPayment({ orderId, sessionId });
+        lastData = result.data;
+        lastError = result.error;
+        if (result.data?.verified && result.data.order) break;
+        if (attempt < 5) await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
       if (cancelled) return;
-      if (error || !data?.verified || !data.order) {
-        console.error('La vérification SasPay a échoué :', error || data?.message);
-        setOrder(data?.order || { id: orderId, ref: '', payment_status: 'non_confirme' });
+      if (lastError || !lastData?.verified || !lastData.order) {
+        console.error('La vérification SasPay a échoué :', lastError || lastData?.message);
+        if (lastData?.order) setOrder(lastData.order);
         return;
       }
       try {
-        localStorage.setItem(LAST_ORDER_KEY, JSON.stringify(data.order));
+        localStorage.setItem(LAST_ORDER_KEY, JSON.stringify(lastData.order));
       } catch (storageError) {
         console.error('Le reçu ne peut pas être conservé sur cet appareil :', storageError);
       }
       clear();
-      setOrder(data.order);
+      setOrder(lastData.order);
     }
     verifyPayment();
     return () => {
@@ -68,14 +76,16 @@ export default function Confirmation() {
       setOrder(location.state.order);
       return;
     }
+    const hasOrderInUrl = Boolean(new URLSearchParams(location.search).get('order_id'));
     try {
       const raw = localStorage.getItem(LAST_ORDER_KEY);
-      setOrder(raw ? JSON.parse(raw) : null);
+      if (raw) setOrder(JSON.parse(raw));
+      else if (!hasOrderInUrl) setOrder(null);
     } catch (error) {
       console.error('Impossible de lire le reçu local :', error);
-      setOrder(null);
+      if (!hasOrderInUrl) setOrder(null);
     }
-  }, [location.state]);
+  }, [location.search, location.state]);
 
   useEffect(() => {
     if (!order?.items?.length) return;
@@ -193,11 +203,19 @@ export default function Confirmation() {
     return (
       <main>
         <div className="confirm-wrap">
-          <h1 style={{ fontSize: '1.6rem' }}>Paiement en attente</h1>
+          <h1 style={{ fontSize: '1.6rem' }}>Confirmation de ton paiement</h1>
           <p style={{ color: 'var(--ink-dim)', marginBottom: 22 }}>
-            La commande {order.ref} n’a pas encore été confirmée par SasPay. Si tu viens de payer, actualise la
-            page dans quelques instants ou contacte Caleb avec cette référence.
+            Nous vérifions encore la confirmation SasPay de la commande {order.ref || order.id}. Cette vérification
+            se fait automatiquement ; tu peux rester sur cette page sans repayer.
           </p>
+          <div className="shop-alert info" role="status">
+            <span className="shop-alert-icon" aria-hidden="true">i</span>
+            <div className="shop-alert-content">
+              <strong>Paiement en cours de vérification</strong>
+              <span>La commande sera actualisée automatiquement dès que SasPay aura confirmé le paiement.</span>
+            </div>
+          </div>
+          <Link to="/boutique/compte" className="btn btn-outline">Voir mes commandes</Link>
           <Link to="/boutique/catalogue" className="btn btn-dark">Retour à la boutique</Link>
         </div>
       </main>
@@ -313,7 +331,7 @@ export default function Confirmation() {
           </div>
           <div className="summary-row">
             <span>Paiement</span>
-            <span>KKiaPay · confirmé</span>
+            <span>SasPay · confirmé</span>
           </div>
         </div>
 
