@@ -840,6 +840,14 @@
   }
   .whatsapp-float:hover{ transform:translateY(-3px); box-shadow:0 12px 26px rgba(37,211,102,.35); }
   .whatsapp-float svg{ width:26px; height:26px; }
+  .back-to-top{
+    position:fixed; right:20px; bottom:84px; z-index:80; width:42px; height:42px;
+    display:flex; align-items:center; justify-content:center; border:1px solid var(--panel-line);
+    border-radius:50%; color:var(--paper); background:var(--panel); cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,.15);
+  }
+  .back-to-top svg{ width:18px; height:18px; }
+  .field-counter{ align-self:flex-end; font-size:12px; color:var(--paper-dim); }
   .testimonials-list{ display:grid; gap:12px; margin-bottom:20px; }
   .testimonial-card{ display:flex; gap:12px; align-items:flex-start; padding:16px; border:1px solid var(--panel-line); border-radius:12px; background:var(--panel); }
   .testimonial-card img{ width:48px; height:48px; object-fit:cover; border-radius:50%; flex:none; }

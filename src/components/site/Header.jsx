@@ -53,6 +53,7 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const timecodeRef = useRef(null);
+  const navRef = useRef(null);
 
   function handlePresentationToggle() {
     setMenuOpen(false);
@@ -79,8 +80,23 @@ export default function Header() {
     document.body.style.overflow = menuOpen ? 'hidden' : previousOverflow;
     function closeOnEscape(event) {
       if (event.key === 'Escape') setMenuOpen(false);
+      if (event.key !== 'Tab' || !navRef.current) return;
+      const focusable = navRef.current.querySelectorAll('a, button');
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
-    if (menuOpen) document.addEventListener('keydown', closeOnEscape);
+    if (menuOpen) {
+      document.addEventListener('keydown', closeOnEscape);
+      navRef.current?.querySelector('a, button')?.focus();
+    }
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', closeOnEscape);
@@ -169,7 +185,7 @@ export default function Header() {
         />
       )}
 
-      <nav className={`nav-overlay${menuOpen ? ' open' : ''}`}>
+      <nav className={`nav-overlay${menuOpen ? ' open' : ''}`} ref={navRef} aria-hidden={!menuOpen}>
         <div className="nav-links">
           {NAV_LINKS.map((link) => (
             <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)}>

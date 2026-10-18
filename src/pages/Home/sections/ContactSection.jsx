@@ -178,11 +178,13 @@ export default function ContactSection() {
           <textarea
             name="message"
             rows={4}
+            maxLength={1000}
             placeholder="Parlez-moi de votre projet…"
             required
             value={form.message}
             onChange={(e) => updateField('message', e.target.value)}
           />
+          <span className="field-counter" aria-live="polite">{form.message.length}/1000</span>
         </label>
         <label className="honeypot" aria-hidden="true">
           Site web

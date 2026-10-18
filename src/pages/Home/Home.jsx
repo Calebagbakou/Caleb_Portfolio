@@ -12,6 +12,7 @@ import CompetenciesSection from './sections/CompetenciesSection';
 import { usePresentation } from '../../context/PresentationContext';
 import Seo from '../../components/site/Seo';
 import WhatsAppButton from '../../components/site/WhatsAppButton';
+import BackToTop from '../../components/site/BackToTop';
 
 export default function Home() {
   const { isProfessional } = usePresentation();
@@ -31,6 +32,7 @@ export default function Home() {
       <ContactSection />
       <TestimonialsSection />
       <WhatsAppButton />
+      <BackToTop />
     </>
   );
 }
