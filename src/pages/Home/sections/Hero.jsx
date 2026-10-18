@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import profileJpg from '../../../assets/profile1.jpg';
 import profileWebp from '../../../assets/profile1.webp';
 import { getSettingValue } from '../../../services/settings';
 import { usePresentation } from '../../../context/PresentationContext';
@@ -43,7 +42,7 @@ function renderTyped(n) {
 
 export default function Hero() {
   const { isProfessional } = usePresentation();
-  const [profileImage, setProfileImage] = useState(profileJpg);
+  const [profileImage, setProfileImage] = useState(profileWebp);
   const [typedCount, setTypedCount] = useState(prefersReducedMotion ? FULL_TEXT.length : 0);
   const [activeChapter, setActiveChapter] = useState(0);
   const [scrubPct, setScrubPct] = useState(0);
@@ -76,13 +75,13 @@ export default function Hero() {
     getSettingValue('site_profile_image_url').then(({ data, error }) => {
       if (error) {
         console.error('Impossible de charger la photo principale depuis les paramètres :', error);
-        if (active) setProfileImage(profileJpg);
+        if (active) setProfileImage(profileWebp);
         return;
       }
-      if (active) setProfileImage(data || profileJpg);
+      if (active) setProfileImage(data || profileWebp);
     }).catch((error) => {
       console.error('Échec du chargement de la photo principale :', error);
-      if (active) setProfileImage(profileJpg);
+      if (active) setProfileImage(profileWebp);
     });
     return () => {
       active = false;
@@ -210,7 +209,7 @@ export default function Hero() {
                 <picture>
                   <source srcSet={profileWebp} type="image/webp" />
                   <img
-                  src={profileImage === profileJpg ? profileWebp : profileImage}
+                  src={profileImage}
                   alt="Photo de profil de Caleb Jesugnon AGBAKOU"
                   width="802"
                   height="900"
@@ -218,7 +217,7 @@ export default function Hero() {
                   loading="eager"
                   fetchpriority="high"
                   onError={() => {
-                    if (profileImage !== profileJpg) setProfileImage(profileJpg);
+                    if (profileImage !== profileWebp) setProfileImage(profileWebp);
                   }}
                   />
                 </picture>
