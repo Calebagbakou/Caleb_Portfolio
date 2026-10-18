@@ -97,9 +97,10 @@ ajoute aussi le format portrait 3:4.
    `https://umzjknzxigigyxxjnzlc.supabase.co/functions/v1/saspay-webhook`.
    Configure un secret de signature, puis enregistre exactement la même valeur
    dans Supabase sous `SAASPAY_WEBHOOK_SECRET`. Ne mets jamais ce secret dans
-   le frontend. Le webhook vérifie la signature HMAC-SHA256, puis revalide la
-   session, le montant et la devise directement auprès de SasPay avant de
-   confirmer la commande.
+   le frontend. Le webhook vérifie `X-Webhook-Signature` avec
+   `X-Webhook-Timestamp` (HMAC-SHA256 sur `timestamp.corps-brut`, fenêtre de
+   5 minutes), puis revalide la transaction, le montant et la devise
+   directement auprès de SasPay avant de confirmer la commande.
 
 Ne passe pas en production avant d'avoir effectué un paiement de test complet
 et vérifié la commande dans `/admin/orders`.
