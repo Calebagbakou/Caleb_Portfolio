@@ -42,9 +42,12 @@ Deno.serve(async (request) => {
     const signature = (request.headers.get('x-webhook-signature') || '').trim().toLowerCase();
     const timestamp = (request.headers.get('x-webhook-timestamp') || '').trim();
     const timestampSeconds = Number(timestamp);
-    if (!signature || !/^\d+$/.test(timestamp) || !Number.isSafeInteger(timestampSeconds)
+    if (!signature) {
+      return jsonResponse({ error: 'En-tête X-Webhook-Signature manquant.' }, 400);
+    }
+    if (!/^\d+$/.test(timestamp) || !Number.isSafeInteger(timestampSeconds)
       || Math.abs(Math.floor(Date.now() / 1000) - timestampSeconds) > 300) {
-      return jsonResponse({ error: 'Signature du webhook invalide.' }, 401);
+      return jsonResponse({ error: 'Horodatage du webhook invalide ou expiré.' }, 400);
     }
     const expectedSignature = await createSignature(webhookSecret, `${timestamp}.${rawBody}`);
     if (!constantTimeEqual(signature, expectedSignature)) {
