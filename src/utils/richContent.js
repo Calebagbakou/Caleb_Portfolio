@@ -12,6 +12,37 @@ const ALLOWED_MARKS = new Set(['bold', 'italic', 'strike', 'underline', 'code', 
 
 export const EMPTY_RICH_DOCUMENT = { type: 'doc', content: [{ type: 'paragraph' }] };
 
+export function plainTextToRichDocument(value) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const paragraphs = value.split(/\r?\n/).map((text) => text.trim()).filter(Boolean);
+  return {
+    type: 'doc',
+    content: paragraphs.map((text) => ({
+      type: 'paragraph',
+      content: [{ type: 'text', text }],
+    })),
+  };
+}
+
+export function richDocumentToPlainText(document) {
+  const safeDocument = sanitizeRichDocument(document);
+  if (!safeDocument) return '';
+
+  function extractText(node) {
+    if (node.type === 'text') return node.text;
+    if (node.type === 'hardBreak') return '\n';
+    if (node.type === 'image') return node.attrs.alt;
+    if (node.type === 'horizontalRule') return '\n';
+    return (node.content || []).map(extractText).join('');
+  }
+
+  return (safeDocument.content || [])
+    .map(extractText)
+    .join('\n')
+    .replace(/[ \t]+\n/g, '\n')
+    .trim();
+}
+
 export function validateRichLink(value) {
   if (typeof value !== 'string' || !/^(https?:|mailto:|tel:)/i.test(value.trim())) return null;
   const href = value.trim();

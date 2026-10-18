@@ -88,7 +88,7 @@ export default function Produit() {
         <div className="product-info reveal in">
           <div className="eyebrow">{product.categoryLabel}</div>
           <h1>{product.name}</h1>
-          <p className="desc">{product.description}</p>
+          <RichContent doc={product.description_rich} fallbackText={product.description} />
 
           <ul className="highlight-list">
             {product.highlights.map((h) => (
@@ -161,7 +161,6 @@ export default function Produit() {
               <ShopArrow />
             </button>
           </div>
-          <RichContent doc={product.description_rich} />
           <p className="product-note">
             {product.slug === 'gemini-pro'
               ? 'Les formules 4 et 12 mois sont affichées mais momentanément indisponibles. La formule 18 mois est disponible ; après confirmation du paiement, votre lien d’activation est généré automatiquement.'

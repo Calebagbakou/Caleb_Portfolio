@@ -11,6 +11,7 @@ import {
 } from '../../services/shop';
 import { DEFAULT_SHOP_CONTENT } from '../../context/ShopContext';
 import { supabase } from '../../services/supabase';
+import { plainTextToRichDocument, richDocumentToPlainText } from '../../utils/richContent';
 
 const RichTextEditor = lazy(() => import('../../components/admin/RichTextEditor'));
 
@@ -62,6 +63,7 @@ function productForm(product) {
   return {
     ...EMPTY_PRODUCT,
     ...product,
+    description_rich: product.description_rich || plainTextToRichDocument(product.description),
     highlights: (product.highlights || []).join('\n'),
     badge: product.badge || '',
     cta_label: product.cta_label || 'Acheter maintenant',
@@ -201,7 +203,7 @@ export default function Shop() {
       ...form,
       name: form.name.trim(),
       slug: slugify(form.slug),
-      description: form.description.trim() || null,
+      description: form.slug === 'gemini-pro' ? null : richDocumentToPlainText(form.description_rich) || null,
       tagline: form.tagline.trim() || null,
       highlights: form.highlights.split('\n').map((line) => line.trim()).filter(Boolean),
       badge: form.badge.trim() || null,
@@ -431,9 +433,7 @@ export default function Shop() {
               <input id="shop-product-tagline" name="tagline" value={form.tagline || ''} onChange={updateProductField} />
             </div>
             <div className="form-group shop-admin-wide">
-              <label htmlFor="shop-product-description">Description complète</label>
-              <textarea id="shop-product-description" name="description" rows="4" value={form.description || ''} onChange={updateProductField} />
-              <label className="rich-editor-label" htmlFor="shop-product-rich-description">Présentation détaillée (facultatif)</label>
+              <label className="rich-editor-label" htmlFor="shop-product-rich-description">Description complète — présentation détaillée</label>
               <Suspense fallback={<div className="rich-editor-loading" role="status">Chargement de l’éditeur…</div>}>
                 <RichTextEditor
                   key={`${form.id || 'new-product'}-${productEditorRevision}`}

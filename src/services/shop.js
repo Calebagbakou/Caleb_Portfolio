@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { richDocumentToPlainText } from '../utils/richContent';
 
 const PRODUCT_FIELDS = 'id, name, slug, description, description_rich, tagline, highlights, category_id, badge, cta_label, regular_price, promo_price, allow_multiple_qty, status, featured, sort_order, avatar, gradient, logo_url, image_url, poster_ratio, delivery_type, download_filename, download_size';
 const OPTIONAL_PRODUCT_FIELDS = ['cta_label', 'regular_price', 'promo_price', 'description_rich', 'allow_multiple_qty'];
@@ -50,7 +51,7 @@ function attachShopData(products, plans, categories) {
       description_rich: product.description_rich || null,
       allow_multiple_qty: product.allow_multiple_qty ?? product.slug === 'gemini-pro',
       name: hideActivationProvider(product.name),
-      description: hideActivationProvider(product.description),
+      description: hideActivationProvider(product.description || richDocumentToPlainText(product.description_rich)),
       tagline: hideActivationProvider(product.tagline),
       badge: hideActivationProvider(product.badge),
       category: category?.slug || '',

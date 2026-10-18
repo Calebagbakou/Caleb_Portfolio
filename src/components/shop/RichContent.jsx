@@ -61,8 +61,16 @@ function renderBlock(node, key) {
   return tag ? createElement(tag, { key }, children) : null;
 }
 
-export default function RichContent({ doc }) {
-  const safeDocument = sanitizeRichDocument(doc);
+export default function RichContent({ doc, fallbackText = '' }) {
+  const safeDocument = sanitizeRichDocument(doc)
+    || sanitizeRichDocument({
+      type: 'doc',
+      content: (typeof fallbackText === 'string' ? fallbackText : '')
+        .split(/\r?\n/)
+        .map((text) => text.trim())
+        .filter(Boolean)
+        .map((text) => ({ type: 'paragraph', content: [{ type: 'text', text }] })),
+    });
   if (!safeDocument) return null;
 
   return (
