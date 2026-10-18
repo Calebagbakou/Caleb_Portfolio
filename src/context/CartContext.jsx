@@ -68,6 +68,11 @@ export function CartProvider({ children }) {
     });
   }, []);
 
+  const buyNow = useCallback((productId, planId, qty = 1) => {
+    const safeQty = Math.max(1, parseInt(qty, 10) || 1);
+    setItems([{ productId, planId, qty: safeQty }]);
+  }, []);
+
   const updateQty = useCallback((productId, planId, qty) => {
     const parsed = parseInt(qty, 10);
     setItems((prev) => {
@@ -116,7 +121,7 @@ export function CartProvider({ children }) {
   const count = useMemo(() => details.reduce((sum, it) => sum + it.qty, 0), [details]);
   const total = useMemo(() => details.reduce((sum, line) => sum + line.lineTotal, 0), [details]);
 
-  const value = { items, details, count, total, add, updateQty, remove, clear };
+  const value = { items, details, count, total, add, buyNow, updateQty, remove, clear };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

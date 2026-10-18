@@ -9,7 +9,7 @@ export default function Produit() {
   const { id } = useParams();
   const { products, loading, error } = useShop();
   const product = findProduct(id, products);
-  const { add } = useCart();
+  const { add, buyNow } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -57,6 +57,14 @@ export default function Produit() {
       return;
     }
     setToast(product.name + ' ajouté au panier');
+  }
+
+  function handleBuyNow() {
+    const selectedPlan = product.plans.find((plan) => plan.id === selectedPlanId);
+    if (!selectedPlan?.active) return;
+    buyNow(product.id, selectedPlanId, product.slug === 'capcut-pro' ? 1 : qty);
+    const next = '/boutique/commande';
+    navigate(user ? next : `/boutique/connexion?next=${encodeURIComponent(next)}`);
   }
 
   return (
@@ -143,16 +151,28 @@ export default function Produit() {
           <div className="product-cta-row">
             <button
               className="btn btn-primary"
-              onClick={handleAddToCart}
+              onClick={handleBuyNow}
               disabled={!product.plans.some((plan) => plan.id === selectedPlanId && plan.active)}
             >
-              Ajouter au panier
+              Acheter maintenant
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 3h2l2.4 12.4a2 2 0 002 1.6h8.2a2 2 0 002-1.6L21 8H6" />
-                <circle cx="9" cy="20" r="1.4" />
-                <circle cx="17" cy="20" r="1.4" />
+                <path d="M5 12h14M13 6l6 6-6 6" />
               </svg>
             </button>
+            {product.slug !== 'capcut-pro' && (
+              <button
+                className="btn btn-outline"
+                onClick={handleAddToCart}
+                disabled={!product.plans.some((plan) => plan.id === selectedPlanId && plan.active)}
+              >
+                Ajouter au panier
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 3h2l2.4 12.4a2 2 0 002 1.6h8.2a2 2 0 002-1.6L21 8H6" />
+                  <circle cx="9" cy="20" r="1.4" />
+                  <circle cx="17" cy="20" r="1.4" />
+                </svg>
+              </button>
+            )}
             <Link to="/boutique/panier" className="btn btn-outline">
               Voir le panier
             </Link>
