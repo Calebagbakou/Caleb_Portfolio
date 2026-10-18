@@ -4,6 +4,7 @@ import { findProduct, formatPrice } from '../../data/products';
 import { useCart } from '../../context/CartContext';
 import { useShop } from '../../context/ShopContext';
 import { useAuth } from '../../context/AuthContext';
+import Seo from '../../components/site/Seo';
 
 export default function Produit() {
   const { id } = useParams();
@@ -69,6 +70,12 @@ export default function Produit() {
 
   return (
     <main className="wrap" style={{ position: 'relative' }}>
+      <Seo
+        title={`${product.name} — Caleb Creative`}
+        description={product.description}
+        path={`/boutique/produit/${product.slug}`}
+        product={product}
+      />
       <div className="product-detail">
         <div
           className="product-visual reveal in"

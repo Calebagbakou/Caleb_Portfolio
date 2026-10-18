@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../../components/shop/ProductCard';
 import ShopAlert from '../../components/shop/ShopAlert';
 import { useShop } from '../../context/ShopContext';
+import Seo from '../../components/site/Seo';
 
 export default function Catalogue() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -22,6 +23,11 @@ export default function Catalogue() {
 
   return (
     <main className="wrap">
+      <Seo
+        title="Catalogue — Abonnements et outils créatifs | Caleb Creative"
+        description="Parcours le catalogue Caleb Creative : CapCut Pro, Canva Pro, Gemini Pro et d'autres outils créatifs disponibles au Bénin."
+        path="/boutique/catalogue"
+      />
       <div className="section" style={{ paddingTop: 32 }}>
         <div className="eyebrow">CATALOGUE</div>
         <h1 style={{ fontSize: 'clamp(1.7rem,4vw,2.4rem)', margin: '0 0 6px' }}>Tous les produits</h1>

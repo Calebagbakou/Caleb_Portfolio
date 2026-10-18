@@ -17,6 +17,7 @@ export default function Seo({
   description = 'Caleb Jesugnon Agbakou crée des vidéos IA, designs, montages vidéo et visuels IA pour vos projets au Bénin et au-delà.',
   path = '/',
   noIndex = false,
+  product = null,
 }) {
   useEffect(() => {
     const canonicalUrl = new URL(path, SITE_URL).toString();
@@ -33,14 +34,33 @@ export default function Seo({
     upsertMeta('name', 'twitter:title', title);
     upsertMeta('name', 'twitter:description', description);
 
-    let structuredData = document.head.querySelector('script[data-seo-schema="person"]');
+    const schemaKey = product ? 'product' : 'person';
+    let structuredData = document.head.querySelector(`script[data-seo-schema="${schemaKey}"]`);
     if (!structuredData) {
       structuredData = document.createElement('script');
       structuredData.type = 'application/ld+json';
-      structuredData.dataset.seoSchema = 'person';
+      structuredData.dataset.seoSchema = schemaKey;
       document.head.appendChild(structuredData);
     }
-    structuredData.textContent = JSON.stringify({
+    structuredData.textContent = JSON.stringify(product ? {
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.name,
+      description,
+      url: canonicalUrl,
+      brand: { '@type': 'Brand', name: 'Caleb Creative' },
+      category: product.categoryLabel,
+      offers: product.plans
+        .filter((plan) => plan.active !== false && Number(plan.price) > 0)
+        .map((plan) => ({
+          '@type': 'Offer',
+          name: plan.label,
+          price: Number(plan.price).toFixed(2),
+          priceCurrency: plan.currency || 'XOF',
+          availability: 'https://schema.org/InStock',
+          url: canonicalUrl,
+        })),
+    } : {
       '@context': 'https://schema.org',
       '@type': 'Person',
       name: 'Caleb Jesugnon Agbakou',
@@ -63,7 +83,7 @@ export default function Seo({
     return () => {
       document.title = 'Caleb Creative — Portfolio';
     };
-  }, [description, noIndex, path, title]);
+  }, [description, noIndex, path, product, title]);
 
   return null;
 }

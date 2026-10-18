@@ -3,6 +3,7 @@ import ProductCard from '../../components/shop/ProductCard';
 import ShopAlert from '../../components/shop/ShopAlert';
 import { useReveal } from '../../hooks/useReveal';
 import { useShop } from '../../context/ShopContext';
+import Seo from '../../components/site/Seo';
 
 function TrustItem({ icon, title, desc }) {
   const [ref, visible] = useReveal();
@@ -28,6 +29,11 @@ export default function ShopHome() {
 
   return (
     <>
+      <Seo
+        title="Boutique Caleb Creative — Outils créatifs et abonnements"
+        description="Découvre les abonnements et outils créatifs sélectionnés par Caleb Creative : CapCut Pro, Canva Pro, Gemini Pro et plus."
+        path="/boutique"
+      />
       <section className="shop-hero" ref={heroRef}>
         <div className="eyebrow">CALEB CREATIVE — BOUTIQUE</div>
         <h1 className={`reveal${heroVisible ? ' in' : ''}`}>{content.shop_hero_title}</h1>
