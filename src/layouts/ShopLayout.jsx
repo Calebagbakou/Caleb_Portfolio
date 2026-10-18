@@ -7,7 +7,11 @@ import '../styles/shop.css';
 export default function ShopLayout({ showFullNav, showMobileButton }) {
   useLayoutEffect(() => {
     document.body.classList.add('shop-theme');
-    return () => document.body.classList.remove('shop-theme');
+    document.documentElement.classList.add('shop-active');
+    return () => {
+      document.body.classList.remove('shop-theme');
+      document.documentElement.classList.remove('shop-active');
+    };
   }, []);
 
   return (

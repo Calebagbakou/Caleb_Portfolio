@@ -34,12 +34,14 @@ import BuyerAuthGate from './components/shop/BuyerAuthGate';
 import NotFound from './pages/NotFound';
 import ProjectDetail from './pages/ProjectDetail';
 import useSiteFavicon from './hooks/useSiteFavicon';
+import ScrollToTop from './components/site/ScrollToTop';
 
 export default function App() {
   useSiteFavicon();
 
   return (
     <Routes>
+      <Route element={<ScrollToTop />}>
       {/* ================= SITE PUBLIC (portfolio one-page) ================= */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
@@ -92,6 +94,7 @@ export default function App() {
 
       {/* ================= 404 ================= */}
       <Route path="*" element={<NotFound />} />
+      </Route>
     </Routes>
   );
 }

@@ -1,4 +1,5 @@
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useState } from 'react';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import { useAuth } from '../context/AuthContext';
 import '../styles/admin.css';
@@ -20,11 +21,18 @@ export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [logoutError, setLogoutError] = useState('');
   const page = PAGES[location.pathname] || { title: 'Administration', section: 'Espace de gestion' };
 
   async function handleLogout() {
-    await logout();
-    navigate('/admin/login');
+    setLogoutError('');
+    try {
+      await logout();
+      navigate('/admin/login');
+    } catch (error) {
+      console.error('Déconnexion administrateur impossible :', error);
+      setLogoutError('La déconnexion a échoué. Réessayez.');
+    }
   }
 
   return (
@@ -46,6 +54,7 @@ export default function AdminLayout() {
             </span>
           </div>
         </div>
+        {logoutError && <p role="alert">{logoutError}</p>}
         <Outlet />
       </main>
     </div>

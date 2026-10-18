@@ -7,7 +7,7 @@ Deno.serve(async (request) => {
   try {
     const authorization = request.headers.get('authorization') || '';
     const accessToken = authorization.match(/^Bearer\s+(.+)$/i)?.[1];
-    if (!accessToken) return jsonResponse({ error: 'Connecte-toi pour accéder à ton compte.' }, 401);
+    if (!accessToken) return jsonResponse({ error: 'Connectez-vous pour accéder à votre compte.' }, 401);
 
     const client = getServiceClient();
     const { data: { user }, error: authError } = await client.auth.getUser(accessToken);
@@ -21,7 +21,7 @@ Deno.serve(async (request) => {
         id, ref, status, payment_status, total, currency, fulfillment_status, created_at,
         customers!inner ( name, contact, email ),
         order_items ( id, product_name, plan_label, qty, line_total,
-          products ( id, delivery_type, download_filename, download_size ) )
+          products ( id, delivery_type, download_filename, download_size, image_url, logo_url, avatar, gradient ) )
       `)
       .ilike('customers.email', user.email.trim())
       .order('created_at', { ascending: false });
@@ -33,6 +33,6 @@ Deno.serve(async (request) => {
     });
   } catch (error) {
     console.error('Échec de chargement du compte client :', error);
-    return jsonResponse({ error: 'Impossible de charger ton espace client.' }, 500);
+    return jsonResponse({ error: 'Impossible de charger votre espace client.' }, 500);
   }
 });
