@@ -21,7 +21,7 @@ async function createSignature(secret: string, signedPayload: string) {
     false,
     ['sign'],
   );
-  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(body));
+  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(signedPayload));
   return Array.from(new Uint8Array(signature))
     .map((byte) => byte.toString(16).padStart(2, '0'))
     .join('');
