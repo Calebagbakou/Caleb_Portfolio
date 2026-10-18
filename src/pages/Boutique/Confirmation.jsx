@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { LAST_ORDER_KEY, useCart } from '../../context/CartContext';
 import { formatPrice } from '../../data/products';
-import { getShopOrderDeliveries, listShopCatalog, verifySasPayPayment } from '../../services/shop';
+import { getBuyerAccount, getShopOrderDeliveries, listShopCatalog, verifySasPayPayment } from '../../services/shop';
 import { supabase } from '../../services/supabase';
 import ShopAlert from '../../components/shop/ShopAlert';
 import { getShopErrorMessage } from '../../utils/shopErrors';
@@ -44,12 +44,23 @@ export default function Confirmation() {
     async function verifyPayment() {
       let lastData = null;
       let lastError = null;
-      for (let attempt = 0; attempt < 6 && !cancelled; attempt += 1) {
+      for (let attempt = 0; attempt < 30 && !cancelled; attempt += 1) {
         const result = await verifySasPayPayment({ orderId, sessionId });
         lastData = result.data;
         lastError = result.error;
         if (result.data?.verified && result.data.order) break;
-        if (attempt < 5) await new Promise((resolve) => setTimeout(resolve, 2000));
+        if (result.data?.order?.payment_status === 'confirme') {
+          lastData = { ...result.data, verified: true };
+          break;
+        }
+        const accountResult = await getBuyerAccount();
+        const accountOrder = accountResult.data?.orders?.find((entry) => entry.id === orderId);
+        if (accountOrder?.payment_status === 'confirme') {
+          lastData = { order: accountOrder, verified: true };
+          lastError = null;
+          break;
+        }
+        if (attempt < 29) await new Promise((resolve) => setTimeout(resolve, 2000));
       }
       if (cancelled) return;
       if (lastError || !lastData?.verified || !lastData.order) {
