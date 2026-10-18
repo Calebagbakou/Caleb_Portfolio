@@ -6,12 +6,13 @@ import { useShop } from '../../context/ShopContext';
 import { useAuth } from '../../context/AuthContext';
 import Seo from '../../components/site/Seo';
 import ShopArrow from '../../components/shop/ShopArrow';
+import RichContent from '../../components/shop/RichContent';
 
 export default function Produit() {
   const { id } = useParams();
   const { products, loading, error } = useShop();
   const product = findProduct(id, products);
-  const { add, buyNow } = useCart();
+  const { buyNow } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -19,7 +20,7 @@ export default function Produit() {
     product?.plans.find((plan) => plan.active)?.id ?? null
   );
   const [qty, setQty] = useState(1);
-  const [toast, setToast] = useState('');
+  const allowMultipleQty = product?.allow_multiple_qty === true;
 
   useEffect(() => {
     if (!product) return;
@@ -27,13 +28,8 @@ export default function Produit() {
     setSelectedPlanId((current) => product.plans.some((plan) => plan.id === current && plan.active)
       ? current
       : product.plans.find((plan) => plan.active)?.id ?? null);
+    setQty(1);
   }, [product]);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(''), 2200);
-    return () => clearTimeout(t);
-  }, [toast]);
 
   if (!product) {
     if (loading) return <main className="wrap"><div className="shop-state">Chargement du produit…</div></main>;
@@ -50,21 +46,10 @@ export default function Produit() {
     );
   }
 
-  function handleAddToCart() {
-    const selectedPlan = product.plans.find((plan) => plan.id === selectedPlanId);
-    if (!selectedPlan?.active) return;
-    add(product.id, selectedPlanId, qty);
-    if (!user) {
-      navigate(`/boutique/connexion?next=${encodeURIComponent('/boutique/commande')}`);
-      return;
-    }
-    setToast(product.name + ' ajouté au panier');
-  }
-
   function handleBuyNow() {
     const selectedPlan = product.plans.find((plan) => plan.id === selectedPlanId);
     if (!selectedPlan?.active) return;
-    buyNow(product.id, selectedPlanId, product.slug === 'capcut-pro' ? 1 : qty);
+    buyNow(product.id, selectedPlanId, allowMultipleQty ? qty : 1);
     const next = '/boutique/commande';
     navigate(user ? next : `/boutique/connexion?next=${encodeURIComponent(next)}`);
   }
@@ -149,20 +134,22 @@ export default function Produit() {
             </div>
           </div>
 
-          <div className="qty-row">
-            <span className="plan-group-label" style={{ margin: 0 }}>
-              Quantité
-            </span>
-            <div className="qty-stepper">
-              <button type="button" aria-label="Diminuer" onClick={() => setQty((q) => Math.max(1, q - 1))}>
-                −
-              </button>
-              <span>{qty}</span>
-              <button type="button" aria-label="Augmenter" onClick={() => setQty((q) => Math.min(20, q + 1))}>
-                +
-              </button>
+          {allowMultipleQty && (
+            <div className="qty-row">
+              <span className="plan-group-label" style={{ margin: 0 }}>
+                Quantité
+              </span>
+              <div className="qty-stepper">
+                <button type="button" aria-label="Diminuer" onClick={() => setQty((q) => Math.max(1, q - 1))}>
+                  −
+                </button>
+                <span>{qty}</span>
+                <button type="button" aria-label="Augmenter" onClick={() => setQty((q) => Math.min(20, q + 1))}>
+                  +
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="product-cta-row">
             <button
@@ -173,24 +160,8 @@ export default function Produit() {
               Acheter maintenant
               <ShopArrow />
             </button>
-            {product.slug !== 'capcut-pro' && (
-              <button
-                className="btn btn-outline"
-                onClick={handleAddToCart}
-                disabled={!product.plans.some((plan) => plan.id === selectedPlanId && plan.active)}
-              >
-                Ajouter au panier
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M3 3h2l2.4 12.4a2 2 0 002 1.6h8.2a2 2 0 002-1.6L21 8H6" />
-                  <circle cx="9" cy="20" r="1.4" />
-                  <circle cx="17" cy="20" r="1.4" />
-                </svg>
-              </button>
-            )}
-            <Link to="/boutique/panier" className="btn btn-outline">
-              Voir le panier
-            </Link>
           </div>
+          <RichContent doc={product.description_rich} />
           <p className="product-note">
             {product.slug === 'gemini-pro'
               ? 'Les formules 4 et 12 mois sont affichées mais momentanément indisponibles. La formule 18 mois est disponible ; après confirmation du paiement, votre lien d’activation est généré automatiquement.'
@@ -198,15 +169,6 @@ export default function Produit() {
           </p>
         </div>
       </div>
-
-      {toast && (
-        <div className="toast show">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-            <path d="M5 12l5 5L20 7" />
-          </svg>
-          <span>{toast}</span>
-        </div>
-      )}
     </main>
   );
 }

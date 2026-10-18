@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
   archiveShopProduct,
   createShopCategory,
@@ -12,11 +12,14 @@ import {
 import { DEFAULT_SHOP_CONTENT } from '../../context/ShopContext';
 import { supabase } from '../../services/supabase';
 
+const RichTextEditor = lazy(() => import('../../components/admin/RichTextEditor'));
+
 const EMPTY_PRODUCT = {
   id: null,
   name: '',
   slug: '',
   description: '',
+  description_rich: null,
   tagline: '',
   highlights: '',
   category_id: '',
@@ -24,6 +27,7 @@ const EMPTY_PRODUCT = {
   cta_label: 'Acheter maintenant',
   regular_price: '',
   promo_price: '',
+  allow_multiple_qty: false,
   status: 'active',
   featured: false,
   avatar: '',
@@ -63,6 +67,7 @@ function productForm(product) {
     cta_label: product.cta_label || 'Acheter maintenant',
     regular_price: product.regular_price ?? '',
     promo_price: product.promo_price ?? '',
+    allow_multiple_qty: product.allow_multiple_qty ?? product.slug === 'gemini-pro',
     avatar: product.avatar || '',
     gradient: product.gradient || EMPTY_PRODUCT.gradient,
     logo_url: product.logo_url || '',
@@ -79,10 +84,12 @@ function productForm(product) {
 }
 
 export default function Shop() {
+  const productEditorPanelRef = useRef(null);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [content, setContent] = useState(DEFAULT_SHOP_CONTENT);
   const [form, setForm] = useState(EMPTY_PRODUCT);
+  const [productEditorRevision, setProductEditorRevision] = useState(0);
   const [newCategory, setNewCategory] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -134,13 +141,21 @@ export default function Shop() {
 
   function editProduct(product) {
     setForm(productForm(product));
+    setProductEditorRevision((revision) => revision + 1);
     setError('');
     setNotice('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    requestAnimationFrame(() => {
+      productEditorPanelRef.current?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+        block: 'start',
+      });
+      document.getElementById('shop-product-name')?.focus({ preventScroll: true });
+    });
   }
 
   function resetProduct() {
     setForm(EMPTY_PRODUCT);
+    setProductEditorRevision((revision) => revision + 1);
     setError('');
     setNotice('');
   }
@@ -370,7 +385,7 @@ export default function Shop() {
         </form>
       </section>
 
-      <section className="panel">
+      <section className="panel" ref={productEditorPanelRef}>
         <h2>{form.id ? 'Modifier un produit' : 'Ajouter un produit'}</h2>
         <p>Les prix sont définis par formule. La boutique affiche uniquement les produits actifs.</p>
         <form onSubmit={saveProduct}>
@@ -399,6 +414,18 @@ export default function Shop() {
               <input id="shop-product-promo-price" type="number" min="1" step="1" name="promo_price" value={form.promo_price} onChange={updateProductField} required />
               <small className="project-form-hint">Le prix normal sera affiché barré à gauche; celui-ci sera affiché à droite.</small>
             </div>
+            <div className="form-group shop-admin-wide">
+              <label className="shop-admin-check">
+                <input
+                  type="checkbox"
+                  name="allow_multiple_qty"
+                  checked={form.allow_multiple_qty}
+                  onChange={updateProductField}
+                />
+                Autoriser l’achat de plusieurs unités
+              </label>
+              <small className="project-form-hint">Si désactivé, le client ne pourra commander qu’une unité. La quantité maximale autorisée est de 20.</small>
+            </div>
             <div className="form-group">
               <label htmlFor="shop-product-tagline">Accroche</label>
               <input id="shop-product-tagline" name="tagline" value={form.tagline || ''} onChange={updateProductField} />
@@ -406,6 +433,14 @@ export default function Shop() {
             <div className="form-group shop-admin-wide">
               <label htmlFor="shop-product-description">Description complète</label>
               <textarea id="shop-product-description" name="description" rows="4" value={form.description || ''} onChange={updateProductField} />
+              <label className="rich-editor-label" htmlFor="shop-product-rich-description">Présentation détaillée (facultatif)</label>
+              <Suspense fallback={<div className="rich-editor-loading" role="status">Chargement de l’éditeur…</div>}>
+                <RichTextEditor
+                  key={`${form.id || 'new-product'}-${productEditorRevision}`}
+                  value={form.description_rich}
+                  onChange={(descriptionRich) => setForm((current) => ({ ...current, description_rich: descriptionRich }))}
+                />
+              </Suspense>
             </div>
             <div className="form-group shop-admin-wide">
               <label htmlFor="shop-product-highlights">Points forts (un par ligne)</label>

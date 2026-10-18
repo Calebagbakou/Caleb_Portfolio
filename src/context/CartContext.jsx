@@ -47,8 +47,10 @@ export function CartProvider({ children }) {
       const normalized = current.flatMap((item) => {
         const product = findProduct(item.productId, products);
         const plan = findPlan(product, item.planId);
+        const maxQty = product?.allow_multiple_qty ? 20 : 1;
+        const qty = Math.min(maxQty, Math.max(1, parseInt(item.qty, 10) || 1));
         return product && plan?.active !== false
-          ? [{ ...item, productId: product.id, planId: plan.id }]
+          ? [{ ...item, productId: product.id, planId: plan.id, qty }]
           : [];
       });
       return JSON.stringify(current) === JSON.stringify(normalized) ? current : normalized;
@@ -56,22 +58,28 @@ export function CartProvider({ children }) {
   }, [products, shopLoading, shopError]);
 
   const add = useCallback((productId, planId, qty = 1) => {
-    const safeQty = Math.max(1, parseInt(qty, 10) || 1);
+    const product = findProduct(productId, products);
+    const maxQty = product?.allow_multiple_qty ? 20 : 1;
+    const safeQty = Math.min(maxQty, Math.max(1, parseInt(qty, 10) || 1));
     setItems((prev) => {
       const existing = prev.find((it) => it.productId === productId && it.planId === planId);
       if (existing) {
         return prev.map((it) =>
-          it.productId === productId && it.planId === planId ? { ...it, qty: it.qty + safeQty } : it
+          it.productId === productId && it.planId === planId
+            ? { ...it, qty: Math.min(maxQty, it.qty + safeQty) }
+            : it
         );
       }
       return [...prev, { productId, planId, qty: safeQty }];
     });
-  }, []);
+  }, [products]);
 
   const buyNow = useCallback((productId, planId, qty = 1) => {
-    const safeQty = Math.max(1, parseInt(qty, 10) || 1);
+    const product = findProduct(productId, products);
+    const maxQty = product?.allow_multiple_qty ? 20 : 1;
+    const safeQty = Math.min(maxQty, Math.max(1, parseInt(qty, 10) || 1));
     setItems([{ productId, planId, qty: safeQty }]);
-  }, []);
+  }, [products]);
 
   const updateQty = useCallback((productId, planId, qty) => {
     const parsed = parseInt(qty, 10);
@@ -79,11 +87,15 @@ export function CartProvider({ children }) {
       if (!parsed || parsed < 1) {
         return prev.filter((it) => !(it.productId === productId && it.planId === planId));
       }
+      const product = findProduct(productId, products);
+      const maxQty = product?.allow_multiple_qty ? 20 : 1;
       return prev.map((it) =>
-        it.productId === productId && it.planId === planId ? { ...it, qty: parsed } : it
+        it.productId === productId && it.planId === planId
+          ? { ...it, qty: Math.min(maxQty, parsed) }
+          : it
       );
     });
-  }, []);
+  }, [products]);
 
   const remove = useCallback((productId, planId) => {
     setItems((prev) => prev.filter((it) => !(it.productId === productId && it.planId === planId)));

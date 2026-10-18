@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createProject, deleteProject, listProjects, updateProject } from '../../services/projects';
 import {
   DEFAULT_PROJECT_IMAGE_RATIO,
@@ -52,6 +52,7 @@ function mediaFieldHint(type) {
 }
 
 export default function Projects() {
+  const editorPanelRef = useRef(null);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -105,7 +106,13 @@ export default function Projects() {
     });
     setError('');
     setNotice('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    requestAnimationFrame(() => {
+      editorPanelRef.current?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+        block: 'start',
+      });
+      document.getElementById('project-title')?.focus({ preventScroll: true });
+    });
   }
 
   function resetForm() {
@@ -244,7 +251,7 @@ export default function Projects() {
 
   return (
     <div className="projects-admin">
-      <section className="panel">
+      <section className="panel" ref={editorPanelRef}>
         <div className="projects-heading">
           <div>
             <h2>{editingId ? 'Modifier le projet' : 'Ajouter un projet'}</h2>

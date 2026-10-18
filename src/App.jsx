@@ -24,6 +24,7 @@ import Parametres from './pages/admin/Parametres';
 import Projects from './pages/admin/Projects';
 import Shop from './pages/admin/Shop';
 import Orders from './pages/admin/Orders';
+import Clients from './pages/admin/Clients';
 import Media from './pages/admin/Media';
 import Competencies from './pages/admin/Competencies';
 import Services from './pages/admin/Services';
@@ -87,6 +88,7 @@ export default function App() {
         <Route path="media" element={<Media />} />
         <Route path="shop" element={<Shop />} />
         <Route path="orders" element={<Orders />} />
+        <Route path="clients" element={<Clients />} />
         <Route path="messages" element={<Messages />} />
         <Route path="temoignages" element={<Testimonials />} />
         <Route path="parametres" element={<Parametres />} />

@@ -26,6 +26,21 @@ Deno.serve(async (request) => {
     }
 
     const anonymizedEmail = `deleted-${user.id}@invalid.local`;
+    const { data: customerRecords, error: customerLookupError } = await client
+      .from('customers')
+      .select('id')
+      .eq('email', user.email.trim().toLowerCase());
+    if (customerLookupError) throw customerLookupError;
+
+    const customerIds = (customerRecords || []).map((customer) => customer.id);
+    if (customerIds.length) {
+      const { error: notesError } = await client
+        .from('admin_customer_notes')
+        .delete()
+        .in('customer_id', customerIds);
+      if (notesError) throw notesError;
+    }
+
     const { error: anonymizeError } = await client
       .from('customers')
       .update({

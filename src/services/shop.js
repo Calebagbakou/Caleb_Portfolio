@@ -1,11 +1,24 @@
 import { supabase } from './supabase';
 
-const PRODUCT_FIELDS = 'id, name, slug, description, tagline, highlights, category_id, badge, cta_label, regular_price, promo_price, status, featured, sort_order, avatar, gradient, logo_url, image_url, poster_ratio, delivery_type, download_filename, download_size';
-const OPTIONAL_PRODUCT_FIELDS = ['cta_label', 'regular_price', 'promo_price'];
+const PRODUCT_FIELDS = 'id, name, slug, description, description_rich, tagline, highlights, category_id, badge, cta_label, regular_price, promo_price, allow_multiple_qty, status, featured, sort_order, avatar, gradient, logo_url, image_url, poster_ratio, delivery_type, download_filename, download_size';
+const OPTIONAL_PRODUCT_FIELDS = ['cta_label', 'regular_price', 'promo_price', 'description_rich', 'allow_multiple_qty'];
 const BASE_PRODUCT_FIELDS = PRODUCT_FIELDS
   .split(', ')
   .filter((field) => !OPTIONAL_PRODUCT_FIELDS.includes(field));
 const PLAN_FIELDS = 'id, product_id, slug, label, price, old_price, currency, sort_order, active';
+
+function getMissingOptionalProductField(error, fields) {
+  if (!['42703', 'PGRST204'].includes(error?.code)) return null;
+  return fields.find((field) => error.message?.includes(field)) || null;
+}
+
+function getProductFieldMigration(field) {
+  if (field === 'cta_label') return '015_shop_product_cta_label.sql';
+  if (field === 'regular_price' || field === 'promo_price') return '016_shop_product_prices.sql';
+  if (field === 'description_rich') return '018_shop_product_rich_description.sql';
+  if (field === 'allow_multiple_qty') return '020_shop_product_multiple_quantity.sql';
+  return null;
+}
 
 export function hideActivationProvider(value) {
   return typeof value === 'string'
@@ -34,6 +47,8 @@ function attachShopData(products, plans, categories) {
       ...product,
       regular_price: product.regular_price == null ? null : Number(product.regular_price),
       promo_price: product.promo_price == null ? null : Number(product.promo_price),
+      description_rich: product.description_rich || null,
+      allow_multiple_qty: product.allow_multiple_qty ?? product.slug === 'gemini-pro',
       name: hideActivationProvider(product.name),
       description: hideActivationProvider(product.description),
       tagline: hideActivationProvider(product.tagline),
@@ -66,11 +81,8 @@ export async function listShopCatalog({ includeInactive = false } = {}) {
 
     while (true) {
       result = await fetchProducts([...BASE_PRODUCT_FIELDS, ...availableOptionalFields].join(', '));
-      if (!result.error || result.error.code !== '42703') break;
-
-      const missingField = availableOptionalFields.find((field) => (
-        result.error.message.includes(`products.${field}`)
-      ));
+      if (!result.error) break;
+      const missingField = getMissingOptionalProductField(result.error, availableOptionalFields);
       if (!missingField) break;
 
       availableOptionalFields.splice(availableOptionalFields.indexOf(missingField), 1);
@@ -78,8 +90,9 @@ export async function listShopCatalog({ includeInactive = false } = {}) {
     }
 
     if (missingOptionalFields.length) {
+      const migrations = [...new Set(missingOptionalFields.map(getProductFieldMigration).filter(Boolean))];
       console.warn(
-        `Colonnes boutique absentes (${missingOptionalFields.join(', ')}). Applique les migrations correspondantes; des valeurs par défaut sont utilisées.`,
+        `Colonnes boutique absentes (${missingOptionalFields.join(', ')}). Applique les migrations correspondantes${migrations.length ? ` : ${migrations.join(', ')}` : ''}; des valeurs par défaut sont utilisées.`,
       );
     }
     return result;
@@ -169,6 +182,7 @@ export async function saveShopProduct(product, plans) {
     name: product.name,
     slug: product.slug,
     description: product.description,
+    description_rich: product.description_rich || null,
     tagline: product.tagline,
     highlights: product.highlights,
     category_id: product.category_id,
@@ -176,6 +190,7 @@ export async function saveShopProduct(product, plans) {
     cta_label: product.cta_label || 'Acheter maintenant',
     regular_price: product.regular_price === '' ? null : Number(product.regular_price),
     promo_price: product.promo_price === '' ? null : Number(product.promo_price),
+    allow_multiple_qty: Boolean(product.allow_multiple_qty),
     status: product.status,
     featured: product.featured,
     sort_order: Number(product.sort_order) || 999,
@@ -193,9 +208,9 @@ export async function saveShopProduct(product, plans) {
 
   const { error: productError } = await supabase.from('products').upsert(productRow, { onConflict: 'id' });
   if (productError) {
-    if (productError.code === '42703' && OPTIONAL_PRODUCT_FIELDS.some((field) => productError.message.includes(field))) {
-      const missingField = OPTIONAL_PRODUCT_FIELDS.find((field) => productError.message.includes(field));
-      const migration = missingField === 'cta_label' ? '015_shop_product_cta_label.sql' : '016_shop_product_prices.sql';
+    const missingField = getMissingOptionalProductField(productError, OPTIONAL_PRODUCT_FIELDS);
+    if (missingField) {
+      const migration = getProductFieldMigration(missingField);
       return {
         error: new Error(`Applique la migration supabase/migrations/${migration} pour enregistrer ces champs produit.`),
       };

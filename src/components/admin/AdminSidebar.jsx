@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 
 /**
  * Port direct de la sidebar admin (identique sur index.html, messages.html,
@@ -7,6 +7,8 @@ import { NavLink } from 'react-router-dom';
  * protégées de l'espace admin.
  */
 export default function AdminSidebar({ onLogout }) {
+  const location = useLocation();
+
   return (
     <aside className="admin-sidebar">
       <div className="admin-brand">
@@ -80,13 +82,13 @@ export default function AdminSidebar({ onLogout }) {
           </svg>
           Commandes
         </NavLink>
-        <a href="#soon-clients" onClick={(e) => e.preventDefault()}>
+        <NavLink to="/admin/clients">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <circle cx="12" cy="8" r="4" />
             <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
           </svg>
-          Clients<span className="soon">bientôt</span>
-        </a>
+          Clients
+        </NavLink>
 
         <div className="admin-nav-label">Général</div>
         <NavLink to="/admin/messages">
@@ -102,12 +104,27 @@ export default function AdminSidebar({ onLogout }) {
           </svg>
           Témoignages
         </NavLink>
-        <NavLink to="/admin/parametres">
+        <NavLink
+          to="/admin/parametres"
+          end
+          className={({ isActive }) => (isActive && !location.hash ? 'active' : '')}
+        >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
             <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009.6 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 8.6a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" />
           </svg>
           Paramètres
+        </NavLink>
+        <NavLink
+          to="/admin/parametres#admin-security"
+          end
+          className={({ isActive }) => (isActive && location.hash === '#admin-security' ? 'active' : '')}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <rect x="4" y="10" width="16" height="11" rx="2" />
+            <path d="M8 10V7a4 4 0 118 0v3M12 14v3" />
+          </svg>
+          Mot de passe
         </NavLink>
       </nav>
 
