@@ -438,13 +438,6 @@
   .stat{
     background:var(--panel); padding:22px 18px; position:relative;
   }
-  .stat-icon{
-    display:flex; align-items:center; justify-content:center; width:28px; height:28px;
-    margin-bottom:9px; border-radius:8px; color:var(--teal); background:var(--teal-dim);
-  }
-  .stat:nth-child(2n) .stat-icon{ color:var(--orange); background:var(--orange-dim); }
-  .stat:nth-child(3n) .stat-icon{ color:var(--violet); background:var(--violet-dim); }
-  .stat-icon svg{ width:15px; height:15px; }
   .stat::before, .stat::after{
     content:""; position:absolute; left:0; right:0; height:1px;
     background-image: radial-gradient(circle, var(--ink) 1.5px, transparent 1.5px);
@@ -1037,9 +1030,6 @@
   .professional-presentation .stat-num{ color:#1C1E21; font-size:1.8rem; }
   .professional-presentation .stat-num span{ color:#1877F2; }
   .professional-presentation .stat-label{ color:#65676B; font-family:'Inter',sans-serif; font-size:12px; }
-  .professional-presentation .stat-icon{ margin:0 auto 9px; color:#1877F2; background:#E7F0FA; }
-  .professional-presentation .stat:nth-child(2n) .stat-icon,
-  .professional-presentation .stat:nth-child(3n) .stat-icon{ color:#1877F2; background:#E7F0FA; }
   .professional-presentation section{
     padding:58px max(20px,calc((100% - 1120px)/2));
     background:transparent; scroll-margin-top:82px;
