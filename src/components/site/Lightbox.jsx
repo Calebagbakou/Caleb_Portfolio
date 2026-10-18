@@ -161,6 +161,11 @@ export default function Lightbox({ items, index, onClose, onNavigate }) {
             <h3 className="lightbox-title">{item?.title}</h3>
             {item?.description && <p className="lightbox-description">{item.description}</p>}
           </div>
+          {item?.slug && (
+            <a className="btn btn-ghost project-detail-link" href={`/projet/${item.slug}`}>
+              Voir l’étude de cas
+            </a>
+          )}
         </div>
       </div>
       <button

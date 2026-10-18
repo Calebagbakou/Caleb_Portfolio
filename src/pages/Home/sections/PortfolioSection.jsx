@@ -158,7 +158,7 @@ function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisi
         )}
         {!previewActive && image
           ? <>
-            <img className="project-image-main" src={image} alt="" loading="lazy" />
+            <img className="project-image-main" src={image} alt={`Réalisation ${item.title}`} loading="lazy" />
             {item.media_type === 'image' && (
               <>
                 <img className="project-image-glitch project-image-glitch-cyan" src={image} alt="" aria-hidden="true" />
@@ -297,7 +297,11 @@ export default function PortfolioSection() {
 
   function openLightbox(index) {
     setActivePreviewId(null);
-    if (flatItems.length) setLightboxIndex((index + flatItems.length) % flatItems.length);
+    if (flatItems.length) {
+      const item = flatItems[(index + flatItems.length) % flatItems.length];
+      window.history.replaceState(null, '', `#portfolio?projet=${encodeURIComponent(item.slug || item.id)}`);
+      setLightboxIndex((index + flatItems.length) % flatItems.length);
+    }
   }
 
   function navigateLightbox(index) {
@@ -351,6 +355,7 @@ export default function PortfolioSection() {
         index={lightboxIndex}
         onClose={() => {
           setLightboxIndex(null);
+          window.history.replaceState(null, '', '#portfolio');
           resumeVisiblePreview();
         }}
         onNavigate={navigateLightbox}

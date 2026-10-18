@@ -81,6 +81,11 @@ export function listPublishedProjects() {
   return fetchProjects({ publishedOnly: true });
 }
 
+export async function getPublishedProjectBySlug(slug) {
+  const { data, error } = await listPublishedProjects();
+  return { data: (data || []).find((project) => project.slug === slug) || null, error };
+}
+
 export async function createProject(project) {
   return supabase
     .from('projects')

@@ -43,6 +43,7 @@ function renderTyped(n) {
 export default function Hero() {
   const { isProfessional } = usePresentation();
   const [profileImage, setProfileImage] = useState(profileWebp);
+  const [availability, setAvailability] = useState('Disponible pour de nouveaux projets');
   const [typedCount, setTypedCount] = useState(prefersReducedMotion ? FULL_TEXT.length : 0);
   const [activeChapter, setActiveChapter] = useState(0);
   const [scrubPct, setScrubPct] = useState(0);
@@ -86,6 +87,16 @@ export default function Hero() {
     return () => {
       active = false;
     };
+  }, []);
+
+  useEffect(() => {
+    getSettingValue('availability_banner').then(({ data, error }) => {
+      if (error) {
+        console.error('Impossible de charger le bandeau de disponibilité :', error);
+        return;
+      }
+      if (data?.trim()) setAvailability(data.trim());
+    });
   }, []);
 
   // Typewriter
@@ -187,6 +198,7 @@ export default function Hero() {
         <span className="hero-badge">
           <span className="dot"></span>{isProfessional ? 'CRÉATEUR VISUEL · BÉNIN' : 'CALEB CREATIVE'}
         </span>
+        {isProfessional && <div className="availability-banner"><span className="availability-dot" />{availability}</div>}
         <div className="hero-title-row">
           <h1>
             <span>{renderTyped(typedCount)}</span>
@@ -241,6 +253,9 @@ export default function Hero() {
               <path d="M5 12h14M13 6l6 6-6 6" />
             </svg>
           </Link>
+          <a className="btn btn-ghost btn-cv" href="/caleb-creative-book.pdf" download>
+            Télécharger mon CV / mon book
+          </a>
         </div>
         <div className="motion-sequence" aria-label="Le processus créatif : idée, design, mouvement et rendu">
           <div className="motion-step idea-step">

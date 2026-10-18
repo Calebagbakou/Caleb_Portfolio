@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getSettings, saveSettings } from '../../services/settings';
 
-const SIMPLE_KEYS = ['site_name', 'logo_url', 'favicon_url', 'contact_email', 'contact_phone', 'shop_url'];
+const SIMPLE_KEYS = ['site_name', 'logo_url', 'favicon_url', 'contact_email', 'contact_phone', 'shop_url', 'availability_banner'];
 const SOCIAL_FIELDS = {
   social_facebook: 'facebook',
   social_instagram: 'instagram',
@@ -18,6 +18,7 @@ const emptyForm = {
   contact_email: '',
   contact_phone: '',
   shop_url: '',
+  availability_banner: 'Disponible pour de nouveaux projets',
   social_facebook: '',
   social_instagram: '',
   social_linkedin: '',
@@ -138,6 +139,17 @@ export default function Parametres() {
 
           <div className="settings-section">
             <h3>Contact</h3>
+            <div className="form-group">
+              <label htmlFor="availability_banner">Bandeau de disponibilité</label>
+              <input
+                type="text"
+                id="availability_banner"
+                maxLength="100"
+                placeholder="Disponible pour de nouveaux projets"
+                value={form.availability_banner}
+                onChange={(e) => updateField('availability_banner', e.target.value)}
+              />
+            </div>
             <div className="form-group">
               <label htmlFor="contact_email">Email de contact</label>
               <input

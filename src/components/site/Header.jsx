@@ -52,6 +52,7 @@ export default function Header() {
   });
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [activeSection, setActiveSection] = useState('');
   const timecodeRef = useRef(null);
   const navRef = useRef(null);
 
@@ -73,6 +74,20 @@ export default function Header() {
     document.addEventListener('scroll', updateShadow, { passive: true });
     updateShadow();
     return () => document.removeEventListener('scroll', updateShadow);
+  }, []);
+
+  useEffect(() => {
+    const sections = NAV_LINKS
+      .map((link) => document.querySelector(link.href))
+      .filter(Boolean);
+    const observer = new IntersectionObserver((entries) => {
+      const visible = entries
+        .filter((entry) => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (visible) setActiveSection(`#${visible.target.id}`);
+    }, { rootMargin: '-18% 0px -65% 0px', threshold: [0.1, 0.4] });
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -188,7 +203,7 @@ export default function Header() {
       <nav className={`nav-overlay${menuOpen ? ' open' : ''}`} ref={navRef} aria-hidden={!menuOpen}>
         <div className="nav-links">
           {NAV_LINKS.map((link) => (
-            <a key={link.href} href={link.href} onClick={() => setMenuOpen(false)}>
+            <a key={link.href} className={activeSection === link.href ? 'active' : ''} href={link.href} onClick={() => setMenuOpen(false)}>
               <span>{link.label}</span>
               <span className="idx">{link.idx}</span>
             </a>

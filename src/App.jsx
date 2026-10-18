@@ -32,6 +32,7 @@ import Account from './pages/Boutique/Account';
 import BuyerAuthGate from './components/shop/BuyerAuthGate';
 
 import NotFound from './pages/NotFound';
+import ProjectDetail from './pages/ProjectDetail';
 import useSiteFavicon from './hooks/useSiteFavicon';
 
 export default function App() {
@@ -42,6 +43,7 @@ export default function App() {
       {/* ================= SITE PUBLIC (portfolio one-page) ================= */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
+        <Route path="/projet/:slug" element={<ProjectDetail />} />
       </Route>
 
       {/* ================= BOUTIQUE ================= */}

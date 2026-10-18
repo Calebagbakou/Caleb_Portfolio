@@ -68,6 +68,7 @@ export default function ContactSection() {
   const logos = useSectionLogos();
   const [form, setForm] = useState({ nom: '', email: '', message: '', website: '' });
   const [status, setStatus] = useState(null); // { kind: 'loading'|'success'|'error', text }
+  const [fieldErrors, setFieldErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
   function updateField(name, value) {
@@ -83,9 +84,15 @@ export default function ContactSection() {
 
     if (form.website.trim()) return;
     if (!nom || !email || !message) {
-      setStatus({ kind: 'error', text: 'Merci de remplir tous les champs.' });
+      setFieldErrors({
+        nom: !nom ? 'Indiquez votre nom.' : '',
+        email: !email ? 'Indiquez votre adresse email.' : '',
+        message: !message ? 'Décrivez votre projet en quelques mots.' : '',
+      });
+      setStatus({ kind: 'error', text: 'Vérifiez les champs signalés avant d’envoyer votre message.' });
       return;
     }
+    setFieldErrors({});
 
     setSubmitting(true);
     setStatus({ kind: 'loading', text: 'Envoi en cours…' });
@@ -110,6 +117,7 @@ export default function ContactSection() {
   return (
     <section className="wrap" id="contact">
       <RevealHeading eyebrow="CONTACT">Parlons de votre projet.</RevealHeading>
+      <p className="response-time">Réponse sous 24 h ouvrées.</p>
 
       <div className="contact-grid">
         {CONTACT_ITEMS.map((item) => (
@@ -160,7 +168,10 @@ export default function ContactSection() {
             required
             value={form.nom}
             onChange={(e) => updateField('nom', e.target.value)}
+            aria-invalid={Boolean(fieldErrors.nom)}
+            aria-describedby="contact-nom-error"
           />
+          {fieldErrors.nom && <span id="contact-nom-error" className="field-error">{fieldErrors.nom}</span>}
         </label>
         <label>
           Email
@@ -171,7 +182,10 @@ export default function ContactSection() {
             required
             value={form.email}
             onChange={(e) => updateField('email', e.target.value)}
+            aria-invalid={Boolean(fieldErrors.email)}
+            aria-describedby="contact-email-error"
           />
+          {fieldErrors.email && <span id="contact-email-error" className="field-error">{fieldErrors.email}</span>}
         </label>
         <label>
           Message
@@ -183,8 +197,11 @@ export default function ContactSection() {
             required
             value={form.message}
             onChange={(e) => updateField('message', e.target.value)}
+            aria-invalid={Boolean(fieldErrors.message)}
+            aria-describedby="contact-message-error"
           />
           <span className="field-counter" aria-live="polite">{form.message.length}/1000</span>
+          {fieldErrors.message && <span id="contact-message-error" className="field-error">{fieldErrors.message}</span>}
         </label>
         <label className="honeypot" aria-hidden="true">
           Site web
