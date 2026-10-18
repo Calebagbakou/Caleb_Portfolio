@@ -122,7 +122,7 @@ def page_cv(c):
                  "visuels qui marquent."), rx, y, rw, st('P', 8.5, TXT, 12.6, alignment=4)) - 12
     # chiffres
     bw = (rw - 16) / 3
-    for i, (n, l) in enumerate([('40+', 'PROJETS RÉALISÉS'), ('2 ANS', 'D’EXPÉRIENCE'), ('10', 'SERVICES')]):
+    for i, (n, l) in enumerate([('40+', 'PROJETS RÉALISÉS'), ('2 ANS', 'D’EXPÉRIENCE'), ('50+', 'SERVICES')]):
         bx = rx + i * (bw + 8)
         c.setFillColor(INK); c.roundRect(bx, y - 46, bw, 46, 7, stroke=0, fill=1)
         c.setFillColor(LIME); c.setFont('PB', 15); c.drawCentredString(bx + bw / 2, y - 22, n)
