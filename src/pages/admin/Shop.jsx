@@ -1,11 +1,15 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
   archiveShopProduct,
+  createShopPromoCode,
   createShopCategory,
+  deleteShopPromoCode,
   deleteShopCategory,
+  listShopPromoCodes,
   listShopAdminData,
   saveShopContent,
   saveShopProduct,
+  updateShopPromoCode,
   updateShopCategory,
   hideActivationProvider,
 } from '../../services/shop';
@@ -98,13 +102,34 @@ export default function Shop() {
   const [contentSaving, setContentSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [pixverifyCategories, setPixverifyCategories] = useState(null);
-  const [pixverifyLoading, setPixverifyLoading] = useState(false);
-  const [pixverifyError, setPixverifyError] = useState('');
+  const [prodSellerProducts, setProdSellerProducts] = useState(null);
+  const [prodSellerLoading, setProdSellerLoading] = useState(false);
+  const [prodSellerError, setProdSellerError] = useState('');
+  const [promoCodes, setPromoCodes] = useState([]);
+  const [promoForm, setPromoForm] = useState({
+    code: '',
+    discount_type: 'percentage',
+    discount_value: '',
+    starts_at: '',
+    expires_at: '',
+  });
+  const [promoSaving, setPromoSaving] = useState(false);
+  const [promoError, setPromoError] = useState('');
+  const [promoNotice, setPromoNotice] = useState('');
 
   async function load() {
     setLoading(true);
-    const { data, error: loadError } = await listShopAdminData();
+    const [{ data, error: loadError }, promoResult] = await Promise.all([
+      listShopAdminData(),
+      listShopPromoCodes(),
+    ]);
+    if (promoResult.error) {
+      console.error('Impossible de charger les codes promo :', promoResult.error);
+      setPromoError('Impossible de charger les codes promo. Vérifie que la migration promo est appliquée.');
+    } else {
+      setPromoCodes(promoResult.data || []);
+      setPromoError('');
+    }
     if (loadError) {
       console.error('Impossible de charger les données de la boutique :', loadError);
       setError(`Chargement impossible : ${loadError.message}. Vérifie que la migration boutique a été exécutée.`);
@@ -164,6 +189,7 @@ export default function Shop() {
 
   async function saveProduct(event) {
     event.preventDefault();
+    const usesProdSeller = ['gemini-pro', 'canva-pro'].includes(slugify(form.slug));
     if (!form.name.trim() || !form.slug.trim() || !form.category_id) {
       setError('Le nom, l’URL courte et la catégorie du produit sont obligatoires.');
       return;
@@ -191,7 +217,7 @@ export default function Shop() {
       setError('Le lien du fichier doit commencer par https://.');
       return;
     }
-    if (form.delivery_type === 'activate' && !form.access_url.trim()) {
+    if (!usesProdSeller && form.delivery_type === 'activate' && !form.access_url.trim()) {
       setError('Renseigne le lien d’activation pour ce produit.');
       return;
     }
@@ -214,8 +240,8 @@ export default function Shop() {
       gradient: form.gradient.trim() || null,
       logo_url: form.logo_url.trim() || null,
       image_url: form.image_url.trim() || null,
-      access_url: form.access_url.trim() || null,
-      delivery_type: form.delivery_type,
+      access_url: usesProdSeller ? null : form.access_url.trim() || null,
+      delivery_type: usesProdSeller ? 'api' : form.delivery_type,
       download_filename: form.download_filename.trim() || null,
       download_size: form.download_size.trim() || null,
     };
@@ -295,20 +321,89 @@ export default function Shop() {
     setContentSaving(false);
   }
 
-  async function loadPixverifyCategories() {
-    setPixverifyLoading(true);
-    setPixverifyError('');
-    const { data, error: invokeError } = await supabase.functions.invoke('gemini-pro-activate', {
-      body: { action: 'categories' },
+  async function loadProdSellerProducts() {
+    setProdSellerLoading(true);
+    setProdSellerError('');
+    const { data, error: invokeError } = await supabase.functions.invoke('gemini-prodseller-activate', {
+      body: { action: 'products' },
     });
     if (invokeError || data?.error) {
-      console.error('Impossible de charger les catégories PixVerify :', invokeError || data.error);
-      setPixverifyError('Impossible de charger le catalogue d’activation. Réessaie plus tard.');
-      setPixverifyCategories(null);
+      console.error('Impossible de charger le catalogue ProdSeller :', invokeError || data.error);
+      setProdSellerError('Impossible de charger le catalogue fournisseur. Réessaie plus tard.');
+      setProdSellerProducts(null);
     } else {
-      setPixverifyCategories(data.categories || []);
+      setProdSellerProducts(data.products || []);
     }
-    setPixverifyLoading(false);
+    setProdSellerLoading(false);
+  }
+
+  async function savePromoCode(event) {
+    event.preventDefault();
+    const code = promoForm.code.trim().toUpperCase().replace(/\s+/g, '');
+    const value = Number(promoForm.discount_value);
+    if (!/^[A-Z0-9_-]{3,40}$/.test(code)) {
+      setPromoError('Le code doit contenir de 3 à 40 lettres, chiffres, tirets ou tirets bas.');
+      return;
+    }
+    if (!Number.isFinite(value) || value <= 0 || (promoForm.discount_type === 'percentage' && value > 100)
+      || (promoForm.discount_type === 'fixed' && !Number.isInteger(value))) {
+      setPromoError(promoForm.discount_type === 'percentage'
+        ? 'Le pourcentage doit être compris entre 0 et 100.'
+        : 'La réduction fixe doit être un montant entier positif en FCFA.');
+      return;
+    }
+    const startsAt = promoForm.starts_at ? new Date(promoForm.starts_at).toISOString() : null;
+    const expiresAt = promoForm.expires_at ? new Date(promoForm.expires_at).toISOString() : null;
+    if (startsAt && expiresAt && new Date(expiresAt) <= new Date(startsAt)) {
+      setPromoError('La date de fin doit être postérieure à la date de début.');
+      return;
+    }
+
+    setPromoSaving(true);
+    setPromoError('');
+    setPromoNotice('');
+    const { error: saveError } = await createShopPromoCode({
+      code,
+      discount_type: promoForm.discount_type,
+      discount_value: value,
+      starts_at: startsAt,
+      expires_at: expiresAt,
+      active: true,
+    });
+    if (saveError) {
+      console.error('Impossible de créer le code promo :', saveError);
+      setPromoError(saveError.code === '23505'
+        ? 'Ce code existe déjà.'
+        : `Création impossible : ${saveError.message}`);
+    } else {
+      setPromoForm({ code: '', discount_type: 'percentage', discount_value: '', starts_at: '', expires_at: '' });
+      setPromoNotice(`Code ${code} créé.`);
+      await load();
+    }
+    setPromoSaving(false);
+  }
+
+  async function togglePromoCode(promoCode) {
+    const { error: updateError } = await updateShopPromoCode(promoCode.id, { active: !promoCode.active });
+    if (updateError) {
+      console.error('Impossible de modifier le code promo :', updateError);
+      setPromoError('Le statut du code promo n’a pas pu être modifié.');
+      return;
+    }
+    setPromoCodes((current) => current.map((entry) => entry.id === promoCode.id
+      ? { ...entry, active: !entry.active }
+      : entry));
+  }
+
+  async function removePromoCode(promoCode) {
+    if (!window.confirm(`Supprimer le code « ${promoCode.code} » ?`)) return;
+    const { error: deleteError } = await deleteShopPromoCode(promoCode.id);
+    if (deleteError) {
+      console.error('Impossible de supprimer le code promo :', deleteError);
+      setPromoError('Le code promo n’a pas pu être supprimé.');
+      return;
+    }
+    setPromoCodes((current) => current.filter((entry) => entry.id !== promoCode.id));
   }
 
   return (
@@ -317,28 +412,30 @@ export default function Shop() {
       {notice && <div className="shop-admin-alert success" role="status">{notice}</div>}
 
       <section className="panel">
-        <h2>Catalogue des activations</h2>
+        <h2>Catalogue ProdSeller</h2>
         <p>
-          Consulte les offres disponibles pour vérifier le lien Gemini AI Pro 18 mois.
-          Cette action ne lance aucun achat et ne déclenche aucun paiement.
+          Consulte les produits disponibles pour relever l’identifiant exact de Gemini Pro 18 mois.
+          Cette action est en lecture seule et ne lance aucun achat.
         </p>
-        <button className="btn btn-secondary" type="button" onClick={loadPixverifyCategories} disabled={pixverifyLoading}>
-          {pixverifyLoading ? 'Chargement…' : 'Charger les offres disponibles'}
+        <button className="btn btn-secondary" type="button" onClick={loadProdSellerProducts} disabled={prodSellerLoading}>
+          {prodSellerLoading ? 'Chargement…' : 'Charger le catalogue'}
         </button>
-        {pixverifyError && <div className="shop-admin-alert error" role="alert">{pixverifyError}</div>}
-        {pixverifyCategories && (
+        {prodSellerError && <div className="shop-admin-alert error" role="alert">{prodSellerError}</div>}
+        {prodSellerProducts && (
           <div className="shop-admin-list" style={{ marginTop: 16 }}>
-            {pixverifyCategories.length === 0 && <p>Aucune catégorie disponible.</p>}
-            {pixverifyCategories.map((category) => (
-              <div className="shop-admin-category" key={category.id}>
+            {prodSellerProducts.length === 0 && <p>Aucun produit disponible.</p>}
+            {prodSellerProducts.map((product) => (
+              <div className="shop-admin-category" key={product.id}>
                 <div>
-                  <strong>{hideActivationProvider(category.name)}</strong>
-                  <div>ID : <code>{category.id}</code></div>
-                  {category.description && (
-                    <small>{hideActivationProvider(category.description)}</small>
+                  <strong>{hideActivationProvider(product.name)}</strong>
+                  <div>ID : <code>{product.id}</code></div>
+                  {product.description && (
+                    <small>{hideActivationProvider(product.description)}</small>
                   )}
-                  {category.price_per_unit !== undefined && <div>Prix : {category.price_per_unit}</div>}
-                  {category.stock && <div>Stock : {category.stock.available ?? 'voir les offres disponibles'}</div>}
+                  {product.price !== undefined && <div>Prix débité du solde : {product.price} USDT</div>}
+                  {product.stock !== undefined && <div>Stock : {product.stock ?? 'non communiqué'}</div>}
+                  <div>Stock disponible : {product.inStock === true ? 'Oui' : product.inStock === false ? 'Non' : 'Non communiqué'}</div>
+                  <div>Activation par e-mail : {product.requiresEmailActivation === true ? 'Oui' : product.requiresEmailActivation === false ? 'Non' : 'Non communiqué'}</div>
                 </div>
               </div>
             ))}
@@ -362,6 +459,91 @@ export default function Shop() {
             {contentSaving ? 'Enregistrement…' : 'Enregistrer les textes'}
           </button>
         </form>
+      </section>
+
+      <section className="panel">
+        <h2>Codes promo</h2>
+        <p>Crée des réductions en pourcentage ou en montant fixe FCFA. Le montant final est recalculé côté serveur.</p>
+        {promoError && <div className="shop-admin-alert error" role="alert">{promoError}</div>}
+        {promoNotice && <div className="shop-admin-alert success" role="status">{promoNotice}</div>}
+        <form className="shop-promo-form" onSubmit={savePromoCode}>
+          <div className="form-group">
+            <label htmlFor="promo-code">Code</label>
+            <input
+              id="promo-code"
+              autoComplete="off"
+              maxLength={40}
+              placeholder="EXEMPLE10"
+              required
+              value={promoForm.code}
+              onChange={(event) => setPromoForm((current) => ({ ...current, code: event.target.value }))}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="promo-type">Type de réduction</label>
+            <select
+              id="promo-type"
+              value={promoForm.discount_type}
+              onChange={(event) => setPromoForm((current) => ({ ...current, discount_type: event.target.value, discount_value: '' }))}
+            >
+              <option value="percentage">Pourcentage</option>
+              <option value="fixed">Montant fixe (FCFA)</option>
+            </select>
+          </div>
+          <div className="form-group">
+            <label htmlFor="promo-value">{promoForm.discount_type === 'percentage' ? 'Pourcentage (%)' : 'Montant (FCFA)'}</label>
+            <input
+              id="promo-value"
+              type="number"
+              min="1"
+              max={promoForm.discount_type === 'percentage' ? '100' : undefined}
+              step={promoForm.discount_type === 'percentage' ? '0.01' : '1'}
+              required
+              value={promoForm.discount_value}
+              onChange={(event) => setPromoForm((current) => ({ ...current, discount_value: event.target.value }))}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="promo-start">Début (facultatif)</label>
+            <input id="promo-start" type="datetime-local" value={promoForm.starts_at} onChange={(event) => setPromoForm((current) => ({ ...current, starts_at: event.target.value }))} />
+          </div>
+          <div className="form-group">
+            <label htmlFor="promo-end">Fin (facultatif)</label>
+            <input id="promo-end" type="datetime-local" value={promoForm.expires_at} onChange={(event) => setPromoForm((current) => ({ ...current, expires_at: event.target.value }))} />
+          </div>
+          <button className="btn btn-primary" type="submit" disabled={promoSaving}>
+            {promoSaving ? 'Création…' : 'Créer le code'}
+          </button>
+        </form>
+        <div className="shop-admin-categories shop-promo-list">
+          {promoCodes.map((promoCode) => (
+            <div className="shop-admin-category" key={promoCode.id}>
+              <div>
+                <strong>{promoCode.code}</strong>
+                <div>
+                  {promoCode.discount_type === 'percentage'
+                    ? `${promoCode.discount_value}% de réduction`
+                    : `${Number(promoCode.discount_value).toLocaleString('fr-FR')} FCFA de réduction`}
+                </div>
+                {(promoCode.starts_at || promoCode.expires_at) && (
+                  <small>
+                    {promoCode.starts_at ? `Dès le ${new Date(promoCode.starts_at).toLocaleString('fr-FR')}` : ''}
+                    {promoCode.starts_at && promoCode.expires_at ? ' · ' : ''}
+                    {promoCode.expires_at ? `Jusqu’au ${new Date(promoCode.expires_at).toLocaleString('fr-FR')}` : ''}
+                  </small>
+                )}
+              </div>
+              <div className="row-actions">
+                <span className={`promo-state${promoCode.active ? ' active' : ''}`}>{promoCode.active ? 'Actif' : 'Inactif'}</span>
+                <button className="btn btn-secondary btn-sm" type="button" onClick={() => togglePromoCode(promoCode)}>
+                  {promoCode.active ? 'Désactiver' : 'Activer'}
+                </button>
+                <button className="btn btn-danger btn-sm" type="button" onClick={() => removePromoCode(promoCode)}>Supprimer</button>
+              </div>
+            </div>
+          ))}
+          {!promoCodes.length && <p>Aucun code promo.</p>}
+        </div>
       </section>
 
       <section className="panel">
@@ -498,15 +680,23 @@ export default function Shop() {
                 </div>
               </div>
             )}
-            <div className="form-group">
-              <label htmlFor="shop-product-delivery-type">Mode de livraison</label>
-              <select id="shop-product-delivery-type" name="delivery_type" value={form.delivery_type} onChange={updateProductField}>
-                <option value="activate">Lien d’activation direct (ex. Canva)</option>
-                <option value="download">Fichier en téléchargement temporaire (ex. CapCut)</option>
-                <option value="api">Activation par API (ex. Gemini Pro)</option>
-              </select>
-            </div>
-            {form.delivery_type !== 'api' && (
+            {['gemini-pro', 'canva-pro'].includes(slugify(form.slug)) ? (
+              <div className="form-group">
+                <span className="form-label">Mode de livraison</span>
+                <strong>ProdSeller</strong>
+                <small className="project-form-hint">La livraison est gérée côté serveur. Aucun lien manuel ne sera utilisé.</small>
+              </div>
+            ) : (
+              <div className="form-group">
+                <label htmlFor="shop-product-delivery-type">Mode de livraison</label>
+                <select id="shop-product-delivery-type" name="delivery_type" value={form.delivery_type} onChange={updateProductField}>
+                  <option value="activate">Lien d’activation direct</option>
+                  <option value="download">Fichier en téléchargement temporaire</option>
+                  <option value="api">Activation par API</option>
+                </select>
+              </div>
+            )}
+            {!['gemini-pro', 'canva-pro'].includes(slugify(form.slug)) && form.delivery_type !== 'api' && (
               <div className="form-group shop-admin-wide">
                 <label htmlFor="shop-product-access">
                   {form.delivery_type === 'download' ? 'Lien source privé (Drive ou hébergeur)' : 'Lien d’activation'}

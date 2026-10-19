@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { deleteBuyerAccount, getBuyerAccount, getShopOrderDeliveries } from '../../services/shop';
 import { formatPrice } from '../../data/products';
 import ShopAlert from '../../components/shop/ShopAlert';
 import { getShopErrorMessage } from '../../utils/shopErrors';
+import { formatOrderReference } from '../../utils/orderReference';
+import { supabase } from '../../services/supabase';
 
 const ACCOUNT_SECTIONS = [
   { id: 'orders', label: 'Mes commandes' },
@@ -13,15 +15,16 @@ const ACCOUNT_SECTIONS = [
 ];
 
 function getOrderStatus(order) {
-  if (order.payment_status !== 'confirme') return { label: 'En attente de paiement', paid: false };
-  const fulfillment = String(order.fulfillment_status || order.status || '').toLowerCase();
-  if (['livre', 'livree', 'livré', 'livrée', 'delivered'].includes(fulfillment)) {
-    return { label: 'Payée · Livrée', paid: true };
+  const paymentStatus = String(order.payment_status || '').toLowerCase();
+  const orderState = [order.payment_status, order.status, order.fulfillment_status].join(' ').toLowerCase();
+  if (/annul|cancel/.test(orderState)) {
+    return { label: 'Annulée', paid: false, tone: 'danger', icon: '×' };
   }
-  if (['en_cours', 'en_preparation', 'en préparation', 'preparation', 'processing'].includes(fulfillment)) {
-    return { label: 'Payée · En préparation', paid: true };
+  if (/echec|échec|failed|refus/.test(orderState)) {
+    return { label: 'Échec', paid: false, tone: 'danger', icon: '×' };
   }
-  return { label: 'Payée', paid: true };
+  if (paymentStatus !== 'confirme') return { label: 'En attente', paid: false, tone: 'pending', icon: '…' };
+  return { label: 'Payée', paid: true, tone: 'success', icon: '✓' };
 }
 
 function getInitials(name) {
@@ -42,6 +45,7 @@ export default function Account() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deliveryState, setDeliveryState] = useState({});
+  const [providerDeliveryState, setProviderDeliveryState] = useState({});
   const [activeSection, setActiveSection] = useState(() => {
     const requestedSection = new URLSearchParams(window.location.search).get('section');
     return ACCOUNT_SECTIONS.some((section) => section.id === requestedSection) ? requestedSection : 'orders';
@@ -51,6 +55,8 @@ export default function Account() {
   const [deleting, setDeleting] = useState(false);
   const [logoutError, setLogoutError] = useState('');
   const [copiedOrder, setCopiedOrder] = useState('');
+  const [copiedAccess, setCopiedAccess] = useState('');
+  const requestedProviderOrders = useRef(new Set());
 
   useEffect(() => {
     let active = true;
@@ -117,6 +123,38 @@ export default function Account() {
     }
   }, [mostRecentPaidOrder, deliveryState]);
 
+  useEffect(() => {
+    if (!account?.orders) return;
+    for (const order of account.orders) {
+      if (order.payment_status !== 'confirme' || requestedProviderOrders.current.has(order.id)) continue;
+      const hasProviderProduct = (order.order_items || []).some((item) => {
+        const product = Array.isArray(item.products) ? item.products[0] : item.products;
+        return product?.slug === 'canva-pro'
+          || (product?.slug === 'gemini-pro' && item.plan_label === '18 mois');
+      });
+      if (!hasProviderProduct) continue;
+
+      requestedProviderOrders.current.add(order.id);
+      setProviderDeliveryState((current) => ({ ...current, [order.id]: { loading: true } }));
+      supabase.functions.invoke('gemini-prodseller-activate', {
+        body: { action: 'status', order_id: order.id, order_ref: order.ref },
+      }).then(({ data, error: statusError }) => {
+        setProviderDeliveryState((current) => ({
+          ...current,
+          [order.id]: statusError
+            ? { error: getShopErrorMessage(statusError, 'Le statut de vos accès est momentanément indisponible.') }
+            : { data },
+        }));
+      }).catch((statusError) => {
+        console.error('Impossible de charger les accès ProdSeller :', statusError);
+        setProviderDeliveryState((current) => ({
+          ...current,
+          [order.id]: { error: getShopErrorMessage(statusError, 'Le statut de vos accès est momentanément indisponible.') },
+        }));
+      });
+    }
+  }, [account]);
+
   async function handleLogout() {
     setLogoutError('');
     try {
@@ -148,13 +186,37 @@ export default function Account() {
 
   async function copyOrderReference(order) {
     try {
-      await navigator.clipboard.writeText(order.ref);
+      await navigator.clipboard.writeText(formatOrderReference(order.ref));
       setCopiedOrder(order.id);
       window.setTimeout(() => setCopiedOrder(''), 1800);
     } catch (copyError) {
       console.error('Impossible de copier la référence de commande :', copyError);
       setError('La référence n’a pas pu être copiée. Sélectionnez-la pour la copier manuellement.');
     }
+  }
+
+  async function copyProviderAccess(orderId, key) {
+    try {
+      await navigator.clipboard.writeText(key);
+      setCopiedAccess(`${orderId}:${key}`);
+      window.setTimeout(() => setCopiedAccess(''), 1800);
+    } catch (copyError) {
+      console.error('Impossible de copier l’accès fournisseur :', copyError);
+      setError('L’accès n’a pas pu être copié. Sélectionnez-le pour le copier manuellement.');
+    }
+  }
+
+  async function retryProviderAccess(order) {
+    setProviderDeliveryState((current) => ({ ...current, [order.id]: { loading: true } }));
+    const { data, error: retryError } = await supabase.functions.invoke('gemini-prodseller-activate', {
+      body: { action: 'retry', order_id: order.id, order_ref: order.ref },
+    });
+    setProviderDeliveryState((current) => ({
+      ...current,
+      [order.id]: retryError
+        ? { error: getShopErrorMessage(retryError, 'La préparation des accès a échoué. Réessayez plus tard.') }
+        : { data },
+    }));
   }
 
   function selectSection(section) {
@@ -215,7 +277,6 @@ export default function Account() {
               </button>
             ))}
           </div>
-          <button type="button" className="account-logout" onClick={handleLogout}>Se déconnecter</button>
         </nav>
 
         <div className="account-content">
@@ -223,7 +284,7 @@ export default function Account() {
             <section className="account-orders">
               <div className="account-section-head">
                 <div><div className="account-card-label">VOTRE ACTIVITÉ</div><h1>Mes commandes</h1></div>
-                <Link to="/boutique/catalogue" className="btn btn-outline account-catalogue-link">Voir le catalogue</Link>
+                <Link to="/boutique/catalogue" className="btn btn-outline account-catalogue-link">Voir le catalogue <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" /></svg></Link>
               </div>
               {!orders.length ? (
                 <div className="account-empty">
@@ -240,56 +301,94 @@ export default function Account() {
               ) : orders.map((order) => {
                 const delivery = deliveryState[order.id];
                 const status = getOrderStatus(order);
-                const helpMessage = encodeURIComponent(`Bonjour, j’ai besoin d’aide pour la commande ${order.ref}.`);
+                const displayedReference = formatOrderReference(order.ref);
+                const helpMessage = encodeURIComponent(`Bonjour, j’ai besoin d’aide pour la commande ${displayedReference}.`);
+                const items = order.order_items || [];
+                const firstItem = items[0];
+                const firstProduct = Array.isArray(firstItem?.products) ? firstItem.products[0] : firstItem?.products;
+                const image = firstProduct?.image_url || firstProduct?.logo_url;
+                const itemTitle = items.map((item) => `${item.product_name} · ${item.plan_label} × ${item.qty}`).join(' / ');
+                const availableDeliveries = delivery?.data?.deliveries || [];
+                const providerDelivery = providerDeliveryState[order.id];
+                const providerProducts = providerDelivery?.data?.products || [];
+                const accessState = delivery?.loading
+                  ? 'Activation en cours'
+                  : availableDeliveries.length
+                    ? availableDeliveries.every((item) => item.url) ? 'Accès disponible' : 'Activation en cours'
+                    : '';
                 return (
                   <article className="account-order" key={order.id}>
-                    <div className="account-order-top">
-                      <div className="account-order-reference">
-                        <span className="account-order-icon" aria-hidden="true">CC</span>
-                        <div>
-                          <strong>{order.ref}</strong>
-                          <span>{new Date(order.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                        </div>
+                    <div className="account-order-heading">
+                      <span className="account-item-image account-order-product-image" style={{ background: firstProduct?.gradient || 'var(--surface-alt)' }}>
+                        {image ? <img src={image} alt="" loading="lazy" /> : firstProduct?.avatar || firstItem?.product_name?.slice(0, 2)?.toUpperCase() || 'CC'}
+                      </span>
+                      <div className="account-order-product-name">
+                        <strong>{itemTitle || 'Commande boutique'}</strong>
+                        {accessState && <span className="account-access-state">{accessState}</span>}
                       </div>
-                      <div className="account-order-total">
-                        <strong>{formatPrice(order.total)}</strong>
-                        <span className={`account-pill ${status.paid ? 'success' : ''}`}>{status.label}</span>
-                      </div>
+                      <span className={`account-pill ${status.tone}`}><span aria-hidden="true">{status.icon}</span>{status.label}</span>
                     </div>
-                    <div className="account-items">
-                      {(order.order_items || []).map((item) => {
-                        const product = Array.isArray(item.products) ? item.products[0] : item.products;
-                        const image = product?.image_url || product?.logo_url;
-                        return (
-                          <div className="account-item" key={item.id}>
-                            <span className="account-item-image" style={{ background: product?.gradient || 'var(--surface-alt)' }}>
-                              {image ? <img src={image} alt="" loading="lazy" /> : product?.avatar || 'CC'}
-                            </span>
-                            <span>{item.product_name} · {item.plan_label} × {item.qty}</span>
-                          </div>
-                        );
-                      })}
+                    <div className="account-order-reference">
+                      <span>Commande {displayedReference}</span>
+                      <span aria-hidden="true"> · </span>
+                      <time dateTime={order.created_at}>{new Date(order.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</time>
                     </div>
+                    <strong className="account-order-total">{formatPrice(order.total)}</strong>
                     <div className="account-order-actions">
+                      {providerDelivery?.loading && <span className="account-delivery-pending">Vérification des accès fournisseur…</span>}
+                      {providerDelivery?.error && <span className="account-error">{providerDelivery.error}</span>}
+                      {providerProducts.map((providerProduct) => (
+                        <section className="account-provider-access" key={providerProduct.key}>
+                          <strong>{providerProduct.name}</strong>
+                          {providerProduct.status === 'success' && providerProduct.accessKeys?.map((key, index) => (
+                            <div className="account-provider-key" key={`${providerProduct.key}-${index}`}>
+                              <code>{key}</code>
+                              <button type="button" className="btn btn-outline" onClick={() => copyProviderAccess(order.id, key)}>
+                                {copiedAccess === `${order.id}:${key}` ? 'Copié ✓' : 'Copier l’accès'}
+                              </button>
+                            </div>
+                          ))}
+                          {providerProduct.status === 'starting' && <span className="account-delivery-pending">Activation en cours</span>}
+                          {providerProduct.status === 'not_started' && <span className="account-delivery-pending">Accès non initialisé</span>}
+                          {providerProduct.error && <span className="account-error">{providerProduct.error}</span>}
+                        </section>
+                      ))}
+                      {['retryable', 'insufficient_balance'].includes(providerDelivery?.data?.status) && (
+                        <button type="button" className="btn btn-outline account-order-access" onClick={() => retryProviderAccess(order)} disabled={providerDelivery.loading}>
+                          {providerDelivery.loading ? 'Nouvelle tentative…' : 'Réessayer la préparation'}
+                        </button>
+                      )}
                       {status.paid && order.id === mostRecentPaidOrder?.id && delivery?.loading && (
                         <span className="account-delivery-pending">Chargement de vos accès…</span>
                       )}
                       {delivery?.error && <span className="account-error">{delivery.error}</span>}
                       {status.paid && delivery?.error && (
-                        <button type="button" className="btn btn-outline account-order-button" onClick={() => loadDeliveries(order)}>Réessayer les accès</button>
+                        <button type="button" className="btn btn-outline account-order-access" onClick={() => loadDeliveries(order)}>Réessayer les accès</button>
                       )}
                       {delivery?.data?.deliveries?.map((item) => (
                         item.url
-                          ? <a className="btn btn-primary account-order-button" href={item.url} target="_blank" rel="noopener noreferrer" key={`${item.productId}-${item.type}`}>{item.type === 'download' ? 'Télécharger' : `Accéder à ${item.name}`}</a>
+                          ? <a className="btn btn-primary account-order-access" href={item.url} target="_blank" rel="noopener noreferrer" key={`${item.productId}-${item.type}`}>{item.type === 'download' ? 'Télécharger' : `Accéder à ${item.name}`}</a>
                           : <span className="account-error" key={`${item.productId}-${item.type}`}>{item.error}</span>
                       ))}
-                      <button type="button" className="btn btn-outline account-order-button" onClick={() => copyOrderReference(order)}>
-                        {copiedOrder === order.id ? 'Référence copiée' : 'Copier la référence'}
+                      <div className="account-order-secondary-actions">
+                      <button type="button" className="btn btn-outline account-order-button" onClick={() => copyOrderReference(order)} aria-label="Copier la référence">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" /><path d="M16 8V5a2 2 0 00-2-2H5a2 2 0 00-2 2v9a2 2 0 002 2h3" /></svg>
+                        <span>{copiedOrder === order.id ? 'Copié ✓' : 'Copier'}</span>
                       </button>
-                      {status.paid && (
-                        <Link className="btn btn-outline account-order-button" to={`/boutique/confirmation?order_id=${encodeURIComponent(order.id)}`}>Reçu</Link>
+                      {status.paid ? (
+                        <Link className="btn btn-outline account-order-button" to={`/boutique/confirmation?order_id=${encodeURIComponent(order.id)}`}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M6 3h9l4 4v14H6z" /><path d="M14 3v5h5M9 13h7M9 17h7" /></svg><span>Reçu</span>
+                        </Link>
+                      ) : (
+                        <button className="btn btn-outline account-order-button" type="button" disabled aria-label="Reçu indisponible avant confirmation du paiement">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M6 3h9l4 4v14H6z" /><path d="M14 3v5h5M9 13h7M9 17h7" /></svg><span>Reçu</span>
+                        </button>
                       )}
-                      <a className="btn btn-outline account-order-button" href={`https://wa.me/2290148135395?text=${helpMessage}`} target="_blank" rel="noopener noreferrer">Besoin d’aide ?</a>
+                      <a className="btn btn-outline account-order-button" href={`https://wa.me/2290148135395?text=${helpMessage}`} target="_blank" rel="noopener noreferrer">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 01-11.2 6.5L4 19l1-4.2A7.5 7.5 0 1120 11.5Z" /><path d="M9 9.5c.5 2 2 3.5 4 4" /></svg><span>Aide</span>
+                      </a>
+                      </div>
+                      <span className="sr-only" aria-live="polite">{copiedOrder === order.id ? 'Copié ✓' : ''}</span>
                     </div>
                   </article>
                 );
@@ -312,6 +411,9 @@ export default function Account() {
                   Modifier mon mot de passe
                 </button>
               </section>
+              <div className="account-profile-logout">
+                <button type="button" className="btn btn-outline" onClick={handleLogout}>Se déconnecter</button>
+              </div>
               <section className="account-danger-zone">
                 <div>
                   <h2>Zone sensible</h2>

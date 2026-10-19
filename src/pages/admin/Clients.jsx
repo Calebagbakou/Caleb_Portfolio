@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { formatPrice } from '../../data/products';
 import { listAdminClients, saveAdminCustomerNote } from '../../services/adminClients';
+import { formatOrderReference, normalizeOrderReference } from '../../utils/orderReference';
 
 const LOYALTY_ORDER_THRESHOLD = 5;
 
@@ -21,7 +22,7 @@ function getWhatsAppUrl(contact, client) {
 
   const firstName = client.name.split(/\s+/).filter(Boolean)[0] || 'bonjour';
   const reference = client.orders[0]?.ref;
-  const message = `Bonjour ${firstName}, je vous contacte au sujet de votre commande${reference ? ` ${reference}` : ''}.`;
+  const message = `Bonjour ${firstName}, je vous contacte au sujet de votre commande${reference ? ` ${formatOrderReference(reference)}` : ''}.`;
   return `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 }
 
@@ -57,7 +58,6 @@ function getSearchValue(client) {
     client.name,
     client.contact,
     client.email,
-    ...client.orders.map((order) => order.ref),
   ].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
 
@@ -99,7 +99,9 @@ export default function Clients() {
 
   const filteredClients = useMemo(() => {
     const normalizedSearch = search.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-    const result = clients.filter((client) => getSearchValue(client).includes(normalizedSearch));
+    const normalizedReference = normalizeOrderReference(search);
+    const result = clients.filter((client) => getSearchValue(client).includes(normalizedSearch)
+      || (normalizedReference && client.orders.some((order) => normalizeOrderReference(order.ref).includes(normalizedReference))));
     return result.sort((left, right) => {
       if (sort === 'spent') return right.totalSpent - left.totalSpent;
       if (sort === 'orders') return right.paidOrderCount - left.paidOrderCount;
@@ -278,7 +280,7 @@ export default function Clients() {
                 <article className="client-order" key={order.id}>
                   <div className="client-order-heading">
                     <div>
-                      <strong>{order.ref}</strong>
+                      <strong>{formatOrderReference(order.ref)}</strong>
                       <span>{formatDate(order.created_at)}</span>
                     </div>
                     <div className="client-order-total">

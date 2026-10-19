@@ -106,7 +106,9 @@ Deno.serve(async (request) => {
       const product = Array.isArray(item.products) ? item.products[0] : item.products;
       return { ...item, product };
     }).filter((item: Record<string, unknown>) =>
-      item.product && (item.product as Record<string, unknown>).delivery_type !== 'api',
+      item.product
+      && (item.product as Record<string, unknown>).delivery_type !== 'api'
+      && (item.product as Record<string, unknown>).slug !== 'canva-pro',
     );
 
     const productIds = [...new Set(items.map((item: Record<string, unknown>) =>

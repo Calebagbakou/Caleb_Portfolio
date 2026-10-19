@@ -62,6 +62,7 @@ export async function getOrderReceipt(client: ReturnType<typeof getServiceClient
     .from('orders')
     .select(`
       id, ref, status, payment_status, payment_method, total, currency,
+      promo_code, promo_discount,
       payment_provider, payment_transaction_id, payment_verified_at,
       customers ( name, contact, email ),
       order_items ( id, product_id, plan_id, product_name, plan_label, unit_price, qty, line_total )
@@ -74,6 +75,9 @@ export async function getOrderReceipt(client: ReturnType<typeof getServiceClient
   return {
     ...data,
     customer: customer ? { name: customer.name, contact: customer.contact, email: customer.email } : null,
+    subtotal: Number(data.total) + Number(data.promo_discount || 0),
+    discountAmount: Number(data.promo_discount || 0),
+    promoCode: data.promo_code || null,
     items: (data.order_items || []).map((item: Record<string, unknown>) => ({
       productId: item.product_id,
       planId: item.plan_id,

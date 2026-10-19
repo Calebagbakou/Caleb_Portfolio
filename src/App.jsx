@@ -33,6 +33,7 @@ import BuyerAuthGate from './components/shop/BuyerAuthGate';
 
 import NotFound from './pages/NotFound';
 import ProjectDetail from './pages/ProjectDetail';
+import Legal from './pages/Legal';
 import useSiteFavicon from './hooks/useSiteFavicon';
 import ScrollToTop from './components/site/ScrollToTop';
 
@@ -46,6 +47,8 @@ export default function App() {
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/projet/:slug" element={<ProjectDetail />} />
+        <Route path="/confidentialite" element={<Legal />} />
+        <Route path="/conditions" element={<Legal />} />
       </Route>
 
       {/* ================= BOUTIQUE ================= */}

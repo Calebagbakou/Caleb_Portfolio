@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { Extension } from '@tiptap/core';
 import { EditorContent, useEditor } from '@tiptap/react';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
@@ -25,6 +26,24 @@ const TOOLBAR_ACTIONS = [
   { label: 'Liste à puces', icon: 'bullet-list', action: (editor) => editor.chain().focus().toggleBulletList().run(), active: (editor) => editor.isActive('bulletList') },
   { label: 'Séparateur', icon: 'separator', action: (editor) => editor.chain().focus().setHorizontalRule().run() },
 ];
+
+const FONT_SIZES = [12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32];
+
+const FontSize = Extension.create({
+  name: 'fontSize',
+  addGlobalAttributes() {
+    return [{
+      types: ['textStyle'],
+      attributes: {
+        fontSize: {
+          default: null,
+          parseHTML: (element) => element.style.fontSize || null,
+          renderHTML: (attributes) => attributes.fontSize ? { style: `font-size: ${attributes.fontSize}` } : {},
+        },
+      },
+    }];
+  },
+});
 
 const TOOLBAR_ICONS = {
   bold: <path d="M7 5h6a3.5 3.5 0 010 7H7zm0 7h7a3.5 3.5 0 010 7H7z" />,
@@ -69,6 +88,7 @@ export default function RichTextEditor({ value, onChange }) {
         codeBlock: false,
       }),
       TextStyle,
+      FontSize,
       Color,
       Underline,
       Highlight.configure({ multicolor: true }),
@@ -116,6 +136,14 @@ export default function RichTextEditor({ value, onChange }) {
     const color = event.target.value;
     setHighlightColor(color);
     applyMark((chain) => chain.setHighlight({ color }).run());
+  }
+
+  function changeFontSize(direction) {
+    if (!editor) return;
+    const current = Number.parseInt(editor.getAttributes('textStyle').fontSize, 10) || 16;
+    const currentIndex = FONT_SIZES.indexOf(current);
+    const nextIndex = Math.max(0, Math.min(FONT_SIZES.length - 1, (currentIndex < 0 ? FONT_SIZES.indexOf(16) : currentIndex) + direction));
+    applyMark((chain) => chain.setMark('textStyle', { fontSize: `${FONT_SIZES[nextIndex]}px` }).run());
   }
 
   function addLink() {
@@ -219,6 +247,13 @@ export default function RichTextEditor({ value, onChange }) {
             onChange={changeHighlightColor}
           />
         </label>
+        <span className="rich-editor-toolbar-divider" aria-hidden="true" />
+        <button type="button" aria-label="Réduire la taille du texte" title="Réduire la taille du texte" onClick={() => changeFontSize(-1)} disabled={Number.parseInt(editor.getAttributes('textStyle').fontSize, 10) <= 12}>
+          <span className="rich-editor-font-size-icon" aria-hidden="true">A−</span>
+        </button>
+        <button type="button" aria-label="Agrandir la taille du texte" title="Agrandir la taille du texte" onClick={() => changeFontSize(1)} disabled={Number.parseInt(editor.getAttributes('textStyle').fontSize, 10) >= 32}>
+          <span className="rich-editor-font-size-icon" aria-hidden="true">A+</span>
+        </button>
         <span className="rich-editor-toolbar-divider" aria-hidden="true" />
         {TOOLBAR_ACTIONS.slice(0, 4).map(({ label, icon, action, active }) => (
           <button

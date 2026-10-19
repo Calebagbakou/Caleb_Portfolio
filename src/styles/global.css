@@ -872,6 +872,20 @@
   .footer-row{ display:flex; flex-direction:column; gap:16px; align-items:flex-start; }
   .footer-brand{ font-family:'Montserrat', sans-serif; font-weight:600; font-size:14px; }
   .footer-note{ font-family:'Poppins', monospace; font-size:11px; color:var(--paper-faint); }
+  .footer-legal-links{ display:flex; flex-wrap:wrap; gap:16px; }
+  .footer-legal-links a{ min-height:44px; display:inline-flex; align-items:center; color:var(--paper-dim); font-size:12px; }
+  .legal-page{ width:min(100% - 40px,820px); margin:0 auto; padding:52px 0 72px; color:var(--paper); }
+  .legal-page h1{ max-width:none; margin:0 0 10px; font-size:clamp(1.8rem,3vw,2.4rem); }
+  .legal-page .legal-updated{ margin:0 0 32px; color:var(--paper-faint); font-size:13px; }
+  .legal-page section{ margin:0 0 26px; padding:0; }
+  .legal-page h2{ margin:0 0 8px; font-size:1.15rem; }
+  .legal-page p,.legal-page li{ color:var(--paper-dim); font-size:14px; line-height:1.7; }
+  .legal-page ul{ padding-left:20px; }
+  .legal-page .legal-placeholder{ color:var(--teal); font-weight:700; }
+  .legal-return-links{ display:flex; flex-wrap:wrap; gap:8px 18px; margin-bottom:24px; }
+  .legal-return-links a{ display:inline-flex; align-items:center; min-height:44px; color:var(--paper-dim); font-size:13px; font-weight:600; }
+  .legal-return-links a:hover{ color:var(--paper); }
+  .buyer-google-note{ margin:14px 0 8px; color:var(--ink-dim); font-size:12px; line-height:1.5; }
 
   /* ---------- DESKTOP ---------- */
   @media (min-width: 720px){

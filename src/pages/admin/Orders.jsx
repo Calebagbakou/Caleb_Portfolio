@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { formatPrice } from '../../data/products';
 import { listShopOrders, updateShopOrderFulfillment } from '../../services/shop';
+import { formatOrderReference } from '../../utils/orderReference';
 
 const ORDER_STATUSES = [
   ['en_attente', 'En attente'],
@@ -80,7 +81,7 @@ export default function Orders() {
               <article className="shop-admin-order" key={order.id}>
                 <div className="shop-admin-order-heading">
                   <div>
-                    <span className="badge badge-read">{order.ref}</span>
+                    <span className="badge badge-read">{formatOrderReference(order.ref)}</span>
                     <h3>{customer?.name || 'Client sans nom'}</h3>
                     <p>{customer?.contact || 'Téléphone non renseigné'}{customer?.email ? ` · ${customer.email}` : ''}</p>
                   </div>
@@ -89,6 +90,13 @@ export default function Orders() {
                     <strong>{formatPrice(Number(order.total))}</strong>
                   </div>
                 </div>
+
+                {Number(order.promo_discount) > 0 && (
+                  <div className="shop-admin-order-promo">
+                    Code promo <strong>{order.promo_code}</strong>
+                    <span>−{formatPrice(Number(order.promo_discount))}</span>
+                  </div>
+                )}
 
                 <div className="shop-admin-order-items">
                   {items.map((item) => (

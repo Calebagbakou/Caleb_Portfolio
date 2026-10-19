@@ -59,6 +59,7 @@ Deno.serve(async (request) => {
       p_customer: normalizedCustomer,
       p_items: items,
       p_note: String(body.note || '').trim().slice(0, 1000) || null,
+      p_promo_code: typeof body.promo_code === 'string' ? body.promo_code.trim() : null,
     });
     if (error) throw error;
     if (!order?.id || !order?.ref || !Number.isFinite(Number(order.total))) {

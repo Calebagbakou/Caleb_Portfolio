@@ -121,3 +121,42 @@ dans la table `settings` sous `site_competencies` et `site_services`; aucune
 migration supplémentaire n’est nécessaire. Si aucune liste n’a encore été
 enregistrée, le site reprend les éléments de départ déjà présents dans le
 portfolio.
+
+## 7. Configurer la livraison Gemini Pro via ProdSeller
+
+L’Edge Function `gemini-prodseller-activate` remplace le fournisseur uniquement
+pour l’activation Gemini Pro 18 mois. Elle ne lance l’achat ProdSeller qu’après
+confirmation du paiement boutique. Les autres paiements et livraisons ne sont
+pas concernés.
+
+1. Dans ProdSeller, crée une clé API et vérifie le solde disponible. Ne place
+  jamais cette clé dans le code du site, un fichier `VITE_*` ou Git.
+2. Configure les secrets du projet Supabase `PRODSELLER_API_KEY`,
+  `PRODSELLER_GEMINI_18M_PRODUCT_ID` et `PRODSELLER_CANVA_PRODUCT_ID`. Les deux
+  derniers sont les identifiants exacts des produits lus dans le catalogue,
+  pas leurs noms affichés.
+3. Après configuration de la clé, ouvre `/admin/shop` et utilise **Charger le
+  catalogue**. Cette lecture seule affiche le prix, le stock et
+  `requiresEmailActivation`; elle ne dépense pas le solde. Vérifie que le
+  produit choisi correspond bien à l’offre Gemini Pro 18 mois.
+4. Applique manuellement
+  [`supabase/migrations/022_gemini_prodseller_tracking.sql`](./supabase/migrations/022_gemini_prodseller_tracking.sql)
+  au projet Supabase, puis déploie `gemini-prodseller-activate`,
+  `gemini-pro-activate`, `shop-account` et `shop-order-delivery`. Ces versions
+  suivent séparément Canva et Gemini pour une même commande, gardent les accès
+  visibles dans Mon compte et n’utilisent plus de lien Canva chargé
+  manuellement.
+5. N’effectue le premier achat qu’avec une commande boutique payée et confirmée
+  dont tu acceptes le débit réel. ProdSeller débite le solde USDT; la
+  documentation consultée ne décrit pas de sandbox. Les tentatives utilisent
+  une clé d’idempotence stable par commande et tentative; ne supprime pas la
+  ligne d’activation pour forcer un nouvel achat.
+
+L’API peut livrer immédiatement ou laisser l’ordre en `paid` pendant une
+activation manuelle. Dans ce dernier cas, la confirmation et Mon compte peuvent
+vérifier `GET /v1/orders/:id` et ne montrent les identifiants qu’après
+`delivered`. Si `requiresEmailActivation` vaut vrai, l’Edge Function transmet
+l’adresse du compte client; pour une quantité supérieure à un, elle transmet
+une entrée par unité. Les identifiants fournisseur sont stockés dans la table
+protégée `gemini_pro_activations` et ne sont renvoyés qu’au client propriétaire
+de la commande.

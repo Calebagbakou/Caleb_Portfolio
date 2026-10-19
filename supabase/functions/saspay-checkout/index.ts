@@ -45,6 +45,9 @@ Deno.serve(async (request) => {
     if (orderError) throw orderError;
     if (!order) return jsonResponse({ error: 'Cette commande est introuvable.' }, 404);
     if (order.payment_status === 'confirme') return jsonResponse({ error: 'Cette commande est déjà payée.' }, 409);
+    if (Number(order.total) <= 0) {
+      return jsonResponse({ error: 'Cette commande ne nécessite pas de paiement externe.' }, 409);
+    }
 
     const siteUrl = Deno.env.get('SITE_URL') || 'https://calebcreative.online';
     const customer = Array.isArray(order.customers) ? order.customers[0] : order.customers;

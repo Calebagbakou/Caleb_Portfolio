@@ -73,8 +73,10 @@ export const CATEGORIES = [
 ];
 
 export function formatPrice(price) {
-  if (!price || price <= 0) return 'Prix sur demande';
-  return price.toLocaleString('fr-FR') + ' FCFA';
+  if (price === null || price === undefined || !Number.isFinite(Number(price)) || Number(price) < 0) {
+    return 'Prix sur demande';
+  }
+  return Number(price).toLocaleString('fr-FR') + ' FCFA';
 }
 
 export function findProduct(id, products = PRODUCTS) {

@@ -6,6 +6,34 @@ import { getBuyerAccount, getShopOrderDeliveries, listShopCatalog, verifySasPayP
 import { supabase } from '../../services/supabase';
 import ShopAlert from '../../components/shop/ShopAlert';
 import { getShopErrorMessage } from '../../utils/shopErrors';
+import { formatOrderReference } from '../../utils/orderReference';
+
+const DELIVERY_ESTIMATE_TEXT = 'dès que possible';
+
+function formatPaymentDate(value) {
+  if (!value) return 'Date du paiement indisponible';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Date du paiement indisponible';
+  return date.toLocaleString('fr-FR', {
+    day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function getOrderItems(order) {
+  if (Array.isArray(order?.items)) return order.items;
+  return (order?.order_items || []).map((item) => {
+    const product = Array.isArray(item.products) ? item.products[0] : item.products;
+    return {
+      productId: item.product_id,
+      planId: item.plan_id,
+      name: item.product_name,
+      planLabel: item.plan_label,
+      qty: item.qty,
+      lineTotal: item.line_total,
+      product,
+    };
+  });
+}
 
 async function readDeliveryResponse(error, data) {
   if (data) return data;
@@ -26,12 +54,15 @@ export default function Confirmation() {
   const [products, setProducts] = useState(null);
   const [deliveryStatus, setDeliveryStatus] = useState('idle');
   const [deliveryLinks, setDeliveryLinks] = useState([]);
+  const [providerProducts, setProviderProducts] = useState([]);
   const [deliveryError, setDeliveryError] = useState('');
   const [retrying, setRetrying] = useState(false);
+  const [copiedAccessKey, setCopiedAccessKey] = useState('');
   const [shopDeliveries, setShopDeliveries] = useState([]);
   const [shopDeliveryStatus, setShopDeliveryStatus] = useState('idle');
   const [shopDeliveryError, setShopDeliveryError] = useState('');
   const [downloadEmail, setDownloadEmail] = useState(null);
+  const [referenceCopied, setReferenceCopied] = useState(false);
   const requestedShopDelivery = useRef('');
   const paymentVerificationStarted = useRef(false);
 
@@ -99,7 +130,7 @@ export default function Confirmation() {
   }, [location.search, location.state]);
 
   useEffect(() => {
-    if (!order?.items?.length) return;
+    if (!getOrderItems(order).length) return;
 
     let cancelled = false;
     async function loadProducts() {
@@ -119,14 +150,22 @@ export default function Confirmation() {
     };
   }, [order]);
 
-  const geminiQuantity = useMemo(() => {
-    if (!products) return 0;
-    const eligibleProductIds = new Set(
-      products.filter((product) => product.slug === 'gemini-pro').map((product) => product.id),
-    );
-    return (order?.items || [])
-      .filter((line) => eligibleProductIds.has(line.productId) && line.planLabel === '18 mois')
-      .reduce((sum, line) => sum + Number(line.qty || 0), 0);
+  const prodSellerTargets = useMemo(() => {
+    if (!products) return [];
+    const targets = new Map();
+    for (const line of getOrderItems(order)) {
+      const product = line.product || products.find((entry) => entry.id === line.productId);
+      const targetKey = product?.slug === 'canva-pro'
+        ? 'canva_pro'
+        : product?.slug === 'gemini-pro' && line.planLabel === '18 mois'
+          ? 'gemini_18m'
+          : '';
+      if (!targetKey) continue;
+      const current = targets.get(targetKey) || { key: targetKey, name: product.name, quantity: 0 };
+      current.quantity += Number(line.qty || 0);
+      targets.set(targetKey, current);
+    }
+    return [...targets.values()];
   }, [order, products]);
 
   async function requestShopDeliveries() {
@@ -151,20 +190,21 @@ export default function Confirmation() {
     requestShopDeliveries();
   }, [order?.id, order?.payment_status, products]);
 
-  async function requestPixverifyLink(action = 'deliver') {
-    if (!order?.id || !order?.ref || !geminiQuantity) return;
+  async function requestProdSellerDelivery(action = 'deliver') {
+    if (!order?.id || !order?.ref || !prodSellerTargets.length) return;
     setDeliveryError('');
     if (action === 'retry') setRetrying(true);
-    else setDeliveryStatus('loading');
+    else if (action === 'deliver') setDeliveryStatus('loading');
 
-    const { data, error } = await supabase.functions.invoke('gemini-pro-activate', {
+    const { data, error } = await supabase.functions.invoke('gemini-prodseller-activate', {
       body: { action, order_id: order.id, order_ref: order.ref },
     });
 
     if (error || data?.error) {
       const response = await readDeliveryResponse(error, data);
-      console.error('La livraison Gemini a échoué :', error || response.error);
+      console.error('La livraison ProdSeller a échoué :', error || response.error);
       setDeliveryLinks(Array.isArray(response.links) ? response.links : []);
+      setProviderProducts(Array.isArray(response.products) ? response.products : []);
       const status = response.status
         || (error?.context?.status === 402 ? 'insufficient_balance' : '');
       const message = status === 'insufficient_balance'
@@ -180,19 +220,60 @@ export default function Confirmation() {
       );
     } else {
       setDeliveryLinks(Array.isArray(data?.links) ? data.links : []);
+      setProviderProducts(Array.isArray(data?.products) ? data.products : []);
       setDeliveryError('');
       setDeliveryStatus(data?.status || 'failed');
     }
     setRetrying(false);
   }
 
+  async function copyActivationKey(key) {
+    try {
+      await navigator.clipboard.writeText(key);
+      setCopiedAccessKey(key);
+      window.setTimeout(() => setCopiedAccessKey(''), 1800);
+    } catch (copyError) {
+      console.error('Impossible de copier l’accès fournisseur :', copyError);
+      setDeliveryError('L’accès n’a pas pu être copié. Sélectionnez-le pour le copier manuellement.');
+    }
+  }
+
+  async function copyOrderReference() {
+    try {
+      await navigator.clipboard.writeText(formatOrderReference(order.ref));
+      setReferenceCopied(true);
+      window.setTimeout(() => setReferenceCopied(false), 1800);
+    } catch (copyError) {
+      console.error('Impossible de copier la référence de commande :', copyError);
+    }
+  }
+
   useEffect(() => {
-    if (order?.payment_status !== 'confirme' || !products || !geminiQuantity) return;
+    if (order?.payment_status !== 'confirme' || !products || !prodSellerTargets.length) return;
     if (deliveryStatus !== 'idle') return;
-    requestPixverifyLink();
-  }, [order?.payment_status, products, geminiQuantity, deliveryStatus]);
+    requestProdSellerDelivery();
+  }, [order?.payment_status, products, prodSellerTargets, deliveryStatus]);
 
   if (order === undefined) return null;
+  const paymentDetails = [
+    order?.payment_method && !['saspay', 'kkiapay'].includes(String(order.payment_method).toLowerCase())
+      ? order.payment_method
+      : '',
+    order?.payment_country || '',
+  ].filter(Boolean);
+  const paidByPromo = order?.payment_method === 'promo';
+  const orderDiscount = Number(order?.discountAmount ?? order?.promo_discount ?? 0);
+  const orderSubtotal = Number(order?.subtotal ?? (Number(order?.total || 0) + orderDiscount));
+  const orderPromoCode = order?.promoCode || order?.promo_code || '';
+  const providerProductsForDisplay = providerProducts.length
+    ? providerProducts
+    : prodSellerTargets.map((target) => ({
+      ...target,
+      status: deliveryStatus,
+      accessKeys: [],
+      error: deliveryError,
+    }));
+  const needsProviderStatusCheck = providerProductsForDisplay.some((product) => product.status === 'starting');
 
   if (!order || !order.ref) {
     return (
@@ -215,15 +296,15 @@ export default function Confirmation() {
       <main>
         <nav className="buyer-journey" aria-label="Étapes de la commande">
           {['Produit', 'Compte', 'Paiement', 'Livraison'].map((step, index) => (
-            <div className={`buyer-journey-step${index === 2 ? ' active' : ''}`} aria-current={index === 2 ? 'step' : undefined} key={step}>
-              <span>{index + 1}</span>{step}
+            <div className={`buyer-journey-step${index < 2 ? ' completed' : ''}${index === 2 ? ' active' : ''}`} aria-current={index === 2 ? 'step' : undefined} key={step}>
+              <span>{index < 2 ? '✓' : index + 1}</span><span className="buyer-journey-label">{step}</span>
             </div>
           ))}
         </nav>
         <div className="confirm-wrap">
           <h1 style={{ fontSize: '1.6rem' }}>Confirmation de votre paiement</h1>
           <p style={{ color: 'var(--ink-dim)', marginBottom: 22 }}>
-            Nous vérifions la confirmation du paiement pour la commande {order.ref || order.id}. Cette vérification
+            Nous vérifions la confirmation du paiement pour la commande {formatOrderReference(order.ref || order.id)}. Cette vérification
             se fait automatiquement ; vous pouvez rester sur cette page sans repayer.
           </p>
           <div className="shop-alert info" role="status">
@@ -244,8 +325,8 @@ export default function Confirmation() {
     <main>
       <nav className="buyer-journey" aria-label="Étapes de la commande">
         {['Produit', 'Compte', 'Paiement', 'Livraison'].map((step, index) => (
-          <div className={`buyer-journey-step${index === 3 ? ' active' : ''}`} aria-current={index === 3 ? 'step' : undefined} key={step}>
-            <span>{index + 1}</span>{step}
+          <div className={`buyer-journey-step${index < 3 ? ' completed' : ''}${index === 3 ? ' active' : ''}`} aria-current={index === 3 ? 'step' : undefined} key={step}>
+            <span>{index < 3 ? '✓' : index + 1}</span><span className="buyer-journey-label">{step}</span>
           </div>
         ))}
       </nav>
@@ -255,20 +336,24 @@ export default function Confirmation() {
             <path d="M5 12l5 5L20 7" />
           </svg>
         </div>
-        <h1 style={{ fontSize: 'clamp(1.6rem,4vw,2.1rem)', margin: '0 0 8px' }}>Paiement confirmé</h1>
+        <h1 className="confirm-title">{paidByPromo ? 'Commande confirmée' : 'Paiement confirmé'}</h1>
         <p style={{ color: 'var(--ink-dim)' }}>
-          Merci {order.customer?.name} ! Votre paiement a été vérifié.
+          {paidByPromo
+            ? `Merci ${order.customer?.name} ! Votre code promo a couvert le total de la commande.`
+            : `Merci ${order.customer?.name} ! Votre paiement a été vérifié.`}
         </p>
-        <div className="confirm-ref">
-          Référence : <strong>{order.ref}</strong>
-        </div>
-
         {(() => {
           const downloads = shopDeliveries.filter((delivery) => delivery.type === 'download');
           if (!downloads.length && shopDeliveryStatus !== 'loading' && shopDeliveryStatus !== 'failed') return null;
           return (
             <section className="download-delivery" aria-live="polite">
-              <div className="eyebrow">VOS FICHIERS SONT PRÊTS</div>
+              <div className="eyebrow">
+                {downloads.length
+                  ? 'VOS FICHIERS SONT PRÊTS'
+                  : shopDeliveryStatus === 'failed'
+                    ? 'PRÉPARATION IMPOSSIBLE'
+                    : 'PRÉPARATION EN COURS'}
+              </div>
               <h2>Téléchargement sécurisé</h2>
               {shopDeliveryStatus === 'loading' && <p>Préparation de vos liens temporaires…</p>}
               {shopDeliveryStatus === 'failed' && (
@@ -319,55 +404,88 @@ export default function Confirmation() {
         })()}
 
         <div className="confirm-summary">
-          <div>
-            {(order.items || []).map((line) => {
-              const product = products?.find((entry) => entry.id === line.productId);
+          <div className="confirm-products">
+            {getOrderItems(order).map((line) => {
+              const product = line.product || products?.find((entry) => entry.id === line.productId);
               const activation = shopDeliveries.find((entry) =>
                 entry.productId === line.productId && entry.type === 'activate',
               );
               return (
-                <div key={`${line.productId}-${line.planId}`}>
-                  <div className="summary-row">
-                    <span>
-                      {line.name} ({line.planLabel}) ×{line.qty}
-                    </span>
-                    <span>{formatPrice(line.lineTotal)}</span>
+                <div className="confirm-product" key={`${line.productId}-${line.planId}`}>
+                  <span className="confirm-product-image" style={{ background: product?.gradient || 'var(--surface-alt)' }}>
+                    {product?.image_url || product?.logo_url
+                      ? <img src={product.image_url || product.logo_url} alt="" />
+                      : product?.avatar || line.name?.slice(0, 2)?.toUpperCase() || 'CC'}
+                  </span>
+                  <div className="confirm-product-info">
+                    <strong>{line.name}</strong>
+                    <span>{line.planLabel} · Quantité : {line.qty}</span>
                   </div>
+                  <strong className="confirm-product-price">{formatPrice(line.lineTotal)}</strong>
                   {activation?.url && (
-                    <div className="summary-row access-link">
-                      <span style={{ color: 'var(--ink-dim)', fontSize: '0.9rem' }}>Activation :</span>
+                    <div className="confirm-product-access">
+                      <span>Activation</span>
                       <a href={activation.url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
                         Activer {line.name}
                       </a>
                     </div>
                   )}
                   {activation?.error && (
-                    <div className="summary-row">
-                      <span style={{ color: 'var(--ink-dim)', fontSize: '0.9rem' }}>{activation.error}</span>
+                    <div className="confirm-product-access">
+                      <span>{activation.error}</span>
                     </div>
                   )}
                 </div>
               );
             })}
           </div>
+          {orderDiscount > 0 && (
+            <>
+              <div className="summary-row">
+                <span>Sous-total</span>
+                <span>{formatPrice(orderSubtotal)}</span>
+              </div>
+              <div className="summary-row checkout-discount">
+                <span>Code {orderPromoCode}</span>
+                <span>−{formatPrice(orderDiscount)}</span>
+              </div>
+            </>
+          )}
           <div className="summary-row total">
             <span>Total</span>
             <span>{formatPrice(order.total)}</span>
           </div>
           <div className="summary-row">
             <span>Paiement</span>
-            <span>SasPay · confirmé</span>
+            <span>{paidByPromo ? 'Code promo appliqué' : `${paymentDetails.length ? paymentDetails.join(' · ') : 'Paiement en ligne sécurisé'} · confirmé`}</span>
+          </div>
+          <div className="summary-row">
+            <span>Date et heure</span>
+            <span>{formatPaymentDate(order.payment_verified_at)}</span>
+          </div>
+          <div className="summary-row confirm-reference-row">
+            <span>Référence</span>
+            <strong>{formatOrderReference(order.ref)}</strong>
+            <button type="button" className="confirm-copy-button" onClick={copyOrderReference}>
+              {referenceCopied ? 'Copié ✓' : 'Copier'}
+            </button>
+            <span className="sr-only" aria-live="polite">{referenceCopied ? 'Copié ✓' : ''}</span>
           </div>
         </div>
 
-        {geminiQuantity > 0 && (
+        {prodSellerTargets.length > 0 && (
           <section className="confirm-summary" aria-live="polite" style={{ marginTop: 16 }}>
-            <h2 style={{ fontSize: '1.1rem', marginTop: 0 }}>Lien d’activation Gemini AI Pro · 18 mois</h2>
+            <h2 style={{ fontSize: '1.1rem', marginTop: 0 }}>Accès numériques</h2>
             {['idle', 'loading'].includes(deliveryStatus) && (
-              <p>Génération automatique de votre lien d’activation en cours…</p>
+              <p>Préparation automatique de vos accès en cours…</p>
             )}
-            {deliveryStatus === 'starting' && (
-              <p>Votre demande est en cours de traitement. Actualisez cette page dans quelques instants.</p>
+            {needsProviderStatusCheck && (
+              <>
+                <p>Une activation est en cours chez le fournisseur.</p>
+                <button type="button" className="btn btn-outline" onClick={() => requestProdSellerDelivery('status')}>
+                  Vérifier les accès
+                </button>
+              </>
             )}
             {deliveryStatus === 'success' && deliveryLinks.length > 0 && (
               <div>
@@ -390,12 +508,12 @@ export default function Confirmation() {
                 <ShopAlert
                   message={getShopErrorMessage(deliveryError, 'La génération de votre lien a rencontré un problème temporaire. Vous pouvez réessayer sans relancer le paiement.')}
                   action="Réessayer"
-                  onAction={() => requestPixverifyLink('retry')}
+                  onAction={() => requestProdSellerDelivery('retry')}
                 />
                 <button
                   type="button"
                   className="btn btn-outline"
-                  onClick={() => requestPixverifyLink('retry')}
+                  onClick={() => requestProdSellerDelivery('retry')}
                   disabled={retrying}
                 >
                   {retrying
@@ -404,27 +522,51 @@ export default function Confirmation() {
                 </button>
               </>
             )}
+            {providerProductsForDisplay.map((product) => (
+              <section className="provider-access-product" key={product.key}>
+                <h3>{product.name}{product.quantity > 1 ? ` · ${product.quantity} accès` : ''}</h3>
+                {product.status === 'success' && product.accessKeys?.length > 0 && (
+                  <div className="gemini-access-keys">
+                    <p>Votre accès est prêt :</p>
+                    {product.accessKeys.map((key, index) => (
+                      <div className="gemini-access-key" key={`${product.key}-${index}-${key.slice(0, 12)}`}>
+                        <code>{key}</code>
+                        <button type="button" className="btn btn-outline" onClick={() => copyActivationKey(key)}>
+                          {copiedAccessKey === key ? 'Copié ✓' : 'Copier l’accès'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {product.error && <ShopAlert message={product.error} />}
+              </section>
+            ))}
             {deliveryStatus === 'failed' && (
               <ShopAlert
                 message={getShopErrorMessage(deliveryError, 'Le lien d’activation n’a pas pu être généré. Contactez Caleb avec votre référence de commande.')}
-                action="Réessayer"
-                onAction={() => requestPixverifyLink('retry')}
               />
             )}
           </section>
         )}
 
-        <p style={{ color: 'var(--ink-dim)', fontSize: 14, marginBottom: 22 }}>
-          {geminiQuantity > 0
-            ? 'La génération du lien est lancée automatiquement après confirmation du paiement.'
-            : 'Votre commande est enregistrée. Caleb préparera l’activation du produit et pourra vous contacter si une information complémentaire est nécessaire.'}
-        </p>
+        <section className="confirm-next-steps">
+          <h2>Et maintenant ?</h2>
+          <ol>
+            <li><span className="confirm-next-check">✓</span><span>Paiement reçu</span></li>
+            <li><span className="confirm-next-number">2</span><span>Activation en cours <small>{DELIVERY_ESTIMATE_TEXT}</small></span></li>
+            <li><span className="confirm-next-number">3</span><span>Accès disponible dans Mon compte</span></li>
+          </ol>
+          {prodSellerTargets.length > 0 && <p>La préparation des accès est lancée automatiquement après confirmation du paiement.</p>}
+        </section>
 
         <div className="confirm-actions">
           <Link to="/boutique/compte" className="btn btn-primary">
             Voir mes accès
           </Link>
-          <Link to="/boutique/catalogue" className="btn btn-outline">
+          <a className="btn btn-outline" href={`https://wa.me/2290148135395?text=${encodeURIComponent(`Bonjour, j’ai une question au sujet de la commande ${formatOrderReference(order.ref)}.`)}`} target="_blank" rel="noopener noreferrer">
+            Écrire sur WhatsApp
+          </a>
+          <Link to="/boutique/catalogue" className="confirm-continue-link">
             Continuer mes achats
           </Link>
         </div>

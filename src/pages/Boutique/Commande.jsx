@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { formatPrice } from '../../data/products';
 import { createSasPayCheckout, createShopCheckout } from '../../services/shop';
@@ -9,13 +9,15 @@ import { getShopErrorMessage } from '../../utils/shopErrors';
 import ShopArrow from '../../components/shop/ShopArrow';
 
 export default function Commande() {
-  const { details, total } = useCart();
+  const { details, total, clear } = useCart();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const [fname, setFname] = useState('');
   const [fcontact, setFcontact] = useState('');
   const [femail, setFemail] = useState(user?.email || '');
   const [fnote, setFnote] = useState('');
+  const [promoCode, setPromoCode] = useState('');
   const [pendingOrder, setPendingOrder] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -51,6 +53,7 @@ export default function Commande() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    const intent = e.nativeEvent.submitter?.value || 'pay';
     setError('');
     if (!user?.email || !user.email_confirmed_at) {
       setError('Connectez-vous avec une adresse e-mail confirmée avant de commander.');
@@ -58,6 +61,14 @@ export default function Commande() {
     }
     if (needsEmail && !femail.trim()) {
       setError('Une adresse e-mail est obligatoire pour recevoir le lien de téléchargement sécurisé.');
+      return;
+    }
+    if (intent === 'apply' && !promoCode.trim()) {
+      setError('Saisissez un code promo avant de l’appliquer.');
+      return;
+    }
+    if (intent === 'pay' && promoCode.trim() && !pendingOrder) {
+      setError('Appliquez d’abord votre code promo pour vérifier le montant réduit.');
       return;
     }
     setSaving(true);
@@ -68,6 +79,7 @@ export default function Commande() {
           customer: { name: fname.trim(), contact: fcontact.trim(), email: user.email },
           items: details.map((line) => ({ product_id: line.productId, plan_id: line.planId, qty: line.qty })),
           note: fnote.trim(),
+          promo_code: promoCode.trim() || null,
         });
         if (createError) throw createError;
         order = data?.order;
@@ -77,15 +89,29 @@ export default function Commande() {
         setPendingOrder(order);
       }
 
+      if (Number(order.total) === 0 && Number(order.discountAmount) > 0) {
+        clear();
+        try {
+          localStorage.setItem('caleb_boutique_last_order_v1', JSON.stringify(order));
+        } catch (storageError) {
+          console.error('La commande gratuite ne peut pas être conservée sur cet appareil :', storageError);
+        }
+        navigate('/boutique/confirmation', { state: { order }, replace: true });
+        return;
+      }
+      if (intent === 'apply') return;
+
       const { data: payment, error: paymentError } = await createSasPayCheckout({ orderId: order.id });
       if (paymentError) throw paymentError;
       if (!payment?.checkoutUrl) {
-        throw new Error('SasPay n’a pas renvoyé de lien de paiement.');
+        throw new Error('Le prestataire n’a pas renvoyé de lien de paiement.');
       }
       window.location.assign(payment.checkoutUrl);
     } catch (checkoutError) {
       console.error('Le checkout SasPay a échoué :', checkoutError);
-      setError(getShopErrorMessage(checkoutError, 'Le paiement n’a pas pu être lancé. Vous pouvez réessayer.'));
+      setError(intent === 'apply'
+        ? checkoutError?.message || 'Ce code promo ne peut pas être appliqué à cette commande.'
+        : getShopErrorMessage(checkoutError, 'Le paiement n’a pas pu être lancé. Vous pouvez réessayer.'));
     } finally {
       setSaving(false);
     }
@@ -97,14 +123,14 @@ export default function Commande() {
         <div className="eyebrow">COMMANDE</div>
         <h1 style={{ fontSize: 'clamp(1.7rem,4vw,2.2rem)', margin: '0 0 8px' }}>Finaliser votre commande</h1>
         <p style={{ color: 'var(--ink-dim)', maxWidth: '56ch', margin: '0 0 6px' }}>
-          Vérifiez vos coordonnées et le montant. Vous choisirez les moyens de paiement disponibles pour votre pays sur la page SasPay.
+          Vérifiez vos coordonnées et le montant. Vous choisirez les moyens de paiement disponibles pour votre pays sur la page de paiement sécurisée.
         </p>
       </div>
 
       <nav className="buyer-journey" aria-label="Étapes de la commande">
         {['Produit', 'Compte', 'Paiement', 'Livraison'].map((step, index) => (
-          <div className={`buyer-journey-step${index === 2 ? ' active' : ''}`} aria-current={index === 2 ? 'step' : undefined} key={step}>
-            <span>{index + 1}</span>{step}
+          <div className={`buyer-journey-step${index < 2 ? ' completed' : ''}${index === 2 ? ' active' : ''}`} aria-current={index === 2 ? 'step' : undefined} key={step}>
+            <span>{index < 2 ? '✓' : index + 1}</span><span className="buyer-journey-label">{step}</span>
           </div>
         ))}
       </nav>
@@ -123,6 +149,7 @@ export default function Commande() {
                 placeholder="Votre nom"
                 required
                 value={fname}
+                readOnly={Boolean(pendingOrder)}
                 onChange={(e) => setFname(e.target.value)}
               />
             </div>
@@ -136,6 +163,7 @@ export default function Commande() {
                 placeholder="+229 ..."
                 required
                 value={fcontact}
+                readOnly={Boolean(pendingOrder)}
                 onChange={(e) => setFcontact(e.target.value)}
               />
             </div>
@@ -159,22 +187,50 @@ export default function Commande() {
               rows={3}
               placeholder="Précisions utiles pour l’activation…"
               value={fnote}
+              readOnly={Boolean(pendingOrder)}
               onChange={(e) => setFnote(e.target.value)}
             />
           </div>
 
+          <div className="checkout-promo">
+            <div className="form-group">
+              <label htmlFor="promo-code">Code promo</label>
+              <input
+                id="promo-code"
+                autoComplete="off"
+                maxLength={40}
+                placeholder="Saisir un code"
+                value={promoCode}
+                onChange={(event) => {
+                  setPromoCode(event.target.value);
+                  setPendingOrder(null);
+                }}
+              />
+            </div>
+            <button type="submit" name="intent" value="apply" className="btn btn-outline" disabled={saving || !promoCode.trim() || Boolean(pendingOrder)}>
+              {pendingOrder?.promoCode ? 'Code appliqué' : 'Appliquer le code'}
+            </button>
+          </div>
+          {pendingOrder?.promoCode && (
+            <p className="checkout-promo-applied" role="status">
+              Code {pendingOrder.promoCode} appliqué : −{formatPrice(Number(pendingOrder.discountAmount))}
+            </p>
+          )}
+
           <p className="pay-note">
-            Votre commande sera confirmée après validation du paiement par le prestataire. Les moyens disponibles s’affichent sur la page de paiement selon votre pays.
+            {Number(pendingOrder?.total) === 0
+              ? 'Votre code promo couvre la totalité de la commande.'
+              : 'Votre commande sera confirmée après validation du paiement par le prestataire. Les moyens disponibles s’affichent sur la page de paiement selon votre pays.'}
           </p>
 
-          <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 22 }} disabled={saving}>
+          <button type="submit" name="intent" value="pay" className="btn btn-primary btn-full" style={{ marginTop: 22 }} disabled={saving}>
             <span aria-hidden="true">🔒</span>
             {saving
-              ? 'Ouverture du paiement…'
+              ? 'Traitement…'
               : `Payer ${formatPrice(pendingOrder ? Number(pendingOrder.total) : total)}`}
             <ShopArrow />
           </button>
-          <p className="pay-redirect-note">Vous serez redirigé vers la page de paiement sécurisée de notre prestataire.</p>
+          {Number(pendingOrder?.total) !== 0 && <p className="pay-redirect-note">Vous serez redirigé vers la page de paiement sécurisée de notre prestataire.</p>}
         </div>
 
         <aside className="summary-card">
@@ -196,6 +252,16 @@ export default function Commande() {
               </div>
             ))}
           </div>
+          <div className="summary-row">
+            <span>Sous-total</span>
+            <span>{formatPrice(pendingOrder?.subtotal != null ? Number(pendingOrder.subtotal) : total)}</span>
+          </div>
+          {Number(pendingOrder?.discountAmount) > 0 && (
+            <div className="summary-row checkout-discount">
+              <span>Code {pendingOrder.promoCode}</span>
+              <span>−{formatPrice(Number(pendingOrder.discountAmount))}</span>
+            </div>
+          )}
           <div className="summary-row total">
             <span>Total</span>
             <span>{formatPrice(pendingOrder ? Number(pendingOrder.total) : total)}</span>

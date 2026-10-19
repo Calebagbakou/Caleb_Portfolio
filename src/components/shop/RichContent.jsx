@@ -23,7 +23,11 @@ function renderInline(node, key) {
       return;
     }
     if (mark.type === 'textStyle') {
-      content = <span key={`${key}-mark-${index}`} style={{ color: mark.attrs.color }}>{content}</span>;
+      const style = {
+        ...(mark.attrs.color ? { color: mark.attrs.color } : {}),
+        ...(mark.attrs.fontSize ? { fontSize: mark.attrs.fontSize } : {}),
+      };
+      content = <span key={`${key}-mark-${index}`} style={style}>{content}</span>;
       return;
     }
     if (mark.type === 'highlight') {

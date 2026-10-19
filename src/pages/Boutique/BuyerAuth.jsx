@@ -326,8 +326,8 @@ export default function BuyerAuth() {
     <main className="wrap buyer-auth-wrap">
       <nav className="buyer-journey" aria-label="Étapes de la commande">
         {['Produit', 'Compte', 'Paiement', 'Livraison'].map((step, index) => (
-          <div className={`buyer-journey-step${index === 1 ? ' active' : ''}`} aria-current={index === 1 ? 'step' : undefined} key={step}>
-            <span>{index + 1}</span>{step}
+            <div className={`buyer-journey-step${index < 1 ? ' completed' : ''}${index === 1 ? ' active' : ''}`} aria-current={index === 1 ? 'step' : undefined} key={step}>
+              <span>{index < 1 ? '✓' : index + 1}</span><span className="buyer-journey-label">{step}</span>
           </div>
         ))}
       </nav>
@@ -357,6 +357,7 @@ export default function BuyerAuth() {
               <button type="button" className={mode === 'login' ? 'active' : ''} onClick={() => changeMode('login')}>Connexion</button>
               <button type="button" className={mode === 'signup' ? 'active' : ''} onClick={() => changeMode('signup')}>Créer un compte</button>
             </div>
+            <p className="buyer-google-note">Google affichera une adresse technique : c'est notre service de connexion sécurisé.</p>
             <button className="btn btn-outline buyer-google-btn" type="button" onClick={() => handleOAuthSignIn('google')} disabled={submitting}>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="#4285F4" d="M21.35 12.2c0-.72-.06-1.42-.18-2.1H12v3.98h5.23a4.48 4.48 0 0 1-1.94 2.94v2.45h3.14c1.84-1.7 2.92-4.2 2.92-7.27Z" />

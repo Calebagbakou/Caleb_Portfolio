@@ -18,10 +18,12 @@ Deno.serve(async (request) => {
     const { data: orders, error } = await client
       .from('orders')
       .select(`
-        id, ref, status, payment_status, total, currency, fulfillment_status, created_at,
+        id, ref, status, payment_status, payment_method, total, currency,
+        promo_code, promo_discount, fulfillment_status, created_at,
         customers!inner ( name, contact, email ),
         order_items ( id, product_name, plan_label, qty, line_total,
-          products ( id, delivery_type, download_filename, download_size, image_url, logo_url, avatar, gradient ) )
+          product_id, plan_id,
+          products ( id, slug, delivery_type, download_filename, download_size, image_url, logo_url, avatar, gradient ) )
       `)
       .ilike('customers.email', user.email.trim())
       .order('created_at', { ascending: false });

@@ -151,6 +151,25 @@ export function saveShopContent(content) {
   return supabase.from('settings').upsert(rows, { onConflict: 'key' });
 }
 
+export function listShopPromoCodes() {
+  return supabase
+    .from('shop_promo_codes')
+    .select('id, code, discount_type, discount_value, active, starts_at, expires_at, created_at')
+    .order('created_at', { ascending: false });
+}
+
+export function createShopPromoCode(promoCode) {
+  return supabase.from('shop_promo_codes').insert(promoCode);
+}
+
+export function updateShopPromoCode(id, changes) {
+  return supabase.from('shop_promo_codes').update(changes).eq('id', id);
+}
+
+export function deleteShopPromoCode(id) {
+  return supabase.from('shop_promo_codes').delete().eq('id', id);
+}
+
 export async function listShopAdminData() {
   const [catalog, content, deliveryResult] = await Promise.all([
     listShopCatalog({ includeInactive: true }),
@@ -286,6 +305,7 @@ export async function listShopOrders() {
     .from('orders')
     .select(`
       id, ref, status, payment_method, payment_status, total, note, created_at,
+      promo_code, promo_discount,
       currency, payment_provider, payment_transaction_id, payment_verified_at, fulfillment_status,
       customers ( name, contact, email ),
       order_items ( id, product_name, plan_label, unit_price, qty, line_total )
@@ -300,8 +320,8 @@ export function updateShopOrderFulfillment(id, fulfillmentStatus) {
     .eq('id', id);
 }
 
-export function createShopCheckout({ customer, items, note }) {
-  return supabase.functions.invoke('checkout-shop', { body: { customer, items, note } }).then(async (result) => {
+export function createShopCheckout({ customer, items, note, promo_code = null }) {
+  return supabase.functions.invoke('checkout-shop', { body: { customer, items, note, promo_code } }).then(async (result) => {
     if (!result.error) return result;
     return { ...result, error: new Error(await getFunctionErrorMessage(result.error)) };
   });

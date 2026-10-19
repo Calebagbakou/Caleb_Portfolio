@@ -72,6 +72,11 @@ function validateRichColor(value) {
   return value.toLowerCase();
 }
 
+function validateRichFontSize(value) {
+  if (typeof value !== 'string' || !/^(1[2-9]|2\d|3[0-2])px$/.test(value)) return null;
+  return value;
+}
+
 function sanitizeMarks(marks) {
   if (!Array.isArray(marks)) return [];
   return marks.flatMap((mark) => {
@@ -80,7 +85,15 @@ function sanitizeMarks(marks) {
       const href = validateRichLink(mark.attrs?.href);
       return href ? [{ type: 'link', attrs: { href } }] : [];
     }
-    if (mark.type === 'textStyle' || mark.type === 'highlight') {
+    if (mark.type === 'textStyle') {
+      const attrs = {};
+      const color = validateRichColor(mark.attrs?.color);
+      const fontSize = validateRichFontSize(mark.attrs?.fontSize);
+      if (color) attrs.color = color;
+      if (fontSize) attrs.fontSize = fontSize;
+      return Object.keys(attrs).length ? [{ type: mark.type, attrs }] : [];
+    }
+    if (mark.type === 'highlight') {
       const color = validateRichColor(mark.attrs?.color);
       return color ? [{ type: mark.type, attrs: { color } }] : [];
     }
