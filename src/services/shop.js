@@ -154,7 +154,7 @@ export function saveShopContent(content) {
 export function listShopPromoCodes() {
   return supabase
     .from('shop_promo_codes')
-    .select('id, code, discount_type, discount_value, active, starts_at, expires_at, created_at')
+    .select('id, name, code, discount_type, discount_value, is_gift, product_ids, max_uses, uses_count, max_uses_per_email, active, starts_at, expires_at, created_at')
     .order('created_at', { ascending: false });
 }
 
@@ -322,6 +322,15 @@ export function updateShopOrderFulfillment(id, fulfillmentStatus) {
 
 export function createShopCheckout({ customer, items, note, promo_code = null }) {
   return supabase.functions.invoke('checkout-shop', { body: { customer, items, note, promo_code } }).then(async (result) => {
+    if (!result.error) return result;
+    return { ...result, error: new Error(await getFunctionErrorMessage(result.error)) };
+  });
+}
+
+export function previewShopCheckout({ items, promo_code }) {
+  return supabase.functions.invoke('checkout-shop', {
+    body: { action: 'preview', items, promo_code },
+  }).then(async (result) => {
     if (!result.error) return result;
     return { ...result, error: new Error(await getFunctionErrorMessage(result.error)) };
   });

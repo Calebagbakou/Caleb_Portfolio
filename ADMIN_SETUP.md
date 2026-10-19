@@ -122,7 +122,23 @@ migration supplémentaire n’est nécessaire. Si aucune liste n’a encore ét�
 enregistrée, le site reprend les éléments de départ déjà présents dans le
 portfolio.
 
-## 7. Configurer la livraison Gemini Pro via ProdSeller
+## 7. Gérer les codes promo de la boutique
+
+Applique
+[`supabase/migrations/025_shop_promo_management.sql`](./supabase/migrations/025_shop_promo_management.sql),
+puis déploie l’Edge Function `checkout-shop`. Dans `/admin/shop`, un code peut
+avoir un nom interne, un code saisi ou généré, une remise en pourcentage ou en
+montant fixe, une sélection de produits et une période de validité. Les limites
+initiales sont de 100 commandes au total et une utilisation par adresse e-mail;
+une limite laissée vide est sans plafond. Le code est désactivé automatiquement
+quand son plafond global est atteint.
+
+Une réduction de 100 % ou un montant fixe qui couvre toute la commande exige
+l’option explicite **code cadeau**. Appliquer un code dans le checkout ne crée
+pas de commande; les limites ne sont consommées qu’à la confirmation finale de
+la commande. Le prix final et les limites sont recalculés côté serveur.
+
+## 8. Configurer la livraison Gemini Pro via ProdSeller
 
 L’Edge Function `gemini-prodseller-activate` remplace le fournisseur uniquement
 pour l’activation Gemini Pro 18 mois. Elle ne lance l’achat ProdSeller qu’après

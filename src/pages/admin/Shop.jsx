@@ -58,9 +58,37 @@ const CONTENT_FIELDS = [
   ['shop_payment_description', 'Avantage 3 — description'],
 ];
 
+const EMPTY_PROMO_FORM = {
+  id: null,
+  name: '',
+  code: '',
+  discount_type: 'percentage',
+  discount_value: '',
+  is_gift: false,
+  product_ids: [],
+  max_uses: '100',
+  max_uses_per_email: '1',
+  starts_at: '',
+  expires_at: '',
+  active: true,
+};
+
 function slugify(value) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
     .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
+
+function toDateTimeLocal(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+function makePromoCode() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const values = crypto.getRandomValues(new Uint8Array(8));
+  return `CC-${Array.from(values, (value) => alphabet[value % alphabet.length]).join('')}`;
 }
 
 function productForm(product) {
@@ -91,6 +119,7 @@ function productForm(product) {
 
 export default function Shop() {
   const productEditorPanelRef = useRef(null);
+  const promoEditorPanelRef = useRef(null);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [content, setContent] = useState(DEFAULT_SHOP_CONTENT);
@@ -106,13 +135,7 @@ export default function Shop() {
   const [prodSellerLoading, setProdSellerLoading] = useState(false);
   const [prodSellerError, setProdSellerError] = useState('');
   const [promoCodes, setPromoCodes] = useState([]);
-  const [promoForm, setPromoForm] = useState({
-    code: '',
-    discount_type: 'percentage',
-    discount_value: '',
-    starts_at: '',
-    expires_at: '',
-  });
+  const [promoForm, setPromoForm] = useState(EMPTY_PROMO_FORM);
   const [promoSaving, setPromoSaving] = useState(false);
   const [promoError, setPromoError] = useState('');
   const [promoNotice, setPromoNotice] = useState('');
@@ -340,9 +363,14 @@ export default function Shop() {
   async function savePromoCode(event) {
     event.preventDefault();
     const code = promoForm.code.trim().toUpperCase().replace(/\s+/g, '');
+    const name = promoForm.name.trim();
     const value = Number(promoForm.discount_value);
     if (!/^[A-Z0-9_-]{3,40}$/.test(code)) {
       setPromoError('Le code doit contenir de 3 à 40 lettres, chiffres, tirets ou tirets bas.');
+      return;
+    }
+    if (!name || name.length > 120) {
+      setPromoError('Saisis un nom interne de 1 à 120 caractères.');
       return;
     }
     if (!Number.isFinite(value) || value <= 0 || (promoForm.discount_type === 'percentage' && value > 100)
@@ -350,6 +378,17 @@ export default function Shop() {
       setPromoError(promoForm.discount_type === 'percentage'
         ? 'Le pourcentage doit être compris entre 0 et 100.'
         : 'La réduction fixe doit être un montant entier positif en FCFA.');
+      return;
+    }
+    if (promoForm.discount_type === 'percentage' && value === 100 && !promoForm.is_gift) {
+      setPromoError('Coche l’option cadeau pour autoriser une réduction de 100 %.');
+      return;
+    }
+    const maxUses = promoForm.max_uses === '' ? null : Number(promoForm.max_uses);
+    const maxUsesPerEmail = promoForm.max_uses_per_email === '' ? null : Number(promoForm.max_uses_per_email);
+    if ((maxUses !== null && (!Number.isInteger(maxUses) || maxUses < 1))
+      || (maxUsesPerEmail !== null && (!Number.isInteger(maxUsesPerEmail) || maxUsesPerEmail < 1))) {
+      setPromoError('Les limites d’utilisation doivent être des nombres entiers positifs ou rester vides.');
       return;
     }
     const startsAt = promoForm.starts_at ? new Date(promoForm.starts_at).toISOString() : null;
@@ -362,29 +401,89 @@ export default function Shop() {
     setPromoSaving(true);
     setPromoError('');
     setPromoNotice('');
-    const { error: saveError } = await createShopPromoCode({
+    const changes = {
+      name,
       code,
       discount_type: promoForm.discount_type,
       discount_value: value,
+      is_gift: Boolean(promoForm.is_gift),
+      product_ids: [...new Set(promoForm.product_ids)],
+      max_uses: maxUses,
+      max_uses_per_email: maxUsesPerEmail,
       starts_at: startsAt,
       expires_at: expiresAt,
-      active: true,
-    });
+      active: promoForm.active !== false && !(maxUses !== null
+        && (promoForm.id
+          ? (promoCodes.find((entry) => entry.id === promoForm.id)?.uses_count || 0)
+          : 0) >= maxUses),
+      updated_at: new Date().toISOString(),
+    };
+    const { error: saveError } = promoForm.id
+      ? await updateShopPromoCode(promoForm.id, changes)
+      : await createShopPromoCode(changes);
     if (saveError) {
-      console.error('Impossible de créer le code promo :', saveError);
+      console.error('Impossible d’enregistrer le code promo :', saveError);
       setPromoError(saveError.code === '23505'
         ? 'Ce code existe déjà.'
-        : `Création impossible : ${saveError.message}`);
+        : `Enregistrement impossible : ${saveError.message}`);
     } else {
-      setPromoForm({ code: '', discount_type: 'percentage', discount_value: '', starts_at: '', expires_at: '' });
-      setPromoNotice(`Code ${code} créé.`);
+      setPromoForm(EMPTY_PROMO_FORM);
+      setPromoNotice(promoForm.id ? `Code ${code} modifié.` : `Code ${code} créé.`);
       await load();
     }
     setPromoSaving(false);
   }
 
+  function editPromoCode(promoCode) {
+    setPromoForm({
+      id: promoCode.id,
+      name: promoCode.name || promoCode.code,
+      code: promoCode.code,
+      discount_type: promoCode.discount_type,
+      discount_value: String(promoCode.discount_value),
+      is_gift: Boolean(promoCode.is_gift),
+      product_ids: promoCode.product_ids || [],
+      max_uses: promoCode.max_uses == null ? '' : String(promoCode.max_uses),
+      max_uses_per_email: promoCode.max_uses_per_email == null ? '' : String(promoCode.max_uses_per_email),
+      starts_at: toDateTimeLocal(promoCode.starts_at),
+      expires_at: toDateTimeLocal(promoCode.expires_at),
+      active: promoCode.active,
+    });
+    setPromoError('');
+    setPromoNotice('');
+    requestAnimationFrame(() => {
+      promoEditorPanelRef.current?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+        block: 'start',
+      });
+      document.getElementById('promo-name')?.focus({ preventScroll: true });
+    });
+  }
+
+  function resetPromoForm() {
+    setPromoForm(EMPTY_PROMO_FORM);
+    setPromoError('');
+    setPromoNotice('');
+  }
+
+  function togglePromoProduct(productId) {
+    setPromoForm((current) => ({
+      ...current,
+      product_ids: current.product_ids.includes(productId)
+        ? current.product_ids.filter((id) => id !== productId)
+        : [...current.product_ids, productId],
+    }));
+  }
+
   async function togglePromoCode(promoCode) {
-    const { error: updateError } = await updateShopPromoCode(promoCode.id, { active: !promoCode.active });
+    if (!promoCode.active && promoCode.max_uses != null && promoCode.uses_count >= promoCode.max_uses) {
+      setPromoError('Ce code a atteint sa limite totale et ne peut pas être réactivé.');
+      return;
+    }
+    const { error: updateError } = await updateShopPromoCode(promoCode.id, {
+      active: !promoCode.active,
+      updated_at: new Date().toISOString(),
+    });
     if (updateError) {
       console.error('Impossible de modifier le code promo :', updateError);
       setPromoError('Le statut du code promo n’a pas pu être modifié.');
@@ -461,23 +560,78 @@ export default function Shop() {
         </form>
       </section>
 
-      <section className="panel">
+      <section className="panel" ref={promoEditorPanelRef}>
         <h2>Codes promo</h2>
-        <p>Crée des réductions en pourcentage ou en montant fixe FCFA. Le montant final est recalculé côté serveur.</p>
+        <p>Crée et personnalise les réductions, limite leur utilisation et choisis les produits concernés. Le montant final est recalculé côté serveur.</p>
         {promoError && <div className="shop-admin-alert error" role="alert">{promoError}</div>}
         {promoNotice && <div className="shop-admin-alert success" role="status">{promoNotice}</div>}
         <form className="shop-promo-form" onSubmit={savePromoCode}>
           <div className="form-group">
-            <label htmlFor="promo-code">Code</label>
-            <input
-              id="promo-code"
-              autoComplete="off"
-              maxLength={40}
-              placeholder="EXEMPLE10"
-              required
-              value={promoForm.code}
-              onChange={(event) => setPromoForm((current) => ({ ...current, code: event.target.value }))}
-            />
+            <label htmlFor="promo-name">Nom interne</label>
+            <input id="promo-name" maxLength={120} placeholder="Bienvenue nouveaux clients" required value={promoForm.name} onChange={(event) => setPromoForm((current) => ({ ...current, name: event.target.value }))} />
+            <small>Visible uniquement dans le tableau de bord.</small>
+          </div>
+          <div className="form-group">
+            <label htmlFor="promo-code">Code promo</label>
+            <div className="shop-promo-code-row">
+              <input
+                id="promo-code"
+                autoComplete="off"
+                maxLength={40}
+                placeholder="EXEMPLE10"
+                required
+                value={promoForm.code}
+                onChange={(event) => setPromoForm((current) => ({ ...current, code: event.target.value }))}
+              />
+              <button className="btn btn-secondary" type="button" onClick={() => setPromoForm((current) => ({ ...current, code: makePromoCode() }))}>
+                Générer
+              </button>
+            </div>
+          </div>
+          <div className="form-group shop-admin-wide">
+            <label>Produits concernés</label>
+            {products.length
+              ? (
+                <div className="shop-promo-products">
+                  <label className="shop-admin-check">
+                    <input
+                      type="checkbox"
+                      checked={promoForm.product_ids.length === 0}
+                      onChange={() => setPromoForm((current) => ({ ...current, product_ids: [] }))}
+                    />
+                    Tous les produits
+                  </label>
+                  {products.map((product) => (
+                    <label className="shop-admin-check" key={product.id}>
+                      <input
+                        type="checkbox"
+                        checked={promoForm.product_ids.includes(product.id)}
+                        onChange={() => togglePromoProduct(product.id)}
+                      />
+                      {product.name}
+                    </label>
+                  ))}
+                </div>
+              )
+              : <small>Ajoute d’abord un produit au catalogue.</small>}
+            <small>Si aucun produit particulier n’est sélectionné, le code s’applique à toute la boutique.</small>
+          </div>
+          <div className="form-group">
+            <label htmlFor="promo-max-uses">Utilisations totales maximum</label>
+            <input id="promo-max-uses" type="number" min="1" step="1" placeholder="Sans limite" value={promoForm.max_uses} onChange={(event) => setPromoForm((current) => ({ ...current, max_uses: event.target.value }))} />
+            <small>Valeur initiale : 100. Le code se désactive quand cette limite est atteinte.</small>
+          </div>
+          <div className="form-group">
+            <label htmlFor="promo-max-email">Utilisations maximum par adresse e-mail</label>
+            <input id="promo-max-email" type="number" min="1" step="1" placeholder="Sans limite" value={promoForm.max_uses_per_email} onChange={(event) => setPromoForm((current) => ({ ...current, max_uses_per_email: event.target.value }))} />
+            <small>Valeur initiale : 1 utilisation par client.</small>
+          </div>
+          <div className="form-group shop-admin-wide">
+            <label className="shop-admin-check">
+              <input type="checkbox" checked={promoForm.is_gift} onChange={(event) => setPromoForm((current) => ({ ...current, is_gift: event.target.checked }))} />
+              Autoriser à offrir toute la commande (code cadeau)
+            </label>
+            <small>Obligatoire pour créer une réduction de 100 % ou pour qu’un montant fixe puisse ramener une commande à 0 FCFA.</small>
           </div>
           <div className="form-group">
             <label htmlFor="promo-type">Type de réduction</label>
@@ -511,20 +665,35 @@ export default function Shop() {
             <label htmlFor="promo-end">Fin (facultatif)</label>
             <input id="promo-end" type="datetime-local" value={promoForm.expires_at} onChange={(event) => setPromoForm((current) => ({ ...current, expires_at: event.target.value }))} />
           </div>
-          <button className="btn btn-primary" type="submit" disabled={promoSaving}>
-            {promoSaving ? 'Création…' : 'Créer le code'}
-          </button>
+          <div className="shop-promo-form-actions">
+            <button className="btn btn-primary" type="submit" disabled={promoSaving}>
+              {promoSaving ? 'Enregistrement…' : promoForm.id ? 'Enregistrer les modifications' : 'Créer le code'}
+            </button>
+            {promoForm.id && <button className="btn btn-secondary" type="button" onClick={resetPromoForm}>Annuler la modification</button>}
+          </div>
         </form>
         <div className="shop-admin-categories shop-promo-list">
           {promoCodes.map((promoCode) => (
             <div className="shop-admin-category" key={promoCode.id}>
               <div>
-                <strong>{promoCode.code}</strong>
+                <strong>{promoCode.name || promoCode.code}</strong>
+                <div>Code : <code>{promoCode.code}</code></div>
                 <div>
                   {promoCode.discount_type === 'percentage'
                     ? `${promoCode.discount_value}% de réduction`
                     : `${Number(promoCode.discount_value).toLocaleString('fr-FR')} FCFA de réduction`}
+                  {promoCode.is_gift && ' · Cadeau'}
                 </div>
+                <small>
+                  {promoCode.uses_count || 0} utilisation(s)
+                  {promoCode.max_uses == null ? ' · sans limite totale' : ` / ${promoCode.max_uses}`}
+                  {promoCode.max_uses_per_email == null ? ' · sans limite par e-mail' : ` · ${promoCode.max_uses_per_email} par e-mail`}
+                </small>
+                <small>
+                  {promoCode.product_ids?.length
+                    ? `Produits concernés : ${promoCode.product_ids.map((id) => products.find((product) => product.id === id)?.name || 'Produit indisponible').join(', ')}`
+                    : 'Tous les produits'}
+                </small>
                 {(promoCode.starts_at || promoCode.expires_at) && (
                   <small>
                     {promoCode.starts_at ? `Dès le ${new Date(promoCode.starts_at).toLocaleString('fr-FR')}` : ''}
@@ -535,6 +704,9 @@ export default function Shop() {
               </div>
               <div className="row-actions">
                 <span className={`promo-state${promoCode.active ? ' active' : ''}`}>{promoCode.active ? 'Actif' : 'Inactif'}</span>
+                <button className="btn btn-secondary btn-sm" type="button" onClick={() => editPromoCode(promoCode)}>
+                  Modifier
+                </button>
                 <button className="btn btn-secondary btn-sm" type="button" onClick={() => togglePromoCode(promoCode)}>
                   {promoCode.active ? 'Désactiver' : 'Activer'}
                 </button>

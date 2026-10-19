@@ -22,10 +22,30 @@ Deno.serve(async (request) => {
     }
 
     const body = await request.json();
-    const customer = body?.customer;
     const items = body?.items;
-    if (!customer || typeof customer !== 'object' || !Array.isArray(items)) {
-      return jsonResponse({ error: 'Coordonnées client ou panier invalides.' }, 400);
+    if (!Array.isArray(items)) {
+      return jsonResponse({ error: 'Panier invalide.' }, 400);
+    }
+
+    const client = getServiceClient();
+    if (body?.action === 'preview') {
+      const { data: quote, error: quoteError } = await client.rpc('preview_shop_order', {
+        p_items: items,
+        p_promo_code: typeof body.promo_code === 'string' ? body.promo_code.trim() : null,
+        p_email: user.email.trim().toLowerCase(),
+      });
+      if (quoteError) {
+        if (quoteError.code === 'P0001' && typeof quoteError.message === 'string') {
+          return jsonResponse({ error: quoteError.message }, 400);
+        }
+        throw quoteError;
+      }
+      return jsonResponse({ quote });
+    }
+
+    const customer = body?.customer;
+    if (!customer || typeof customer !== 'object') {
+      return jsonResponse({ error: 'Coordonnées client invalides.' }, 400);
     }
 
     const normalizedCustomer = {
@@ -40,7 +60,6 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: 'Adresse e-mail invalide.' }, 400);
     }
 
-    const client = getServiceClient();
     const productIds = [...new Set(items
       .map((item) => item?.product_id)
       .filter((id): id is string => typeof id === 'string'))];
@@ -69,6 +88,10 @@ Deno.serve(async (request) => {
     return jsonResponse({ order });
   } catch (error) {
     console.error('Échec de création de commande boutique :', error);
-    return jsonResponse({ error: error instanceof Error ? error.message : 'Création de commande impossible.' }, 400);
+    if (typeof error === 'object' && error !== null && 'code' in error && error.code === 'P0001'
+      && 'message' in error && typeof error.message === 'string') {
+      return jsonResponse({ error: error.message }, 400);
+    }
+    return jsonResponse({ error: 'Création de commande impossible.' }, 400);
   }
 });
