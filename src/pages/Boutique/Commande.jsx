@@ -18,6 +18,7 @@ export default function Commande() {
   const [femail, setFemail] = useState(user?.email || '');
   const [fnote, setFnote] = useState('');
   const [promoCode, setPromoCode] = useState('');
+  const [promoOpen, setPromoOpen] = useState(false);
   const [pendingOrder, setPendingOrder] = useState(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -192,25 +193,36 @@ export default function Commande() {
             />
           </div>
 
-          <div className="checkout-promo">
-            <div className="form-group">
-              <label htmlFor="promo-code">Code promo</label>
-              <input
-                id="promo-code"
-                autoComplete="off"
-                maxLength={40}
-                placeholder="Saisir un code"
-                value={promoCode}
-                onChange={(event) => {
-                  setPromoCode(event.target.value);
-                  setPendingOrder(null);
-                }}
-              />
-            </div>
-            <button type="submit" name="intent" value="apply" className="btn btn-outline" disabled={saving || !promoCode.trim() || Boolean(pendingOrder)}>
-              {pendingOrder?.promoCode ? 'Code appliqué' : 'Appliquer le code'}
+          {!promoOpen ? (
+            <button
+              type="button"
+              className="checkout-promo-trigger"
+              aria-expanded="false"
+              onClick={() => setPromoOpen(true)}
+            >
+              Vous avez un code promo ? <span>Ajouter un code promo</span>
             </button>
-          </div>
+          ) : (
+            <div className="checkout-promo">
+              <div className="form-group">
+                <label htmlFor="promo-code">Code promo</label>
+                <input
+                  id="promo-code"
+                  autoComplete="off"
+                  maxLength={40}
+                  placeholder="Saisir un code"
+                  value={promoCode}
+                  onChange={(event) => {
+                    setPromoCode(event.target.value);
+                    setPendingOrder(null);
+                  }}
+                />
+              </div>
+              <button type="submit" name="intent" value="apply" className="btn btn-outline" disabled={saving || !promoCode.trim() || Boolean(pendingOrder)}>
+                {pendingOrder?.promoCode ? 'Code appliqué' : 'Appliquer le code'}
+              </button>
+            </div>
+          )}
           {pendingOrder?.promoCode && (
             <p className="checkout-promo-applied" role="status">
               Code {pendingOrder.promoCode} appliqué : −{formatPrice(Number(pendingOrder.discountAmount))}
