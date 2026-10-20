@@ -266,12 +266,14 @@ export default function Produit() {
         </div>
       </div>
       <section className="product-description-section" aria-label="Description détaillée du produit">
-        <RichContent doc={product.description_rich} fallbackText={product.description} />
-        <p className="product-note">
-          {isApiDelivery(product)
-            ? 'Après confirmation du paiement, votre lien d’activation est généré automatiquement.'
-            : 'Livraison numérique : les identifiants ou instructions d’activation te sont envoyés directement par Caleb après validation de la commande.'}
-        </p>
+        <div className="product-description-content">
+          <RichContent doc={product.description_rich} fallbackText={product.description} />
+          <p className="product-note">
+            {isApiDelivery(product)
+              ? 'Après confirmation du paiement, votre lien d’activation est généré automatiquement.'
+              : 'Livraison numérique : les identifiants ou instructions d’activation te sont envoyés directement par Caleb après validation de la commande.'}
+          </p>
+        </div>
       </section>
       <div
         ref={(element) => {

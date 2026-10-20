@@ -451,9 +451,17 @@ body.shop-theme .product-name{ font-family:'Nunito', sans-serif; font-weight:800
 }
 .product-note{ margin-top:18px; font-size:12.5px; color:var(--ink-faint); }
 .product-detail{ padding-bottom:12px; }
-.product-description-section{ width:min(100%,1120px); margin:0 auto 56px; padding:0 24px; }
-.product-description-section .rich-content{ max-width:80ch; margin:0 auto; }
-.product-description-section .product-note{ max-width:80ch; margin:24px auto 0; }
+.product-description-section{ width:100%; margin:0 auto 56px; padding:0; }
+.product-description-content{
+  width:min(100%,960px);
+  margin:0 auto;
+  padding:0 clamp(16px,4vw,32px);
+  box-sizing:border-box;
+}
+.product-description-content > :first-child{ margin-top:0; }
+.product-description-content .rich-content{ width:100%; max-width:none; margin:0; }
+.product-description-content .rich-content > :first-child{ margin-top:0; }
+.product-description-content .product-note{ margin:24px 0 0; }
 .product-info .highlight-list{ margin-bottom:8px; }
 .rich-content{
   width:100%;
