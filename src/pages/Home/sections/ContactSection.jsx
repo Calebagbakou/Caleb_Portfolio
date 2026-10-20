@@ -3,13 +3,15 @@ import { sendContactMessage } from '../../../services/messages';
 import RevealHeading from '../../../components/site/RevealHeading';
 import SectionIcon from '../../../components/site/SectionIcon';
 import { useSectionLogos } from '../../../hooks/useSectionLogos';
+import LegalNotice from '../../../components/site/LegalNotice';
+import { legalFacts } from '../../../data/legalFacts';
 
 const CONTACT_ITEMS = [
   {
     id: 'contact-email',
-    href: 'mailto:calebagbakou@gmail.com',
+    href: legalFacts.contact.emailHref,
     label: 'EMAIL',
-    value: 'calebagbakou@gmail.com',
+    value: legalFacts.contact.email,
     icon: (
       <>
         <rect x="3" y="5" width="18" height="14" rx="2" />
@@ -19,27 +21,27 @@ const CONTACT_ITEMS = [
   },
   {
     id: 'contact-whatsapp',
-    href: 'https://wa.me/2290148135395',
+    href: legalFacts.contact.whatsappHref,
     external: true,
     label: 'WHATSAPP',
-    value: '+229 01 48 13 53 95',
+    value: legalFacts.contact.whatsapp,
     icon: <path d="M4 20l1.3-4A8 8 0 1112 20a8 8 0 01-4-1z" />,
   },
   {
     id: 'contact-phone',
-    href: 'tel:+22901502597092',
+    href: legalFacts.contact.phoneHref,
     label: 'TÉLÉPHONE',
-    value: '+229 01 50 25 97 92',
+    value: legalFacts.contact.phone,
     icon: (
       <path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1.9.3 1.8.6 2.7a2 2 0 01-.5 2.1L8 9.9a16 16 0 006 6l1.4-1.2a2 2 0 012.1-.5c.9.3 1.8.5 2.7.6a2 2 0 011.8 2z" />
     ),
   },
   {
     id: 'contact-location',
-    href: 'https://www.google.com/maps/search/Abomey+B%C3%A9nin',
+    href: legalFacts.contact.locationHref,
     external: true,
     label: 'LOCALISATION',
-    value: 'Abomey – Bénin',
+    value: legalFacts.business.location,
     icon: (
       <>
         <path d="M12 21s7-6.3 7-11.5A7 7 0 105 9.5C5 14.7 12 21 12 21z" />
@@ -117,7 +119,7 @@ export default function ContactSection() {
   return (
     <section className="wrap" id="contact">
       <RevealHeading eyebrow="CONTACT">Parlons de votre projet.</RevealHeading>
-      <p className="response-time">Réponse sous 24 h ouvrées.</p>
+      <p className="response-time">Réponse sous {legalFacts.contact.responseTime}.</p>
 
       <div className="contact-grid">
         {CONTACT_ITEMS.map((item) => (
@@ -214,6 +216,7 @@ export default function ContactSection() {
             onChange={(e) => updateField('website', e.target.value)}
           />
         </label>
+        <LegalNotice variant="contact" />
         {status && <div className={`form-status show ${status.kind}`} role="status" aria-live="polite">{status.text}</div>}
         <button type="submit" className="btn btn-primary" style={{ maxWidth: 260 }} disabled={submitting}>
           Envoyer le message

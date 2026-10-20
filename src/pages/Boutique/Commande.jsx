@@ -7,6 +7,8 @@ import { useAuth } from '../../context/AuthContext';
 import ShopAlert from '../../components/shop/ShopAlert';
 import { getShopErrorMessage } from '../../utils/shopErrors';
 import ShopArrow from '../../components/shop/ShopArrow';
+import LegalNotice from '../../components/site/LegalNotice';
+import { legalFacts } from '../../data/legalFacts';
 
 export default function Commande() {
   const { details, total, clear } = useCart();
@@ -263,9 +265,10 @@ export default function Commande() {
 
           <p className="pay-note">
             {Number(promoQuote?.total) === 0 && Number(promoQuote?.discountAmount) > 0
-              ? 'Votre code promo couvre la totalité de la commande.'
-              : 'Votre commande sera confirmée après validation du paiement par le prestataire. Les moyens disponibles s’affichent sur la page de paiement selon votre pays.'}
+              ? legalFacts.payment.zeroTotal
+              : legalFacts.payment.pending}
           </p>
+          <LegalNotice variant="checkout" />
 
           <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 22 }} disabled={saving} aria-busy={checkoutInProgress}>
             <span aria-hidden="true">🔒</span>
@@ -276,7 +279,7 @@ export default function Commande() {
                 : `Payer ${formatPrice(promoQuote ? Number(promoQuote.total) : total)}`}
             <ShopArrow />
           </button>
-          {!(Number(promoQuote?.total) === 0 && Number(promoQuote?.discountAmount) > 0) && <p className="pay-redirect-note">Vous serez redirigé vers la page de paiement sécurisée de notre prestataire.</p>}
+          {!(Number(promoQuote?.total) === 0 && Number(promoQuote?.discountAmount) > 0) && <p className="pay-redirect-note">{legalFacts.payment.redirect}</p>}
         </div>
 
         <aside className="summary-card">

@@ -63,6 +63,7 @@ export default function App() {
         <Route path="/projet/:slug" element={<ProjectDetail />} />
         <Route path="/confidentialite" element={<Legal />} />
         <Route path="/conditions" element={<Legal />} />
+        <Route path="/mentions-legales" element={<Legal />} />
       </Route>
 
       {/* ================= BOUTIQUE ================= */}

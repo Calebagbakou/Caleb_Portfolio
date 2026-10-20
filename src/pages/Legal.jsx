@@ -1,94 +1,304 @@
 import { Link, useLocation } from 'react-router-dom';
+import Seo from '../components/site/Seo';
+import { legalFacts } from '../data/legalFacts';
+import '../styles/legal.css';
 
-const LEGAL_DRAFT = true;
+function ContactDetails() {
+  return (
+    <p>
+      E-mail : <a href={legalFacts.contact.emailHref}>{legalFacts.contact.email}</a>. WhatsApp :{' '}
+      <a href={legalFacts.contact.whatsappHref}>{legalFacts.contact.whatsapp}</a>. Téléphone :{' '}
+      <a href={legalFacts.contact.phoneHref}>{legalFacts.contact.phone}</a>. Réponse par e-mail sous{' '}
+      {legalFacts.contact.responseTime} ; support WhatsApp disponible{' '}
+      {legalFacts.contact.whatsappAvailability}.
+    </p>
+  );
+}
 
 const PRIVACY_SECTIONS = [
   {
-    title: 'Informations utilisées',
-    paragraphs: [
-      'Lors d’une commande ou de la création d’un compte, le site peut traiter le nom, le numéro WhatsApp, l’adresse e-mail, les informations de connexion, le contenu de la commande, son montant, sa référence et son état.',
-      'La connexion peut être effectuée par e-mail ou avec un fournisseur de connexion, notamment Google ou Facebook. Le site reçoit les informations de compte nécessaires à cette connexion.',
-    ],
+    id: 'responsable',
+    title: 'Responsable du site',
+    content: (
+      <p>
+        {legalFacts.business.ownerName} exploite le site sous le nom commercial{' '}
+        {legalFacts.business.commercialName}. Son activité est exercée en entreprise individuelle
+        à {legalFacts.business.location}.
+      </p>
+    ),
   },
   {
-    title: 'Paiement et commande',
-    paragraphs: [
-      'Le paiement est réalisé par un prestataire de paiement. Le site conserve des informations de suivi telles que la référence de commande, le statut du paiement et, lorsqu’elle est renvoyée, une référence de transaction. Les informations effectivement traitées par le prestataire relèvent aussi de ses propres conditions.',
-      'Le nom du prestataire et les options disponibles dépendent du parcours de paiement proposé au moment de la commande.',
-    ],
+    id: 'donnees',
+    title: 'Données traitées',
+    content: (
+      <>
+        <ul>
+          <li><strong>Contact :</strong> {legalFacts.privacy.contactData}</li>
+          <li><strong>Compte :</strong> {legalFacts.privacy.accountData}</li>
+          <li><strong>Connexion sociale :</strong> {legalFacts.privacy.socialData}</li>
+          <li><strong>Commande :</strong> {legalFacts.privacy.orderData}</li>
+          <li><strong>Paiement :</strong> {legalFacts.privacy.paymentData}</li>
+          <li><strong>Livraison numérique :</strong> {legalFacts.privacy.deliveryData}</li>
+          <li><strong>Témoignage :</strong> {legalFacts.privacy.testimonialData}</li>
+        </ul>
+      </>
+    ),
   },
   {
-    title: 'Messages et avis',
-    paragraphs: [
-      'Le formulaire de contact du portfolio enregistre le nom, l’adresse e-mail et le contenu du message pour permettre une réponse. Si vous déposez un avis, son nom, son texte et la photo fournie peuvent être conservés et affichés lorsqu’il est publié.',
-    ],
+    id: 'utilisation',
+    title: 'Utilisation des données',
+    content: <p>Les données sont utilisées pour {legalFacts.privacy.purposes}</p>,
   },
   {
-    title: 'Utilisation et conservation',
-    paragraphs: [
-      'Ces informations servent au fonctionnement du compte, au suivi des commandes, à la préparation des accès ou fichiers achetés et à la réponse aux demandes d’assistance. Le panier et certaines informations de commande peuvent également être conservés dans le stockage local du navigateur.',
-      'Les durées de conservation applicables sont à préciser : ',
-    ],
-    placeholder: 'Durées de conservation : [À COMPLÉTER].',
+    id: 'navigateur',
+    title: 'Stockage dans le navigateur',
+    content: (
+      <div className="legal-table-wrap">
+        <table>
+          <thead>
+            <tr><th scope="col">Clé</th><th scope="col">Utilité</th></tr>
+          </thead>
+          <tbody>
+            {legalFacts.privacy.browserStorage.map((item) => (
+              <tr key={item.key}><th scope="row"><code>{item.key}</code></th><td>{item.purpose}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    ),
   },
   {
-    title: 'Responsable et contact',
-    paragraphs: [
-      'Identité légale du responsable du site : ',
-    ],
-    placeholder: 'Identité légale : [À COMPLÉTER]. Adresse e-mail de contact : [À COMPLÉTER].',
+    id: 'connexion-sociale',
+    title: 'Connexion par compte tiers',
+    content: <p>{legalFacts.privacy.socialLogin}</p>,
+  },
+  {
+    id: 'mineurs',
+    title: 'Mineurs',
+    content: <p>{legalFacts.privacy.agePolicy}</p>,
+  },
+  {
+    id: 'suppression-des-donnees',
+    title: 'Suppression du compte et des données',
+    content: (
+      <p>
+        {legalFacts.privacy.accountDeletion} {legalFacts.privacy.deletion}
+      </p>
+    ),
+  },
+  {
+    id: 'contact',
+    title: 'Contact',
+    content: <ContactDetails />,
   },
 ];
 
 const TERMS_SECTIONS = [
   {
-    title: 'Éditeur et contact',
-    paragraphs: ['Identité légale de l’éditeur : '],
-    placeholder: 'Identité légale : [À COMPLÉTER]. Adresse e-mail de contact : [À COMPLÉTER].',
+    id: 'vendeur',
+    title: 'Vendeur',
+    content: (
+      <p>
+        {legalFacts.business.ownerName} exploite la boutique sous le nom commercial{' '}
+        {legalFacts.business.commercialName}, en entreprise individuelle à{' '}
+        {legalFacts.business.location}.
+      </p>
+    ),
   },
   {
-    title: 'Commandes et paiements',
-    paragraphs: [
-      'Les produits, formules et prix sont présentés dans la boutique. Le récapitulatif affiché avant paiement indique les articles choisis et le montant de la commande. La commande est suivie à l’aide d’une référence qui apparaît dans l’espace client.',
-      'Le règlement est traité par le prestataire proposé au moment du paiement. Une commande n’est indiquée comme payée qu’après confirmation du paiement.',
-    ],
+    id: 'offres',
+    title: 'Produits et prestations',
+    content: (
+      <>
+        <ul>
+          <li>{legalFacts.products.canva}</li>
+          <li>{legalFacts.products.capcut}</li>
+          <li>{legalFacts.products.gemini}</li>
+        </ul>
+        <p>{legalFacts.creativeServices.terms}</p>
+        <p>{legalFacts.creativeServices.portfolio}</p>
+      </>
+    ),
   },
   {
-    title: 'Accès aux produits et assistance',
-    paragraphs: [
-      'Après confirmation du paiement, les accès ou fichiers associés à la commande sont préparés selon les informations affichées sur la fiche du produit et dans l’espace client. Pour une question, vous pouvez contacter Caleb Creative sur WhatsApp en indiquant la référence de commande.',
-    ],
+    id: 'compte',
+    title: 'Compte client',
+    content: (
+      <p>
+        {legalFacts.accountRules.requirement} {legalFacts.accountRules.age}{' '}
+        {legalFacts.accountRules.restrictions}{' '}
+        {legalFacts.accountRules.suspension}
+      </p>
+    ),
   },
   {
-    title: 'Informations à compléter',
-    paragraphs: [
-      'Les informations légales et les modalités qui ne sont pas déterminées par le fonctionnement actuel du site doivent être précisées avant publication définitive.',
-    ],
-    placeholder: 'Conditions de rétractation, d’annulation, de retour ou de remboursement : [À COMPLÉTER]. Droit applicable et modalités de règlement des litiges : [À COMPLÉTER].',
+    id: 'commande-paiement',
+    title: 'Prix et paiement des commandes de la boutique',
+    content: (
+      <p>
+        Pour les commandes de la boutique, les prix sont affichés en {legalFacts.payment.currency}.
+        Les moyens proposés peuvent
+        comprendre {legalFacts.payment.methods} {legalFacts.payment.fees}{' '}
+        {legalFacts.payment.confirmation}
+      </p>
+    ),
+  },
+  {
+    id: 'livraison',
+    title: 'Livraison et assistance',
+    content: (
+      <p>
+        {legalFacts.products.delivery} {legalFacts.products.accessIssue} Contactez le support par
+        WhatsApp au <a href={legalFacts.contact.whatsappHref}>{legalFacts.contact.whatsapp}</a>.
+        Le support WhatsApp est disponible {legalFacts.contact.whatsappAvailability}.
+      </p>
+    ),
+  },
+  {
+    id: 'garantie-remboursement',
+    title: 'Garantie et remboursement',
+    content: (
+      <p>
+        {legalFacts.warranty.period} {legalFacts.warranty.refundForFailure}{' '}
+        {legalFacts.warranty.failure} {legalFacts.warranty.review}
+      </p>
+    ),
+  },
+  {
+    id: 'donnees',
+    title: 'Données personnelles',
+    content: (
+      <p>
+        Les données liées au compte et aux commandes sont décrites dans la page{' '}
+        <Link to={legalFacts.legalRoutes.privacy}>Confidentialité</Link>. La procédure de
+        suppression du compte est disponible dans la section{' '}
+        <Link to={`${legalFacts.legalRoutes.privacy}#suppression-des-donnees`}>
+          Suppression du compte et des données
+        </Link>.
+      </p>
+    ),
+  },
+  {
+    id: 'contact',
+    title: 'Contact',
+    content: <ContactDetails />,
   },
 ];
 
+const LEGAL_NOTICES_SECTIONS = [
+  {
+    id: 'editeur',
+    title: 'Éditeur',
+    content: (
+      <p>
+        {legalFacts.business.ownerName} édite le site sous le nom commercial{' '}
+        {legalFacts.business.commercialName}. Statut : {legalFacts.business.status}. Localisation :
+        {' '}{legalFacts.business.location}.
+      </p>
+    ),
+  },
+  {
+    id: 'contact',
+    title: 'Contact',
+    content: <ContactDetails />,
+  },
+];
+
+const PAGE_CONFIG = {
+  '/confidentialite': {
+    title: 'Confidentialité',
+    description: 'Données traitées par Caleb Creative, utilisation du navigateur et suppression du compte.',
+    sections: PRIVACY_SECTIONS,
+    summary: [
+      'Les formulaires traitent les données nécessaires au contact, au compte et aux commandes.',
+      'Les données de commande servent à valider le paiement et à livrer les produits.',
+      'Le navigateur mémorise le panier, le reçu et certaines préférences.',
+      'Vous pouvez supprimer votre compte depuis votre espace client.',
+      'Le contact du site est disponible par e-mail et WhatsApp.',
+    ],
+  },
+  '/conditions': {
+    title: 'Conditions de vente et d’utilisation',
+    description: 'Conditions des commandes numériques et des prestations créatives Caleb Creative.',
+    sections: TERMS_SECTIONS,
+    summary: [
+      'Un compte confirmé est requis pour commander.',
+      'Les moyens de paiement des commandes de la boutique dépendent du pays.',
+      'La livraison annoncée intervient après confirmation de la commande.',
+      'La garantie et les demandes de remboursement suivent les modalités indiquées ici.',
+      'Les prestations créatives sont convenues directement avec le client.',
+    ],
+  },
+  '/mentions-legales': {
+    title: 'Mentions légales',
+    description: 'Éditeur et coordonnées de Caleb Creative.',
+    sections: LEGAL_NOTICES_SECTIONS,
+    summary: [
+      'Le site est édité sous le nom commercial Caleb Creative.',
+      'L’activité est exercée en entreprise individuelle.',
+      'La localisation indiquée est Abomey, Bénin.',
+      'Les coordonnées publiques comprennent e-mail, WhatsApp et téléphone.',
+      'Les coordonnées sont également disponibles sur le site.',
+    ],
+  },
+};
+
 export default function Legal() {
   const { pathname } = useLocation();
-  const isPrivacy = pathname === '/confidentialite';
-  const sections = isPrivacy ? PRIVACY_SECTIONS : TERMS_SECTIONS;
+  const page = PAGE_CONFIG[pathname] || PAGE_CONFIG[legalFacts.legalRoutes.privacy];
 
   return (
-    <main className="legal-page">
+    <main className="legal-page" id="top">
+      <Seo
+        title={`${page.title} — ${legalFacts.business.commercialName}`}
+        description={page.description}
+        path={pathname}
+      />
       <nav className="legal-return-links" aria-label="Navigation principale">
         <Link to="/">← Retour au portfolio</Link>
         <Link to="/boutique">Aller à la boutique</Link>
       </nav>
-      <div className="eyebrow">CALEB CREATIVE</div>
-      <h1>{isPrivacy ? 'Confidentialité' : 'Conditions d’utilisation et de vente'}</h1>
-      {LEGAL_DRAFT && <p className="legal-updated">Informations à compléter avant publication définitive.</p>}
-      {sections.map((section) => (
-        <section key={section.title}>
-          <h2>{section.title}</h2>
-          {section.paragraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
-          {section.placeholder && <p className="legal-placeholder">{section.placeholder}</p>}
-        </section>
-      ))}
+      <div className="legal-layout">
+        <aside className="legal-toc-wrap">
+          <details className="legal-toc" open>
+            <summary>Sommaire de la page</summary>
+            <nav aria-label={`Sommaire — ${page.title}`}>
+              <ol>
+                {page.sections.map((section) => (
+                  <li key={section.id}><a href={`#${section.id}`}>{section.title}</a></li>
+                ))}
+              </ol>
+            </nav>
+          </details>
+          <a className="legal-back-top" href="#top">Retour en haut ↑</a>
+        </aside>
+
+        <article className="legal-document">
+          <header className="legal-document-header">
+            <p className="legal-eyebrow">{legalFacts.business.commercialName} · Informations</p>
+            <h1>{page.title}</h1>
+            <p className="legal-updated">
+              Dernière mise à jour : {legalFacts.legalMetadata.lastUpdated} · Version{' '}
+              {legalFacts.legalMetadata.version}
+            </p>
+            <section className="legal-essential" aria-labelledby="legal-essential-title">
+              <h2 id="legal-essential-title">L’essentiel en 5 points</h2>
+              <ol>
+                {page.summary.map((item) => <li key={item}>{item}</li>)}
+              </ol>
+            </section>
+          </header>
+
+          <div className="legal-content">
+            {page.sections.map((section) => (
+              <section className="legal-section" id={section.id} key={section.id}>
+                <h2>{section.title}</h2>
+                {section.content}
+              </section>
+            ))}
+          </div>
+        </article>
+      </div>
     </main>
   );
 }

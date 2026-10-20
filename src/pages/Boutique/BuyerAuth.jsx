@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import { formatPrice } from '../../data/products';
 import ShopAlert from '../../components/shop/ShopAlert';
+import LegalNotice from '../../components/site/LegalNotice';
 import { getShopErrorMessage } from '../../utils/shopErrors';
 import { supabase } from '../../services/supabase';
 import {
@@ -523,6 +524,7 @@ export default function BuyerAuth() {
             )}
           </form>
         )}
+        {mode === 'signup' && !awaitingConfirmation && <LegalNotice variant="signup" />}
         <p className="buyer-auth-footnote">Google et Facebook ne reçoivent jamais votre mot de passe de boutique.</p>
       </section>
       <aside className="buyer-auth-aside">
