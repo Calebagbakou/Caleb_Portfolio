@@ -13,3 +13,8 @@ export function getProdSellerTargetKey(product: { slug?: unknown; delivery_type?
   if (!target || (target.planSlug && target.planSlug !== planSlug)) return null;
   return target.key;
 }
+
+export function getProdSellerProductKey(product: { slug?: unknown; delivery_type?: unknown }) {
+  if (!isApiDelivery(product) || typeof product.slug !== 'string') return null;
+  return API_DELIVERY_PRODUCTS[product.slug]?.key || null;
+}

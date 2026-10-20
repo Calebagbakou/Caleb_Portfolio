@@ -1,4 +1,5 @@
 import { getServiceClient, jsonResponse } from '../_shared/shop.ts';
+import { isApiDelivery } from '../_shared/delivery.ts';
 
 const TOKEN_TTL_HOURS = 24;
 
@@ -21,11 +22,22 @@ function escapeHtml(value: string) {
   })[character] || character);
 }
 
+function parseSender(value: string) {
+  const formattedSender = value.trim().match(/^(?:"?([^"<]+)"?\s*)?<([^<>]+)>$/);
+  if (formattedSender) {
+    return {
+      name: formattedSender[1]?.trim() || 'Caleb Creative',
+      email: formattedSender[2].trim(),
+    };
+  }
+  return { name: 'Caleb Creative', email: value.trim() };
+}
+
 async function sendDownloadEmail(email: string, name: string, downloads: Array<Record<string, string>>) {
-  const apiKey = Deno.env.get('RESEND_API_KEY');
+  const apiKey = Deno.env.get('BREVO_API_KEY');
   const from = Deno.env.get('SHOP_DOWNLOAD_FROM_EMAIL');
   if (!apiKey || !from) {
-    return { sent: false, message: 'Envoi e-mail à configurer : RESEND_API_KEY et SHOP_DOWNLOAD_FROM_EMAIL sont requis.' };
+    return { sent: false, message: 'Envoi e-mail à configurer : BREVO_API_KEY et SHOP_DOWNLOAD_FROM_EMAIL sont requis.' };
   }
 
   const htmlDownloads = downloads.map((download) => `
@@ -39,23 +51,23 @@ async function sendDownloadEmail(email: string, name: string, downloads: Array<R
     `${download.name} (${download.size})\nTélécharger : ${download.url}\nExpiration : ${TOKEN_TTL_HOURS} heures.`,
   ).join('\n\n');
 
-  const response = await fetch('https://api.resend.com/emails', {
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      'api-key': apiKey,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      from,
-      to: [email],
+      sender: parseSender(from),
+      to: [{ email, name }],
       subject: 'Tes fichiers Caleb Creative sont prêts',
-      html: `<p>Bonjour ${escapeHtml(name)},</p><p>Ton paiement est confirmé. Voici tes liens de téléchargement temporaires :</p><ul>${htmlDownloads}</ul><p>Caleb Creative</p>`,
-      text: `Bonjour ${name},\n\nTon paiement est confirmé. Voici tes liens de téléchargement temporaires :\n\n${textDownloads}\n\nCaleb Creative`,
+      htmlContent: `<p>Bonjour ${escapeHtml(name)},</p><p>Ton paiement est confirmé. Voici tes liens de téléchargement temporaires :</p><ul>${htmlDownloads}</ul><p>Caleb Creative</p>`,
+      textContent: `Bonjour ${name},\n\nTon paiement est confirmé. Voici tes liens de téléchargement temporaires :\n\n${textDownloads}\n\nCaleb Creative`,
     }),
   });
 
   if (!response.ok) {
-    console.error('Échec Resend pour l’envoi du lien de téléchargement :', response.status);
+    console.error('Échec Brevo pour l’envoi du lien de téléchargement :', response.status);
     return { sent: false, message: 'Le lien est prêt, mais l’e-mail n’a pas pu être envoyé. Contacte Caleb.' };
   }
   return { sent: true, message: 'Le lien temporaire a aussi été envoyé par e-mail.' };
@@ -107,8 +119,7 @@ Deno.serve(async (request) => {
       return { ...item, product };
     }).filter((item: Record<string, unknown>) =>
       item.product
-      && (item.product as Record<string, unknown>).delivery_type !== 'api'
-      && (item.product as Record<string, unknown>).slug !== 'canva-pro',
+      && !isApiDelivery(item.product as { delivery_type?: unknown }),
     );
 
     const productIds = [...new Set(items.map((item: Record<string, unknown>) =>

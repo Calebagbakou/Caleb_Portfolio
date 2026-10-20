@@ -400,3 +400,9 @@ export function getShopOrderDeliveries({ orderId, orderRef }) {
     body: { orderId, orderRef },
   });
 }
+
+export function getApiProductAvailability(slug) {
+  return supabase.functions.invoke('gemini-prodseller-activate', {
+    body: { action: 'availability', slug },
+  });
+}

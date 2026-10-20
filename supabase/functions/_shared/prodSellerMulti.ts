@@ -1,11 +1,13 @@
 import { getServiceClient, jsonResponse } from './shop.ts';
-import { getProdSellerTargetKey, isApiDelivery } from './delivery.ts';
+import { getProdSellerProductKey, getProdSellerTargetKey, isApiDelivery } from './delivery.ts';
 
 const PRODSELLER_API_URL = 'https://prodseller.com/v1';
 const ACTIVATION_TABLE = 'gemini_pro_activations';
 const denoEnv = (globalThis as typeof globalThis & {
   Deno: { env: { get(name: string): string | undefined } };
 }).Deno.env;
+const AVAILABILITY_CACHE_TTL = 20_000;
+const availabilityCache = new Map<string, { available: boolean; expiresAt: number }>();
 
 type ProviderTarget = {
   key: 'gemini_18m' | 'canva_pro';
@@ -305,6 +307,66 @@ async function listProducts(apiKey: string) {
   });
 }
 
+async function getProductAvailability(slug: string) {
+  const key = getProdSellerProductKey({ slug, delivery_type: 'api' });
+  if (!key) return jsonResponse({ error: 'Produit API inconnu.' }, 400);
+
+  const cached = availabilityCache.get(slug);
+  if (cached && cached.expiresAt > Date.now()) {
+    return jsonResponse({ available: cached.available });
+  }
+
+  const apiKey = denoEnv.get('PRODSELLER_API_KEY')?.trim();
+  if (!apiKey) {
+    return jsonResponse({ error: 'La disponibilité est momentanément indisponible.' }, 503);
+  }
+  const productId = getProductId(key);
+  if (!productId) {
+    return jsonResponse({ error: 'La disponibilité est momentanément indisponible.' }, 503);
+  }
+
+  let response: Response;
+  try {
+    response = await prodsellerRequest(
+      `/products/${encodeURIComponent(productId)}`,
+      apiKey,
+      { signal: AbortSignal.timeout(8000) },
+    );
+  } catch {
+    return jsonResponse({ error: 'La disponibilité est momentanément indisponible.' }, 502);
+  }
+
+  const result = await responseJson(response);
+  if (!response.ok) {
+    console.error('ProdSeller availability request returned HTTP status:', response.status);
+    return jsonResponse({ error: 'La disponibilité est momentanément indisponible.' }, 502);
+  }
+  const product = result.product || result;
+  if (!product || typeof product !== 'object') {
+    console.error('ProdSeller availability response has an unexpected shape.');
+    return jsonResponse({ error: 'La disponibilité est momentanément indisponible.' }, 502);
+  }
+
+  const stock = (product as Record<string, unknown>).stock;
+  const inStock = (product as Record<string, unknown>).inStock;
+  let available: boolean;
+  if (inStock === false) {
+    available = false;
+  } else if (typeof stock === 'number' && Number.isFinite(stock)) {
+    available = stock > 0;
+  } else if (typeof stock === 'string' && stock.trim() && Number.isFinite(Number(stock))) {
+    available = Number(stock) > 0;
+  } else if (typeof inStock === 'boolean') {
+    available = inStock;
+  } else {
+    console.error('ProdSeller availability response does not include stock information.');
+    return jsonResponse({ error: 'La disponibilité momentanément indisponible.' }, 502);
+  }
+
+  availabilityCache.set(slug, { available, expiresAt: Date.now() + AVAILABILITY_CACHE_TTL });
+  return jsonResponse({ available });
+}
+
 async function fetchOrderState(apiKey: string, state: ProviderOrderState, target: ProviderTarget) {
   if (!state.orderId) return state;
   let response: Response;
@@ -486,6 +548,9 @@ export async function handleProdSellerActivation(request: Request) {
   try {
     const body = await request.json();
     const action = typeof body?.action === 'string' ? body.action : 'invalid';
+    if (action === 'availability') {
+      return await getProductAvailability(typeof body?.slug === 'string' ? body.slug : '');
+    }
     if (action === 'categories' || action === 'products') {
       const accessToken = request.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1];
       if (!accessToken) return jsonResponse({ error: 'Connexion administrateur requise.' }, 401);

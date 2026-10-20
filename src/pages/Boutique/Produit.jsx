@@ -4,6 +4,7 @@ import { findProduct, formatPrice } from '../../data/products';
 import { useCart } from '../../context/CartContext';
 import { useShop } from '../../context/ShopContext';
 import { useAuth } from '../../context/AuthContext';
+import { getApiProductAvailability } from '../../services/shop';
 import Seo from '../../components/site/Seo';
 import ShopArrow from '../../components/shop/ShopArrow';
 import RichContent from '../../components/shop/RichContent';
@@ -23,6 +24,7 @@ export default function Produit() {
   const purchaseRowRef = useRef(null);
   const [showStickyPurchase, setShowStickyPurchase] = useState(false);
   const [isCtaShaking, setIsCtaShaking] = useState(false);
+  const [availability, setAvailability] = useState('available');
 
   const [selectedPlanId, setSelectedPlanId] = useState(
     product?.plans.find((plan) => plan.active)?.id ?? null
@@ -37,6 +39,28 @@ export default function Produit() {
       ? current
       : product.plans.find((plan) => plan.active)?.id ?? null);
     setQty(1);
+  }, [product]);
+
+  useEffect(() => {
+    if (!product || !isApiDelivery(product)) {
+      setAvailability('not-applicable');
+      return undefined;
+    }
+
+    let active = true;
+    setAvailability('available');
+    getApiProductAvailability(product.slug).then(({ data, error: availabilityError }) => {
+      if (!active) return;
+      setAvailability(availabilityError || typeof data?.available !== 'boolean'
+        ? 'available'
+        : data.available ? 'available' : 'unavailable');
+    }).catch(() => {
+      if (active) setAvailability('available');
+    });
+
+    return () => {
+      active = false;
+    };
   }, [product]);
 
   useEffect(() => {
@@ -155,6 +179,15 @@ export default function Produit() {
             {crossedPrice != null && <span className="product-old-price">{formatPrice(crossedPrice)}</span>}
             <strong className="product-price">{formatPrice(currentPrice)}</strong>
           </div>
+          {isApiDelivery(product) && (
+            <p
+              className={`product-stock-status${availability === 'available' ? ' is-available' : ''}`}
+              aria-live="polite"
+            >
+              {availability === 'available' && 'Disponible'}
+              {availability === 'unavailable' && 'Sera Disponible dans Quelques Minutes'}
+            </p>
+          )}
 
           <div className="plan-group">
             <span className="plan-group-label">Formule</span>
