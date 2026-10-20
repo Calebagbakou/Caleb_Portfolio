@@ -84,16 +84,27 @@ export default function App() {
         }
       >
         <Route index element={<Dashboard />} />
-        <Route path="projects" element={<Projects />} />
-        <Route path="competences" element={<Competencies />} />
-        <Route path="services" element={<Services />} />
-        <Route path="media" element={<Media />} />
-        <Route path="shop" element={<Shop />} />
+        <Route path="portfolio/projects" element={<Projects />} />
+        <Route path="portfolio/competences" element={<Competencies />} />
+        <Route path="portfolio/services" element={<Services />} />
+        <Route path="portfolio/temoignages" element={<Testimonials />} />
+        <Route path="media/images" element={<Media />} />
+        <Route path="shop" element={<Navigate to="/admin/shop/products" replace />} />
+        <Route path="shop/products" element={<Shop shopSection="products" />} />
+        <Route path="shop/categories" element={<Shop shopSection="categories" />} />
+        <Route path="shop/promos" element={<Shop shopSection="promos" />} />
+        <Route path="shop/content" element={<Shop shopSection="content" />} />
+        <Route path="shop/prodseller" element={<Shop shopSection="prodseller" />} />
         <Route path="orders" element={<Orders />} />
         <Route path="clients" element={<Clients />} />
         <Route path="messages" element={<Messages />} />
-        <Route path="temoignages" element={<Testimonials />} />
         <Route path="parametres" element={<Parametres />} />
+        <Route path="projects" element={<Navigate to="/admin/portfolio/projects" replace />} />
+        <Route path="competences" element={<Navigate to="/admin/portfolio/competences" replace />} />
+        <Route path="services" element={<Navigate to="/admin/portfolio/services" replace />} />
+        <Route path="temoignages" element={<Navigate to="/admin/portfolio/temoignages" replace />} />
+        <Route path="media" element={<Navigate to="/admin/media/images" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Route>
 
       {/* ================= 404 ================= */}

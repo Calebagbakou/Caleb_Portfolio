@@ -72,15 +72,16 @@ export default function Parametres() {
   }, []);
 
   useEffect(() => {
-    if (location.hash !== '#admin-security') return undefined;
+    const targetId = location.hash.slice(1);
+    if (!targetId) return undefined;
     const frame = requestAnimationFrame(() => {
-      document.getElementById('admin-security')?.scrollIntoView({
+      document.getElementById(targetId)?.scrollIntoView({
         behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
         block: 'start',
       });
     });
     return () => cancelAnimationFrame(frame);
-  }, [location.hash]);
+  }, [location.hash, status]);
 
   function updateField(key, value) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -232,7 +233,7 @@ export default function Parametres() {
 
       {status === 'ready' && (
         <form className="settings-form" onSubmit={handleSubmit}>
-          <div className="settings-section">
+          <div className="settings-section" id="settings-general">
             <h3>Général</h3>
             <div className="form-group">
               <label htmlFor="site_name">Nom du site</label>
@@ -265,7 +266,7 @@ export default function Parametres() {
             </div>
           </div>
 
-          <div className="settings-section">
+          <div className="settings-section" id="settings-contact">
             <h3>Contact</h3>
             <div className="form-group">
               <label htmlFor="contact_email">Email de contact</label>
@@ -288,7 +289,7 @@ export default function Parametres() {
             </div>
           </div>
 
-          <div className="settings-section">
+          <div className="settings-section" id="settings-shop">
             <h3>Boutique</h3>
             <div className="form-group">
               <label htmlFor="shop_url">URL de la boutique</label>
@@ -302,7 +303,7 @@ export default function Parametres() {
             </div>
           </div>
 
-          <div className="settings-section">
+          <div className="settings-section" id="settings-social">
             <h3>Réseaux sociaux</h3>
             <div className="form-group">
               <label htmlFor="social_facebook">Facebook</label>

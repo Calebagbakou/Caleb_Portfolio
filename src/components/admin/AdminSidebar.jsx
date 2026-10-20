@@ -1,13 +1,121 @@
+import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { countUnreadMessages } from '../../services/messages';
 
-/**
- * Port direct de la sidebar admin (identique sur index.html, messages.html,
- * parametres.html dans l'ancien projet). Les sections Compétences,
- * La gestion du portfolio et de la boutique est regroupée dans les routes
- * protégées de l'espace admin.
- */
+const GROUPS = [
+  {
+    id: 'portfolio',
+    label: 'Portfolio',
+    links: [
+      { label: 'Projets', to: '/admin/portfolio/projects' },
+      { label: 'Compétences', to: '/admin/portfolio/competences' },
+      { label: 'Services', to: '/admin/portfolio/services' },
+      { label: 'Témoignages', to: '/admin/portfolio/temoignages' },
+    ],
+  },
+  {
+    id: 'media',
+    label: 'Médias',
+    links: [
+      { label: 'Images', to: '/admin/media/images' },
+      { label: 'Vidéos', disabled: true },
+    ],
+  },
+  {
+    id: 'shop',
+    label: 'Boutique',
+    links: [
+      { label: 'Commandes', to: '/admin/orders' },
+      { label: 'Clients', to: '/admin/clients' },
+      { label: 'Produits', to: '/admin/shop/products' },
+      { label: 'Catégories', to: '/admin/shop/categories' },
+      { label: 'Codes promo', to: '/admin/shop/promos' },
+      { label: 'Contenu de la boutique', to: '/admin/shop/content' },
+      { label: 'ProdSeller', to: '/admin/shop/prodseller' },
+    ],
+  },
+  {
+    id: 'settings',
+    label: 'Paramètres',
+    links: [
+      { label: 'Général', to: '/admin/parametres#settings-general' },
+      { label: 'Contact', to: '/admin/parametres#settings-contact' },
+      { label: 'Réseaux', to: '/admin/parametres#settings-social' },
+      { label: 'Boutique', to: '/admin/parametres#settings-shop' },
+      { label: 'Sécurité', to: '/admin/parametres#admin-security' },
+    ],
+  },
+];
+
+function activeGroupFor(pathname) {
+  if (pathname.startsWith('/admin/portfolio/')) return 'portfolio';
+  if (pathname.startsWith('/admin/media/')) return 'media';
+  if (pathname.startsWith('/admin/shop/')) return 'shop';
+  if (pathname === '/admin/parametres') return 'settings';
+  return null;
+}
+
+function initialOpenGroup(routeGroup) {
+  if (routeGroup) return routeGroup;
+  try {
+    return window.localStorage.getItem('admin-open-group') || null;
+  } catch (error) {
+    console.error('Impossible de lire le groupe de navigation mémorisé :', error);
+    return null;
+  }
+}
+
+function Icon({ name }) {
+  const common = { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 1.8, 'aria-hidden': true };
+  if (name === 'dashboard') return <svg {...common}><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></svg>;
+  if (name === 'messages') return <svg {...common}><path d="M4 20l1.3-4A8 8 0 1112 20a8 8 0 01-4-1z" /></svg>;
+  if (name === 'logout') return <svg {...common}><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><path d="M16 17l5-5-5-5M21 12H9" /></svg>;
+  return <svg {...common}><path d="M4 12h16M12 4v16" /></svg>;
+}
+
 export default function AdminSidebar({ onLogout }) {
   const location = useLocation();
+  const routeGroup = activeGroupFor(location.pathname);
+  const [openGroup, setOpenGroup] = useState(() => initialOpenGroup(routeGroup));
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (routeGroup) setOpenGroup(routeGroup);
+  }, [routeGroup]);
+
+  useEffect(() => {
+    try {
+      if (openGroup) window.localStorage.setItem('admin-open-group', openGroup);
+      else window.localStorage.removeItem('admin-open-group');
+    } catch (error) {
+      console.error('Impossible de mémoriser le groupe de navigation :', error);
+    }
+  }, [openGroup]);
+
+  useEffect(() => {
+    let active = true;
+    async function refreshUnreadCount() {
+      const { count, error } = await countUnreadMessages();
+      if (error) {
+        console.error('Impossible de compter les messages non lus :', error);
+        return;
+      }
+      if (active) setUnreadCount(count || 0);
+    }
+    function handleMessagesUpdated() {
+      refreshUnreadCount().catch((error) => {
+        console.error('Impossible de compter les messages non lus :', error);
+      });
+    }
+    refreshUnreadCount().catch((error) => {
+      console.error('Impossible de compter les messages non lus :', error);
+    });
+    window.addEventListener('admin-messages-updated', handleMessagesUpdated);
+    return () => {
+      active = false;
+      window.removeEventListener('admin-messages-updated', handleMessagesUpdated);
+    };
+  }, []);
 
   return (
     <aside className="admin-sidebar">
@@ -16,124 +124,59 @@ export default function AdminSidebar({ onLogout }) {
         <span className="admin-brand-text">Admin</span>
       </div>
 
-      <nav className="admin-nav">
+      <nav className="admin-nav" aria-label="Navigation d’administration">
         <NavLink to="/admin" end>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <rect x="3" y="3" width="7" height="9" rx="1.5" />
-            <rect x="14" y="3" width="7" height="5" rx="1.5" />
-            <rect x="14" y="12" width="7" height="9" rx="1.5" />
-            <rect x="3" y="16" width="7" height="5" rx="1.5" />
-          </svg>
-          Dashboard
+          <Icon name="dashboard" />
+          Tableau de bord
         </NavLink>
 
-        <div className="admin-nav-label">Portfolio</div>
-        <NavLink to="/admin/projects">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <rect x="3" y="3" width="18" height="14" rx="2" />
-            <path d="M3 13l5-4 4 3 5-5 4 3" />
-          </svg>
-          Projets
-        </NavLink>
-        <NavLink to="/admin/competences">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M12 2l2.5 6.5H21l-5.3 4 2 6.5-5.7-4-5.7 4 2-6.5L3 8.5h6.5z" />
-          </svg>
-          Compétences
-        </NavLink>
-        <NavLink to="/admin/services">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <circle cx="12" cy="12" r="9" />
-            <path d="M9 12l2 2 4-4" />
-          </svg>
-          Services
-        </NavLink>
+        {GROUPS.map((group) => {
+          const expanded = openGroup === group.id;
+          return (
+            <div className="admin-nav-group" key={group.id}>
+              <button
+                className={`admin-nav-group-toggle${routeGroup === group.id ? ' active' : ''}`}
+                type="button"
+                aria-expanded={expanded}
+                aria-controls={`admin-nav-${group.id}`}
+                onClick={() => setOpenGroup(expanded ? null : group.id)}
+              >
+                <span>{group.label}</span>
+                <span className="admin-nav-chevron" aria-hidden="true">{expanded ? '−' : '+'}</span>
+              </button>
+              <div className="admin-nav-children" id={`admin-nav-${group.id}`} hidden={!expanded}>
+                {group.links.map((link) => link.disabled
+                  ? <span className="admin-nav-disabled" key={link.label}>{link.label}<span className="soon">bientôt</span></span>
+                  : (
+                    <NavLink
+                      key={link.to}
+                      to={link.to}
+                      className={({ isActive }) => {
+                        if (group.id === 'settings') {
+                          const hash = link.to.split('#')[1];
+                          const isDefaultSection = hash === 'settings-general' && !location.hash;
+                          return isActive && (location.hash === `#${hash}` || isDefaultSection) ? 'active' : '';
+                        }
+                        return isActive ? 'active' : '';
+                      }}
+                    >
+                      {link.label}
+                    </NavLink>
+                  ))}
+              </div>
+            </div>
+          );
+        })}
 
-        <div className="admin-nav-label">Médias</div>
-        <NavLink to="/admin/media">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <rect x="3" y="3" width="18" height="18" rx="2" />
-            <circle cx="8.5" cy="8.5" r="1.5" />
-            <path d="M21 15l-5-5L5 21" />
-          </svg>
-          Images
-        </NavLink>
-        <a href="#soon-videos" onClick={(e) => e.preventDefault()}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <rect x="3" y="5" width="14" height="14" rx="2" />
-            <path d="M17 9l4-2v10l-4-2" />
-          </svg>
-          Vidéos<span className="soon">bientôt</span>
-        </a>
-
-        <div className="admin-nav-label">Boutique</div>
-        <NavLink to="/admin/shop">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M3 3h2l2.4 12.4a2 2 0 002 1.6h8.2a2 2 0 002-1.6L21 8H6" />
-            <circle cx="9" cy="20" r="1.4" />
-            <circle cx="17" cy="20" r="1.4" />
-          </svg>
-          Produits
-        </NavLink>
-        <NavLink to="/admin/orders">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <rect x="3" y="5" width="18" height="14" rx="2" />
-            <path d="M3 10h18" />
-          </svg>
-          Commandes
-        </NavLink>
-        <NavLink to="/admin/clients">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <circle cx="12" cy="8" r="4" />
-            <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
-          </svg>
-          Clients
-        </NavLink>
-
-        <div className="admin-nav-label">Général</div>
         <NavLink to="/admin/messages">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M4 20l1.3-4A8 8 0 1112 20a8 8 0 01-4-1z" />
-          </svg>
+          <Icon name="messages" />
           Messages
-        </NavLink>
-        <NavLink to="/admin/temoignages">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M4 5h16v11H8l-4 4z" />
-            <path d="M8 9h8M8 12h5" />
-          </svg>
-          Témoignages
-        </NavLink>
-        <NavLink
-          to="/admin/parametres"
-          end
-          className={({ isActive }) => (isActive && !location.hash ? 'active' : '')}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" />
-            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009.6 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 8.6a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" />
-          </svg>
-          Paramètres
-        </NavLink>
-        <NavLink
-          to="/admin/parametres#admin-security"
-          end
-          className={({ isActive }) => (isActive && location.hash === '#admin-security' ? 'active' : '')}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <rect x="4" y="10" width="16" height="11" rx="2" />
-            <path d="M8 10V7a4 4 0 118 0v3M12 14v3" />
-          </svg>
-          Mot de passe
+          {unreadCount > 0 && <span className="admin-nav-count" aria-label={`${unreadCount} non lus`}>{unreadCount}</span>}
         </NavLink>
       </nav>
 
       <button className="admin-logout" onClick={onLogout}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-          <path d="M16 17l5-5-5-5" />
-          <path d="M21 12H9" />
-        </svg>
+        <Icon name="logout" />
         Déconnexion
       </button>
     </aside>

@@ -37,7 +37,7 @@ export default function Dashboard() {
           <p>Suivez votre activité et gérez votre portfolio et votre boutique en quelques clics.</p>
         </div>
         <div className="dashboard-intro-actions">
-          <Link className="btn btn-primary" to="/admin/projects">Ajouter un projet</Link>
+          <Link className="btn btn-primary" to="/admin/portfolio/projects">Ajouter un projet</Link>
           <Link className="dashboard-text-link" to="/boutique" target="_blank" rel="noreferrer">
             Voir la boutique <span aria-hidden="true">↗</span>
           </Link>
@@ -79,8 +79,8 @@ export default function Dashboard() {
           <p>Les outils essentiels pour garder votre site à jour.</p>
         </div>
         <div className="dashboard-quick-links">
-          <Link to="/admin/projects"><span className="dashboard-quick-icon">↗</span><span><strong>Gérer les projets</strong><small>Portfolio et réalisations</small></span><span className="dashboard-quick-arrow">→</span></Link>
-          <Link to="/admin/shop"><span className="dashboard-quick-icon">◆</span><span><strong>Gérer la boutique</strong><small>Produits et tarifs</small></span><span className="dashboard-quick-arrow">→</span></Link>
+          <Link to="/admin/portfolio/projects"><span className="dashboard-quick-icon">↗</span><span><strong>Gérer les projets</strong><small>Portfolio et réalisations</small></span><span className="dashboard-quick-arrow">→</span></Link>
+          <Link to="/admin/shop/products"><span className="dashboard-quick-icon">◆</span><span><strong>Gérer la boutique</strong><small>Produits et tarifs</small></span><span className="dashboard-quick-arrow">→</span></Link>
           <Link to="/admin/orders"><span className="dashboard-quick-icon">↳</span><span><strong>Suivre les commandes</strong><small>Paiements et activations</small></span><span className="dashboard-quick-arrow">→</span></Link>
         </div>
       </section>

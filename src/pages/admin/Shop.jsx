@@ -117,7 +117,7 @@ function productForm(product) {
   };
 }
 
-export default function Shop() {
+export default function Shop({ shopSection = 'products' }) {
   const productEditorPanelRef = useRef(null);
   const promoEditorPanelRef = useRef(null);
   const [products, setProducts] = useState([]);
@@ -510,7 +510,7 @@ export default function Shop() {
       {error && <div className="shop-admin-alert error" role="alert">{error}</div>}
       {notice && <div className="shop-admin-alert success" role="status">{notice}</div>}
 
-      <section className="panel">
+      {shopSection === 'prodseller' && <section className="panel">
         <h2>Catalogue ProdSeller</h2>
         <p>
           Consulte les produits disponibles pour relever l’identifiant exact de Gemini Pro 18 mois.
@@ -540,9 +540,9 @@ export default function Shop() {
             ))}
           </div>
         )}
-      </section>
+      </section>}
 
-      <section className="panel">
+      {shopSection === 'content' && <section className="panel">
         <h2>Contenu de la boutique</h2>
         <p>Modifie les textes de l’accueil sans toucher au code.</p>
         <form className="shop-admin-content-form" onSubmit={saveContent}>
@@ -558,9 +558,9 @@ export default function Shop() {
             {contentSaving ? 'Enregistrement…' : 'Enregistrer les textes'}
           </button>
         </form>
-      </section>
+      </section>}
 
-      <section className="panel" ref={promoEditorPanelRef}>
+      {shopSection === 'promos' && <section className="panel" ref={promoEditorPanelRef}>
         <h2>Codes promo</h2>
         <p>Crée et personnalise les réductions, limite leur utilisation et choisis les produits concernés. Le montant final est recalculé côté serveur.</p>
         {promoError && <div className="shop-admin-alert error" role="alert">{promoError}</div>}
@@ -716,9 +716,9 @@ export default function Shop() {
           ))}
           {!promoCodes.length && <p>Aucun code promo.</p>}
         </div>
-      </section>
+      </section>}
 
-      <section className="panel">
+      {shopSection === 'categories' && <section className="panel">
         <h2>Catégories</h2>
         <p>Les catégories actives sont proposées dans le catalogue public.</p>
         <div className="shop-admin-categories">
@@ -739,8 +739,9 @@ export default function Shop() {
           </div>
           <button className="btn btn-secondary" type="submit">Ajouter</button>
         </form>
-      </section>
+      </section>}
 
+      {shopSection === 'products' && <>
       <section className="panel" ref={productEditorPanelRef}>
         <h2>{form.id ? 'Modifier un produit' : 'Ajouter un produit'}</h2>
         <p>Les prix sont définis par formule. La boutique affiche uniquement les produits actifs.</p>
@@ -981,6 +982,7 @@ export default function Shop() {
           </div>
         )}
       </section>
+      </>}
     </>
   );
 }

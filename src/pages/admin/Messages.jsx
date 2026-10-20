@@ -48,6 +48,7 @@ export default function Messages() {
       if (!error) {
         setMessages((prev) => prev.map((x) => (x.id === id ? { ...x, is_read: true } : x)));
         setOpenMessage((prev) => (prev && prev.id === id ? { ...prev, is_read: true } : prev));
+        window.dispatchEvent(new Event('admin-messages-updated'));
       }
     }
   }
@@ -59,6 +60,7 @@ export default function Messages() {
     if (!error) {
       setMessages((prev) => prev.map((x) => (x.id === openMessage.id ? { ...x, is_read: newVal } : x)));
       setOpenMessage((prev) => ({ ...prev, is_read: newVal }));
+      window.dispatchEvent(new Event('admin-messages-updated'));
     }
   }
 
@@ -71,6 +73,7 @@ export default function Messages() {
     }
     setMessages((prev) => prev.filter((m) => m.id !== id));
     setOpenMessage((prev) => (prev && prev.id === id ? null : prev));
+    window.dispatchEvent(new Event('admin-messages-updated'));
   }
 
   return (
