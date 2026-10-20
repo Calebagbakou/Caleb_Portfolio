@@ -50,7 +50,7 @@ src/
 - **Boutique** : catalogue et contenu chargés depuis Supabase, panier conservé
   dans `localStorage`, écrans d'administration pour le catalogue et les
   commandes. Le checkout crée la commande côté serveur et ne confirme le
-  paiement qu'après vérification KKiaPay côté serveur.
+  paiement qu'après vérification SasPay côté serveur.
 - **Admin** : authentification Supabase + vérification dans la table
   `admins`, avec gestion des **Projets**, **Messages** et **Paramètres**.
   Les projets sont lus depuis Supabase côté public; publier ou modifier un
@@ -77,8 +77,11 @@ ajoute aussi le format portrait 3:4.
 
 ### Mise en service de la boutique et de SasPay
 
-1. Exécute `supabase/migrations/003_shop_admin_kkiapay.sql` dans le SQL Editor
-   Supabase après avoir vérifié que le schéma correspond aux tables existantes.
+1. Exécute les migrations boutique non encore appliquées dans l’ordre, en
+   commençant par `supabase/migrations/003_shop_admin_kkiapay.sql` si le schéma
+   boutique initial n’existe pas encore. Ce fichier est conservé comme
+   migration historique ; le code courant utilise SasPay uniquement, sans
+   configuration ni clé KKiaPay.
 2. Déploie les Edge Functions `checkout-shop`, `saspay-checkout`,
    `saspay-webhook` et `verify-saspay-payment`. Le checkout de la boutique
    utilise SasPay en mode hébergé. Le webhook confirme les paiements côté
@@ -101,6 +104,8 @@ ajoute aussi le format portrait 3:4.
    `X-Webhook-Timestamp` (HMAC-SHA256 sur `timestamp.corps-brut`, fenêtre de
    5 minutes), puis revalide la transaction, le montant et la devise
    directement auprès de SasPay avant de confirmer la commande.
+6. Exécute `supabase/migrations/026_shop_payment_provider_saspay.sql` pour
+   remplacer le texte historique du mode de paiement affiché dans la boutique.
 
 Ne passe pas en production avant d'avoir effectué un paiement de test complet
 et vérifié la commande dans `/admin/orders`.

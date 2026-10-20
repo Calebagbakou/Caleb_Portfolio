@@ -5,7 +5,7 @@ import { formatPrice } from '../../data/products';
 import { getBuyerAccount, getShopOrderDeliveries, listShopCatalog, verifySasPayPayment } from '../../services/shop';
 import { supabase } from '../../services/supabase';
 import ShopAlert from '../../components/shop/ShopAlert';
-import { getShopErrorMessage } from '../../utils/shopErrors';
+import ProviderLink from '../../components/shop/ProviderLink';
 import { formatOrderReference } from '../../utils/orderReference';
 
 const DELIVERY_ESTIMATE_TEXT = 'dès que possible';
@@ -35,18 +35,6 @@ function getOrderItems(order) {
   });
 }
 
-async function readDeliveryResponse(error, data) {
-  if (data) return data;
-  if (error?.context && typeof error.context.clone === 'function') {
-    try {
-      return await error.context.clone().json();
-    } catch {
-      return { error: error.message };
-    }
-  }
-  return { error: error?.message || 'Le lien d’activation n’a pas pu être généré.' };
-}
-
 export default function Confirmation() {
   const location = useLocation();
   const { clear } = useCart();
@@ -57,7 +45,6 @@ export default function Confirmation() {
   const [providerProducts, setProviderProducts] = useState([]);
   const [deliveryError, setDeliveryError] = useState('');
   const [retrying, setRetrying] = useState(false);
-  const [copiedAccessKey, setCopiedAccessKey] = useState('');
   const [shopDeliveries, setShopDeliveries] = useState([]);
   const [shopDeliveryStatus, setShopDeliveryStatus] = useState('idle');
   const [shopDeliveryError, setShopDeliveryError] = useState('');
@@ -174,8 +161,7 @@ export default function Confirmation() {
     setShopDeliveryError('');
     const { data, error } = await getShopOrderDeliveries({ orderId: order.id, orderRef: order.ref });
     if (error || data?.error) {
-      const response = await readDeliveryResponse(error, data);
-      setShopDeliveryError(getShopErrorMessage(response.error, 'La livraison n’a pas pu être préparée.'));
+      setShopDeliveryError('La livraison n’a pas pu être préparée. Réessayez ou contactez le support.');
       setShopDeliveryStatus('failed');
       return;
     }
@@ -202,7 +188,6 @@ export default function Confirmation() {
 
     if (error || data?.error) {
       const response = await readDeliveryResponse(error, data);
-      console.error('La livraison ProdSeller a échoué :', error || response.error);
       setDeliveryLinks(Array.isArray(response.links) ? response.links : []);
       setProviderProducts(Array.isArray(response.products) ? response.products : []);
       const status = response.status
@@ -227,17 +212,6 @@ export default function Confirmation() {
     setRetrying(false);
   }
 
-  async function copyActivationKey(key) {
-    try {
-      await navigator.clipboard.writeText(key);
-      setCopiedAccessKey(key);
-      window.setTimeout(() => setCopiedAccessKey(''), 1800);
-    } catch (copyError) {
-      console.error('Impossible de copier l’accès fournisseur :', copyError);
-      setDeliveryError('L’accès n’a pas pu être copié. Sélectionnez-le pour le copier manuellement.');
-    }
-  }
-
   async function copyOrderReference() {
     try {
       await navigator.clipboard.writeText(formatOrderReference(order.ref));
@@ -256,7 +230,7 @@ export default function Confirmation() {
 
   if (order === undefined) return null;
   const paymentDetails = [
-    order?.payment_method && !['saspay', 'kkiapay'].includes(String(order.payment_method).toLowerCase())
+    order?.payment_method && String(order.payment_method).toLowerCase() !== 'saspay'
       ? order.payment_method
       : '',
     order?.payment_country || '',
@@ -370,7 +344,7 @@ export default function Confirmation() {
                   {file.error || !file.url ? (
                     <>
                       <div className="shop-admin-alert error" role="alert">
-                        {file.error || 'Le lien temporaire est indisponible. Contacte Caleb avec la référence de commande.'}
+                        Le lien temporaire est indisponible. Contactez le support avec votre référence de commande.
                       </div>
                       <button
                         type="button"
@@ -386,9 +360,7 @@ export default function Confirmation() {
                       <div className="download-file-meta">
                         {file.size} · {file.name} · payé {formatPrice(file.lineTotal)}
                       </div>
-                      <a className="btn btn-primary download-button" href={file.url}>
-                        Télécharger
-                      </a>
+                      <ProviderLink url={file.url} productName={file.filename} actionLabel="Télécharger" />
                       <p className="download-expiry">Lien temporaire valable 24 heures. Le lien source reste privé.</p>
                     </>
                   )}
@@ -423,12 +395,7 @@ export default function Confirmation() {
                   </div>
                   <strong className="confirm-product-price">{formatPrice(line.lineTotal)}</strong>
                   {activation?.url && (
-                    <div className="confirm-product-access">
-                      <span>Activation</span>
-                      <a href={activation.url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-primary">
-                        Activer {line.name}
-                      </a>
-                    </div>
+                    <ProviderLink url={activation.url} productName={line.name} />
                   )}
                   {activation?.error && (
                     <div className="confirm-product-access">
@@ -491,22 +458,19 @@ export default function Confirmation() {
               <div>
                 <p>Votre lien d’activation est prêt :</p>
                 {deliveryLinks.map((link, index) => (
-                  <p key={link}>
-                    <a href={link} target="_blank" rel="noopener noreferrer" className="gemini-activation-url">
-                      {link}
-                    </a>
-                    <br />
-                    <a href={link} target="_blank" rel="noopener noreferrer" className="btn btn-primary">
-                      Activer Gemini Pro{deliveryLinks.length > 1 ? ` ${index + 1}` : ''}
-                    </a>
-                  </p>
+                  <ProviderLink
+                    key={`gemini-link-${index}`}
+                    url={link}
+                    productName="Gemini Pro"
+                    linkNumber={deliveryLinks.length > 1 ? index + 1 : undefined}
+                  />
                 ))}
               </div>
             )}
             {['insufficient_balance', 'retryable'].includes(deliveryStatus) && (
               <>
                 <ShopAlert
-                  message={getShopErrorMessage(deliveryError, 'La génération de votre lien a rencontré un problème temporaire. Vous pouvez réessayer sans relancer le paiement.')}
+                  message={deliveryError || 'La génération de votre lien a rencontré un problème temporaire. Vous pouvez réessayer sans relancer le paiement.'}
                   action="Réessayer"
                   onAction={() => requestProdSellerDelivery('retry')}
                 />
@@ -529,21 +493,23 @@ export default function Confirmation() {
                   <div className="gemini-access-keys">
                     <p>Votre accès est prêt :</p>
                     {product.accessKeys.map((key, index) => (
-                      <div className="gemini-access-key" key={`${product.key}-${index}-${key.slice(0, 12)}`}>
-                        <code>{key}</code>
-                        <button type="button" className="btn btn-outline" onClick={() => copyActivationKey(key)}>
-                          {copiedAccessKey === key ? 'Copié ✓' : 'Copier l’accès'}
-                        </button>
-                      </div>
+                      <ProviderLink
+                        key={`${product.key}-${index}`}
+                        url={key}
+                        productName={product.name}
+                        linkNumber={product.accessKeys.length > 1 ? index + 1 : undefined}
+                      />
                     ))}
                   </div>
                 )}
-                {product.error && <ShopAlert message={product.error} />}
+                {product.error && (
+                  <ShopAlert message="Le lien d’activation n’a pas pu être généré. Contactez le support avec votre référence de commande." />
+                )}
               </section>
             ))}
             {deliveryStatus === 'failed' && (
               <ShopAlert
-                message={getShopErrorMessage(deliveryError, 'Le lien d’activation n’a pas pu être généré. Contactez Caleb avec votre référence de commande.')}
+                message={deliveryError || 'Le lien d’activation n’a pas pu être généré. Contactez Caleb avec votre référence de commande.'}
               />
             )}
           </section>

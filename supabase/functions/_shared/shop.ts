@@ -1,5 +1,4 @@
 import { createClient } from 'npm:@supabase/supabase-js@2.49.1';
-import { kkiapay } from 'npm:@kkiapay-org/nodejs-sdk@1.0.7';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -19,21 +18,6 @@ export function getServiceClient() {
   const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (!url || !serviceKey) throw new Error('Les identifiants serveur Supabase ne sont pas configurés.');
   return createClient(url, serviceKey, { auth: { persistSession: false } });
-}
-
-export function getPaymentClient() {
-  const privatekey = Deno.env.get('KKIAPAY_PRIVATE_KEY');
-  const publickey = Deno.env.get('KKIAPAY_PUBLIC_KEY');
-  const secretkey = Deno.env.get('KKIAPAY_SECRET_KEY');
-  if (!privatekey || !publickey || !secretkey) {
-    throw new Error('Les clés serveur KKiaPay ne sont pas toutes configurées.');
-  }
-  return kkiapay({
-    privatekey,
-    publickey,
-    secretkey,
-    sandbox: Deno.env.get('KKIAPAY_SANDBOX') !== 'false',
-  });
 }
 
 export function getSasPayConfig() {

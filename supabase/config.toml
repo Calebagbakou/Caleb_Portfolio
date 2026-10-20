@@ -1,6 +1,3 @@
-[functions.kkiapay-webhook]
-verify_jwt = false
-
 [functions.shop-order-delivery]
 verify_jwt = false
 

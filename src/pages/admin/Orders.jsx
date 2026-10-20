@@ -62,7 +62,7 @@ export default function Orders() {
       <div className="shop-admin-list-heading">
         <div>
           <h2>Commandes boutique</h2>
-          <p>Les paiements sont confirmés uniquement après vérification côté serveur auprès de KKiaPay.</p>
+          <p>Les paiements sont confirmés uniquement après vérification côté serveur auprès de SasPay.</p>
         </div>
         <button className="btn btn-secondary btn-sm" type="button" onClick={loadOrders} disabled={loading}>Actualiser</button>
       </div>
@@ -109,7 +109,7 @@ export default function Orders() {
 
                 <div className="shop-admin-order-footer">
                   <span>{formatDate(order.created_at)}</span>
-                  <span>{order.payment_transaction_id ? `Transaction KKiaPay : ${order.payment_transaction_id}` : 'Pas de transaction confirmée'}</span>
+                  <span>{order.payment_transaction_id ? `Transaction : ${order.payment_transaction_id}` : 'Pas de transaction confirmée'}</span>
                   <label>
                     <span>Suivi / activation</span>
                     <select

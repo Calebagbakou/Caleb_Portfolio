@@ -10,7 +10,7 @@ export const DEFAULT_SHOP_CONTENT = {
   shop_contact_title: 'Suivi par WhatsApp',
   shop_contact_description: 'Un échange direct, sans robot',
   shop_payment_title: 'Paiement local',
-  shop_payment_description: 'Paiement sécurisé par KKiaPay',
+  shop_payment_description: 'Paiement sécurisé par SasPay',
 };
 
 const ShopContext = createContext(null);

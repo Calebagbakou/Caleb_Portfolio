@@ -380,19 +380,6 @@ async function getFunctionErrorMessage(error) {
   return error?.message || 'La vérification du paiement a échoué.';
 }
 
-export async function verifyShopPayment({ orderId, transactionId }) {
-  const result = await supabase.functions.invoke('verify-kkiapay-payment', {
-    body: { orderId, transactionId },
-  });
-  if (result.error) {
-    return {
-      ...result,
-      error: new Error(await getFunctionErrorMessage(result.error)),
-    };
-  }
-  return result;
-}
-
 export function getShopOrderDeliveries({ orderId, orderRef }) {
   return supabase.functions.invoke('shop-order-delivery', {
     body: { orderId, orderRef },

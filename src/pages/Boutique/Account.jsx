@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { deleteBuyerAccount, getBuyerAccount, getShopOrderDeliveries } from '../../services/shop';
 import { formatPrice } from '../../data/products';
 import ShopAlert from '../../components/shop/ShopAlert';
+import ProviderLink from '../../components/shop/ProviderLink';
 import { getShopErrorMessage } from '../../utils/shopErrors';
 import { formatOrderReference } from '../../utils/orderReference';
 import { supabase } from '../../services/supabase';
@@ -55,7 +56,6 @@ export default function Account() {
   const [deleting, setDeleting] = useState(false);
   const [logoutError, setLogoutError] = useState('');
   const [copiedOrder, setCopiedOrder] = useState('');
-  const [copiedAccess, setCopiedAccess] = useState('');
   const requestedProviderOrders = useRef(new Set());
 
   useEffect(() => {
@@ -105,14 +105,13 @@ export default function Account() {
       setDeliveryState((current) => ({
         ...current,
         [order.id]: deliveryError
-          ? { error: getShopErrorMessage(deliveryError, 'Vos accès sont momentanément indisponibles.') }
+          ? { error: 'Vos accès sont momentanément indisponibles.' }
           : { data },
       }));
     } catch (deliveryError) {
-      console.error('Impossible de charger les accès de la commande :', deliveryError);
       setDeliveryState((current) => ({
         ...current,
-        [order.id]: { error: getShopErrorMessage(deliveryError, 'Vos accès sont momentanément indisponibles.') },
+        [order.id]: { error: 'Vos accès sont momentanément indisponibles.' },
       }));
     }
   }
@@ -142,14 +141,13 @@ export default function Account() {
         setProviderDeliveryState((current) => ({
           ...current,
           [order.id]: statusError
-            ? { error: getShopErrorMessage(statusError, 'Le statut de vos accès est momentanément indisponible.') }
+            ? { error: 'Le statut de vos accès est momentanément indisponible.' }
             : { data },
         }));
       }).catch((statusError) => {
-        console.error('Impossible de charger les accès ProdSeller :', statusError);
         setProviderDeliveryState((current) => ({
           ...current,
-          [order.id]: { error: getShopErrorMessage(statusError, 'Le statut de vos accès est momentanément indisponible.') },
+          [order.id]: { error: 'Le statut de vos accès est momentanément indisponible.' },
         }));
       });
     }
@@ -195,17 +193,6 @@ export default function Account() {
     }
   }
 
-  async function copyProviderAccess(orderId, key) {
-    try {
-      await navigator.clipboard.writeText(key);
-      setCopiedAccess(`${orderId}:${key}`);
-      window.setTimeout(() => setCopiedAccess(''), 1800);
-    } catch (copyError) {
-      console.error('Impossible de copier l’accès fournisseur :', copyError);
-      setError('L’accès n’a pas pu être copié. Sélectionnez-le pour le copier manuellement.');
-    }
-  }
-
   async function retryProviderAccess(order) {
     setProviderDeliveryState((current) => ({ ...current, [order.id]: { loading: true } }));
     const { data, error: retryError } = await supabase.functions.invoke('gemini-prodseller-activate', {
@@ -214,7 +201,7 @@ export default function Account() {
     setProviderDeliveryState((current) => ({
       ...current,
       [order.id]: retryError
-        ? { error: getShopErrorMessage(retryError, 'La préparation des accès a échoué. Réessayez plus tard.') }
+        ? { error: 'La préparation des accès a échoué. Réessayez plus tard.' }
         : { data },
     }));
   }
@@ -341,16 +328,18 @@ export default function Account() {
                         <section className="account-provider-access" key={providerProduct.key}>
                           <strong>{providerProduct.name}</strong>
                           {providerProduct.status === 'success' && providerProduct.accessKeys?.map((key, index) => (
-                            <div className="account-provider-key" key={`${providerProduct.key}-${index}`}>
-                              <code>{key}</code>
-                              <button type="button" className="btn btn-outline" onClick={() => copyProviderAccess(order.id, key)}>
-                                {copiedAccess === `${order.id}:${key}` ? 'Copié ✓' : 'Copier l’accès'}
-                              </button>
-                            </div>
+                            <ProviderLink
+                              key={`${providerProduct.key}-${index}`}
+                              url={key}
+                              productName={providerProduct.name}
+                              linkNumber={providerProduct.accessKeys.length > 1 ? index + 1 : undefined}
+                            />
                           ))}
                           {providerProduct.status === 'starting' && <span className="account-delivery-pending">Activation en cours</span>}
                           {providerProduct.status === 'not_started' && <span className="account-delivery-pending">Accès non initialisé</span>}
-                          {providerProduct.error && <span className="account-error">{providerProduct.error}</span>}
+                          {providerProduct.error && (
+                            <span className="account-error">Le lien d’activation n’a pas pu être généré. Contactez le support avec votre référence de commande.</span>
+                          )}
                         </section>
                       ))}
                       {['retryable', 'insufficient_balance'].includes(providerDelivery?.data?.status) && (
@@ -367,8 +356,10 @@ export default function Account() {
                       )}
                       {delivery?.data?.deliveries?.map((item) => (
                         item.url
-                          ? <a className="btn btn-primary account-order-access" href={item.url} target="_blank" rel="noopener noreferrer" key={`${item.productId}-${item.type}`}>{item.type === 'download' ? 'Télécharger' : `Accéder à ${item.name}`}</a>
-                          : <span className="account-error" key={`${item.productId}-${item.type}`}>{item.error}</span>
+                          ? item.type === 'activate'
+                            ? <ProviderLink url={item.url} productName={item.name} key={`${item.productId}-${item.type}`} />
+                            : <ProviderLink url={item.url} productName={item.name} actionLabel="Télécharger" key={`${item.productId}-${item.type}`} />
+                          : <span className="account-error" key={`${item.productId}-${item.type}`}>Le lien de livraison n’est pas encore disponible.</span>
                       ))}
                       <div className="account-order-secondary-actions">
                       <button type="button" className="btn btn-outline account-order-button" onClick={() => copyOrderReference(order)} aria-label="Copier la référence">
