@@ -16,6 +16,7 @@ import {
 import { DEFAULT_SHOP_CONTENT } from '../../context/ShopContext';
 import { supabase } from '../../services/supabase';
 import { plainTextToRichDocument, richDocumentToPlainText } from '../../utils/richContent';
+import { isApiDelivery } from '../../utils/delivery';
 
 const RichTextEditor = lazy(() => import('../../components/admin/RichTextEditor'));
 
@@ -89,6 +90,22 @@ function makePromoCode() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const values = crypto.getRandomValues(new Uint8Array(8));
   return `CC-${Array.from(values, (value) => alphabet[value % alphabet.length]).join('')}`;
+}
+
+async function getInvocationErrorMessage(error) {
+  if (error?.context instanceof Response) {
+    try {
+      const responseData = await error.context.clone().json();
+      if (typeof responseData?.error === 'string') return responseData.error;
+    } catch (parseError) {
+      console.warn('La réponse d’erreur ProdSeller n’est pas un JSON lisible.');
+    }
+  }
+  if (error?.name === 'FunctionsFetchError'
+    || /failed to send a request/i.test(error?.message || '')) {
+    return 'La fonction ProdSeller est injoignable ou ne démarre pas. Vérifiez son déploiement et ses journaux Supabase, puis réessayez.';
+  }
+  return error?.message || '';
 }
 
 function productForm(product) {
@@ -212,7 +229,6 @@ export default function Shop({ shopSection = 'products' }) {
 
   async function saveProduct(event) {
     event.preventDefault();
-    const usesProdSeller = ['gemini-pro', 'canva-pro'].includes(slugify(form.slug));
     if (!form.name.trim() || !form.slug.trim() || !form.category_id) {
       setError('Le nom, l’URL courte et la catégorie du produit sont obligatoires.');
       return;
@@ -240,7 +256,7 @@ export default function Shop({ shopSection = 'products' }) {
       setError('Le lien du fichier doit commencer par https://.');
       return;
     }
-    if (!usesProdSeller && form.delivery_type === 'activate' && !form.access_url.trim()) {
+    if (form.delivery_type === 'activate' && !form.access_url.trim()) {
       setError('Renseigne le lien d’activation pour ce produit.');
       return;
     }
@@ -263,8 +279,8 @@ export default function Shop({ shopSection = 'products' }) {
       gradient: form.gradient.trim() || null,
       logo_url: form.logo_url.trim() || null,
       image_url: form.image_url.trim() || null,
-      access_url: usesProdSeller ? null : form.access_url.trim() || null,
-      delivery_type: usesProdSeller ? 'api' : form.delivery_type,
+      access_url: isApiDelivery(form) ? null : form.access_url.trim() || null,
+      delivery_type: form.delivery_type,
       download_filename: form.download_filename.trim() || null,
       download_size: form.download_size.trim() || null,
     };
@@ -347,17 +363,28 @@ export default function Shop({ shopSection = 'products' }) {
   async function loadProdSellerProducts() {
     setProdSellerLoading(true);
     setProdSellerError('');
-    const { data, error: invokeError } = await supabase.functions.invoke('gemini-prodseller-activate', {
-      body: { action: 'products' },
-    });
-    if (invokeError || data?.error) {
-      console.error('Impossible de charger le catalogue ProdSeller :', invokeError || data.error);
-      setProdSellerError('Impossible de charger le catalogue fournisseur. Réessaie plus tard.');
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke('gemini-prodseller-activate', {
+        body: { action: 'products' },
+      });
+      if (invokeError || data?.error) {
+        const detail = data?.error || await getInvocationErrorMessage(invokeError);
+        console.error('Impossible de charger le catalogue ProdSeller :', {
+          message: detail || 'Réponse de la fonction indisponible.',
+          status: invokeError?.context?.status,
+        });
+        setProdSellerError(detail || 'La fonction ProdSeller ne répond pas. Vérifiez son déploiement puis réessayez.');
+        setProdSellerProducts(null);
+      } else {
+        setProdSellerProducts(data.products || []);
+      }
+    } catch (error) {
+      console.error('Impossible de charger le catalogue ProdSeller :', error instanceof Error ? error.message : 'Unknown error');
+      setProdSellerError('La requête vers la fonction ProdSeller a échoué. Vérifiez votre connexion puis réessayez.');
       setProdSellerProducts(null);
-    } else {
-      setProdSellerProducts(data.products || []);
+    } finally {
+      setProdSellerLoading(false);
     }
-    setProdSellerLoading(false);
   }
 
   async function savePromoCode(event) {
@@ -833,6 +860,7 @@ export default function Shop({ shopSection = 'products' }) {
               <label htmlFor="shop-product-image">URL d’image (facultative)</label>
               <input id="shop-product-image" type="url" name="image_url" value={form.image_url || ''} onChange={updateProductField} placeholder="https://…" />
               <small className="project-form-hint">Lien direct et public vers le fichier image (.jpg, .png, .webp…). Les liens vers une page de partage ne s’affichent pas comme image.</small>
+              <small className="project-form-hint">Évitez d’inclure des prix, des numéros de téléphone ou des promotions dans l’image : ils peuvent différer du prix affiché sur la fiche.</small>
             </div>
             <div className="form-group">
               <label htmlFor="shop-product-poster-ratio">Format de l’affiche</label>
@@ -853,23 +881,21 @@ export default function Shop({ shopSection = 'products' }) {
                 </div>
               </div>
             )}
-            {['gemini-pro', 'canva-pro'].includes(slugify(form.slug)) ? (
-              <div className="form-group">
-                <span className="form-label">Mode de livraison</span>
-                <strong>ProdSeller</strong>
-                <small className="project-form-hint">La livraison est gérée côté serveur. Aucun lien manuel ne sera utilisé.</small>
-              </div>
-            ) : (
-              <div className="form-group">
-                <label htmlFor="shop-product-delivery-type">Mode de livraison</label>
-                <select id="shop-product-delivery-type" name="delivery_type" value={form.delivery_type} onChange={updateProductField}>
-                  <option value="activate">Lien d’activation direct</option>
-                  <option value="download">Fichier en téléchargement temporaire</option>
-                  <option value="api">Activation par API</option>
-                </select>
+            <div className="form-group">
+              <label htmlFor="shop-product-delivery-type">Mode de livraison</label>
+              <select id="shop-product-delivery-type" name="delivery_type" value={form.delivery_type} onChange={updateProductField}>
+                <option value="activate">Lien d’activation direct</option>
+                <option value="download">Fichier en téléchargement temporaire</option>
+                <option value="api">Activation par API</option>
+              </select>
+            </div>
+            {isApiDelivery(form) && (
+              <div className="form-group shop-admin-wide">
+                <span className="form-label">Livraison automatique</span>
+                <small className="project-form-hint">Livraison automatique : le lien est généré par l’API après le paiement.</small>
               </div>
             )}
-            {!['gemini-pro', 'canva-pro'].includes(slugify(form.slug)) && form.delivery_type !== 'api' && (
+            {!isApiDelivery(form) && (
               <div className="form-group shop-admin-wide">
                 <label htmlFor="shop-product-access">
                   {form.delivery_type === 'download' ? 'Lien source privé (Drive ou hébergeur)' : 'Lien d’activation'}

@@ -77,11 +77,16 @@ export default function AdminSidebar({ onLogout }) {
   const location = useLocation();
   const routeGroup = activeGroupFor(location.pathname);
   const [openGroup, setOpenGroup] = useState(() => initialOpenGroup(routeGroup));
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     if (routeGroup) setOpenGroup(routeGroup);
   }, [routeGroup]);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname, location.hash]);
 
   useEffect(() => {
     try {
@@ -118,14 +123,28 @@ export default function AdminSidebar({ onLogout }) {
   }, []);
 
   return (
-    <aside className="admin-sidebar">
+    <aside className={`admin-sidebar${mobileNavOpen ? ' is-mobile-open' : ''}`}>
       <div className="admin-brand">
         <span className="admin-brand-mark">CA</span>
         <span className="admin-brand-text">Admin</span>
       </div>
 
-      <nav className="admin-nav" aria-label="Navigation d’administration">
-        <NavLink to="/admin" end>
+      <button
+        className="admin-mobile-menu-toggle"
+        type="button"
+        aria-expanded={mobileNavOpen}
+        aria-controls="admin-navigation"
+        onClick={() => setMobileNavOpen((open) => !open)}
+      >
+        {mobileNavOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+      </button>
+
+      <nav
+        className="admin-nav"
+        id="admin-navigation"
+        aria-label="Navigation d’administration"
+      >
+        <NavLink to="/admin" end onClick={() => setMobileNavOpen(false)}>
           <Icon name="dashboard" />
           Tableau de bord
         </NavLink>
@@ -151,6 +170,7 @@ export default function AdminSidebar({ onLogout }) {
                     <NavLink
                       key={link.to}
                       to={link.to}
+                      onClick={() => setMobileNavOpen(false)}
                       className={({ isActive }) => {
                         if (group.id === 'settings') {
                           const hash = link.to.split('#')[1];
@@ -168,7 +188,7 @@ export default function AdminSidebar({ onLogout }) {
           );
         })}
 
-        <NavLink to="/admin/messages">
+        <NavLink to="/admin/messages" onClick={() => setMobileNavOpen(false)}>
           <Icon name="messages" />
           Messages
           {unreadCount > 0 && <span className="admin-nav-count" aria-label={`${unreadCount} non lus`}>{unreadCount}</span>}

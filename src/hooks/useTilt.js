@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { isLowDataNetwork } from '../utils/network';
 
 /**
  * Port du léger effet de tilt 3D au survol (pointeurs fins uniquement),
@@ -8,7 +9,9 @@ export function useTilt() {
   const ref = useRef(null);
 
   useEffect(() => {
-    if (!window.matchMedia('(pointer:fine)').matches) return;
+    if (!window.matchMedia('(pointer:fine)').matches
+      || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      || isLowDataNetwork()) return;
     const el = ref.current;
     if (!el) return;
 

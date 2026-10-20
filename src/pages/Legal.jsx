@@ -1,5 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 
+const LEGAL_DRAFT = true;
+
 const PRIVACY_SECTIONS = [
   {
     title: 'Informations utilisées',
@@ -79,7 +81,7 @@ export default function Legal() {
       </nav>
       <div className="eyebrow">CALEB CREATIVE</div>
       <h1>{isPrivacy ? 'Confidentialité' : 'Conditions d’utilisation et de vente'}</h1>
-      <p className="legal-updated">Informations à compléter avant publication définitive.</p>
+      {LEGAL_DRAFT && <p className="legal-updated">Informations à compléter avant publication définitive.</p>}
       {sections.map((section) => (
         <section key={section.title}>
           <h2>{section.title}</h2>

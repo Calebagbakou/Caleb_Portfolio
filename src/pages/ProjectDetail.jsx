@@ -3,14 +3,25 @@ import { Link, useParams } from 'react-router-dom';
 import { getPublishedProjectBySlug } from '../services/projects';
 import { getProjectThumbnailUrl } from '../data/projectMedia';
 import Seo from '../components/site/Seo';
+import { LoadingFeedback, ProjectDetailSkeleton } from '../components/site/LoadingStates';
+import { useSlowLoading } from '../hooks/useSlowLoading';
+import SmartImage from '../components/site/SmartImage';
 
 export default function ProjectDetail() {
   const { slug } = useParams();
   const [project, setProject] = useState(null);
   const [status, setStatus] = useState('loading');
+  const [retryCount, setRetryCount] = useState(0);
+  const slowLoading = useSlowLoading(status === 'loading');
 
   useEffect(() => {
-    getPublishedProjectBySlug(slug).then(({ data, error }) => {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 21000);
+    let active = true;
+    setProject(null);
+    setStatus('loading');
+    getPublishedProjectBySlug(slug, { signal: controller.signal }).then(({ data, error }) => {
+      if (!active) return;
       if (error) {
         console.error('Impossible de charger l’étude de cas :', error);
         setStatus('error');
@@ -18,14 +29,26 @@ export default function ProjectDetail() {
       }
       setProject(data);
       setStatus(data ? 'ready' : 'missing');
+    }).catch((error) => {
+      if (!active) return;
+      console.error('Erreur inattendue pendant le chargement de l’étude de cas :', error);
+      setStatus('error');
     });
-  }, [slug]);
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [slug, retryCount]);
 
-  if (status === 'loading') return <main className="project-detail wrap">Chargement du projet…</main>;
+  if (status === 'loading' && slowLoading.phase === 'error') return <main className="wrap"><LoadingFeedback phase="error" onRetry={() => setRetryCount((count) => count + 1)} /></main>;
+  if (status === 'loading' && slowLoading.showLoader) return <ProjectDetailSkeleton />;
+  if (status === 'loading') return null;
   if (!project) {
     return (
       <main className="project-detail wrap">
-        <h1>Projet introuvable</h1>
+        <h1>{status === 'error' ? 'Projet momentanément indisponible' : 'Projet introuvable'}</h1>
+        {status === 'error' && <LoadingFeedback phase={slowLoading.phase === 'error' ? 'error' : 'slow'} onRetry={() => setRetryCount((count) => count + 1)} />}
         <Link className="btn btn-primary" to="/">Retour au portfolio</Link>
       </main>
     );
@@ -40,7 +63,7 @@ export default function ProjectDetail() {
       <h1>{project.title}</h1>
       <div className="project-detail-grid">
         <div className="project-detail-media">
-          {image && <img src={image} alt={`Réalisation ${project.title}`} />}
+          {image && <SmartImage src={image} alt={`Réalisation ${project.title}`} aspectRatio={project.image_ratio || '4/3'} sizes="(max-width: 700px) 90vw, 55vw" />}
         </div>
         <div className="project-detail-copy">
           <h2>Étude de cas</h2>

@@ -3,10 +3,13 @@ import ProductCard from '../../components/shop/ProductCard';
 import ShopAlert from '../../components/shop/ShopAlert';
 import { useShop } from '../../context/ShopContext';
 import Seo from '../../components/site/Seo';
+import { LoadingFeedback, ProductGridSkeleton } from '../../components/site/LoadingStates';
+import { useSlowLoading } from '../../hooks/useSlowLoading';
 
 export default function Catalogue() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { categories, products, loading, error } = useShop();
+  const { categories, products, loading, error, retryLoad } = useShop();
+  const slowLoading = useSlowLoading(loading);
   const requested = searchParams.get('cat') || 'tous';
   const activeCat = categories.some((category) => category.slug === requested) ? requested : 'tous';
 
@@ -48,8 +51,15 @@ export default function Catalogue() {
           ))}
         </div>
 
-        {loading && <div className="shop-state">Chargement des produits…</div>}
-        {error && <ShopAlert message={error} action="Réessayer" onAction={() => window.location.reload()} />}
+        {loading && slowLoading.phase === 'error' && <LoadingFeedback phase="error" onRetry={retryLoad} />}
+        {loading && slowLoading.phase !== 'error' && slowLoading.showLoader && (
+          <>
+            <LoadingFeedback phase={slowLoading.phase} onRetry={retryLoad} />
+            <ProductGridSkeleton />
+          </>
+        )}
+        {!loading && error && slowLoading.phase === 'error' && <LoadingFeedback phase="error" onRetry={retryLoad} />}
+        {!loading && error && slowLoading.phase !== 'error' && <ShopAlert message={error} action="Réessayer" onAction={retryLoad} />}
         {!loading && !error && list.length > 0 && (
           <div className="product-grid" style={{ marginTop: 22 }}>
             {list.map((product) => <ProductCard product={product} key={product.id} />)}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { findProduct, formatPrice } from '../../data/products';
 import { useCart } from '../../context/CartContext';
@@ -7,14 +7,22 @@ import { useAuth } from '../../context/AuthContext';
 import Seo from '../../components/site/Seo';
 import ShopArrow from '../../components/shop/ShopArrow';
 import RichContent from '../../components/shop/RichContent';
+import { LoadingFeedback, ProductDetailSkeleton } from '../../components/site/LoadingStates';
+import { useSlowLoading } from '../../hooks/useSlowLoading';
+import SmartImage from '../../components/site/SmartImage';
+import { isApiDelivery } from '../../utils/delivery';
 
 export default function Produit() {
   const { id } = useParams();
-  const { products, loading, error } = useShop();
+  const { products, loading, error, retryLoad } = useShop();
+  const slowLoading = useSlowLoading(loading);
   const product = findProduct(id, products);
   const { buyNow } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const purchaseRowRef = useRef(null);
+  const [showStickyPurchase, setShowStickyPurchase] = useState(false);
+  const [isCtaShaking, setIsCtaShaking] = useState(false);
 
   const [selectedPlanId, setSelectedPlanId] = useState(
     product?.plans.find((plan) => plan.active)?.id ?? null
@@ -31,14 +39,61 @@ export default function Produit() {
     setQty(1);
   }, [product]);
 
+  useEffect(() => {
+    const purchaseRow = purchaseRowRef.current;
+    if (!product || !purchaseRow || !('IntersectionObserver' in window)) return undefined;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setShowStickyPurchase(false);
+      } else if (entry.boundingClientRect.top < 0) {
+        setShowStickyPurchase(true);
+      }
+    });
+    observer.observe(purchaseRow);
+    return () => observer.disconnect();
+  }, [product]);
+
+  useEffect(() => {
+    document.body.classList.toggle('product-sticky-visible', showStickyPurchase);
+    return () => document.body.classList.remove('product-sticky-visible');
+  }, [showStickyPurchase]);
+
+  useEffect(() => {
+    setIsCtaShaking(false);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+
+    const interval = 500;
+    const duration = 420;
+    let stopTimer;
+    let repeatTimer;
+
+    function shake() {
+      setIsCtaShaking(true);
+      stopTimer = window.setTimeout(() => setIsCtaShaking(false), duration);
+      repeatTimer = window.setTimeout(shake, interval);
+    }
+
+    const initialTimer = window.setTimeout(shake, 2000);
+    return () => {
+      window.clearTimeout(initialTimer);
+      window.clearTimeout(stopTimer);
+      window.clearTimeout(repeatTimer);
+      setIsCtaShaking(false);
+    };
+  }, [showStickyPurchase]);
+
   if (!product) {
-    if (loading) return <main className="wrap"><div className="shop-state">Chargement du produit…</div></main>;
+    if (loading && slowLoading.phase === 'error') return <main className="wrap"><LoadingFeedback phase="error" onRetry={retryLoad} /></main>;
+    if (loading && slowLoading.showLoader) return <><LoadingFeedback phase={slowLoading.phase} onRetry={retryLoad} /><ProductDetailSkeleton /></>;
+    if (loading) return null;
     return (
       <div className="wrap" style={{ textAlign: 'center', padding: '80px 24px' }}>
         <h1 style={{ fontSize: '1.6rem' }}>{error ? 'Boutique indisponible' : 'Produit introuvable'}</h1>
         <p style={{ color: 'var(--ink-dim)', marginBottom: 22 }}>
           {error || "Ce produit n'existe pas ou a été retiré du catalogue."}
         </p>
+        {error && <button type="button" className="btn btn-outline" onClick={retryLoad}>Réessayer</button>}
         <Link to="/boutique/catalogue" className="btn btn-primary">
           Voir le catalogue
         </Link>
@@ -54,8 +109,16 @@ export default function Produit() {
     navigate(user ? next : `/boutique/connexion?next=${encodeURIComponent(next)}`);
   }
 
+  const selectedPlan = product.plans.find((plan) => plan.id === selectedPlanId && plan.active);
+  const purchaseDisabled = !selectedPlan;
+  const currentPrice = product.promo_price ?? selectedPlan?.price;
+  const crossedPrice = product.promo_price != null
+    ? product.regular_price
+    : selectedPlan?.old_price;
+  const purchaseLabel = purchaseDisabled ? 'Indisponible' : 'Acheter maintenant';
+
   return (
-    <main className="wrap" style={{ position: 'relative' }}>
+    <main className={`wrap product-page${showStickyPurchase ? ' has-sticky-cta' : ''}`}>
       <Seo
         title={`${product.name} — Caleb Creative`}
         description={product.description}
@@ -76,10 +139,10 @@ export default function Produit() {
           style={{ background: product.gradient, aspectRatio: product.poster_ratio || '4/3' }}
         >
           {product.image_url && (
-            <img className="product-visual-artwork" src={product.image_url} alt={product.name} />
+            <SmartImage className="product-visual-artwork" src={product.image_url} alt={product.name} />
           )}
           {product.logo_url && (
-            <img className="product-visual-logo" src={product.logo_url} alt={`${product.name} logo`} />
+            <SmartImage className="product-visual-logo" src={product.logo_url} alt={`${product.name} logo`} placeholder={false} />
           )}
           {!product.image_url && !product.logo_url && (
             <span className="product-visual-avatar">{product.avatar}</span>
@@ -88,18 +151,10 @@ export default function Produit() {
         <div className="product-info reveal in">
           <div className="eyebrow">{product.categoryLabel}</div>
           <h1>{product.name}</h1>
-          <RichContent doc={product.description_rich} fallbackText={product.description} />
-
-          <ul className="highlight-list">
-            {product.highlights.map((h) => (
-              <li key={h}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12l5 5L20 7" />
-                </svg>
-                {h}
-              </li>
-            ))}
-          </ul>
+          <div className="product-detail-price-row">
+            {crossedPrice != null && <span className="product-old-price">{formatPrice(crossedPrice)}</span>}
+            <strong className="product-price">{formatPrice(currentPrice)}</strong>
+          </div>
 
           <div className="plan-group">
             <span className="plan-group-label">Formule</span>
@@ -151,22 +206,61 @@ export default function Produit() {
             </div>
           )}
 
-          <div className="product-cta-row">
+          <div className="product-cta-row" ref={purchaseRowRef}>
             <button
-              className="btn btn-primary"
+              className={`btn btn-primary${!purchaseDisabled && !showStickyPurchase && isCtaShaking ? ' is-shaking' : ''}`}
               onClick={handleBuyNow}
-              disabled={!product.plans.some((plan) => plan.id === selectedPlanId && plan.active)}
+              disabled={purchaseDisabled}
             >
-              Acheter maintenant
+              {purchaseLabel}
               <ShopArrow />
             </button>
           </div>
-          <p className="product-note">
-            {product.slug === 'gemini-pro'
-              ? 'Les formules 4 et 12 mois sont affichées mais momentanément indisponibles. La formule 18 mois est disponible ; après confirmation du paiement, votre lien d’activation est généré automatiquement.'
-              : 'Livraison numérique : les identifiants ou instructions d’activation te sont envoyés directement par Caleb après validation de la commande.'}
-          </p>
+
+          {product.highlights.length > 0 && (
+            <ul className="highlight-list">
+              {product.highlights.map((h) => (
+                <li key={h}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="M5 12l5 5L20 7" />
+                  </svg>
+                  {h}
+                </li>
+              ))}
+            </ul>
+          )}
+
         </div>
+      </div>
+      <section className="product-description-section" aria-label="Description détaillée du produit">
+        <RichContent doc={product.description_rich} fallbackText={product.description} />
+        <p className="product-note">
+          {isApiDelivery(product)
+            ? 'Après confirmation du paiement, votre lien d’activation est généré automatiquement.'
+            : 'Livraison numérique : les identifiants ou instructions d’activation te sont envoyés directement par Caleb après validation de la commande.'}
+        </p>
+      </section>
+      <div
+        ref={(element) => {
+          if (element) element.inert = !showStickyPurchase;
+        }}
+        className={`product-sticky-cta${showStickyPurchase ? ' is-visible' : ''}`}
+        role="region"
+        aria-label="Achat rapide"
+        aria-hidden={!showStickyPurchase}
+      >
+        <div className="product-sticky-details">
+          <strong title={product.name}>{product.name}</strong>
+          <span>{selectedPlan ? `${selectedPlan.label} · ${formatPrice(currentPrice)}` : 'Aucune formule disponible'}</span>
+        </div>
+        <button
+          type="button"
+          className={`btn btn-primary${!purchaseDisabled && showStickyPurchase && isCtaShaking ? ' is-shaking' : ''}`}
+          onClick={handleBuyNow}
+          disabled={purchaseDisabled}
+        >
+          {purchaseLabel}
+        </button>
       </div>
     </main>
   );

@@ -15,6 +15,8 @@ import Lightbox from '../../../components/site/Lightbox';
 import YouTubePreview from '../../../components/site/YouTubePreview';
 import ExternalVideoPreview from '../../../components/site/ExternalVideoPreview';
 import RevealHeading from '../../../components/site/RevealHeading';
+import SmartImage from '../../../components/site/SmartImage';
+import { isLowDataNetwork } from '../../../utils/network';
 
 const LEGACY_ITEMS = PORTFOLIO_ROWS.flatMap((row) => row.items.map((item) => ({
   id: `legacy-${item.cat}-${item.title}`,
@@ -98,8 +100,7 @@ function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisi
 
   useEffect(() => {
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-    const saveData = navigator.connection?.saveData;
-    if (!videoPreviewEnabled || reducedMotion || saveData || !('IntersectionObserver' in window)) {
+    if (!videoPreviewEnabled || reducedMotion || isLowDataNetwork() || !('IntersectionObserver' in window)) {
       onPreviewVisibility(item.id, 0);
       return undefined;
     }
@@ -158,11 +159,11 @@ function PortfolioCard({ item, globalIndex, onOpen, previewActive, onPreviewVisi
         )}
         {!previewActive && image
           ? <>
-            <img className="project-image-main" src={image} alt={`Réalisation ${item.title}`} loading="lazy" />
+            <SmartImage className="project-image-main" src={image} alt={`Réalisation ${item.title}`} sizes="(max-width: 700px) 90vw, 45vw" />
             {item.media_type === 'image' && (
               <>
-                <img className="project-image-glitch project-image-glitch-cyan" src={image} alt="" aria-hidden="true" />
-                <img className="project-image-glitch project-image-glitch-violet" src={image} alt="" aria-hidden="true" />
+                <SmartImage className="project-image-glitch project-image-glitch-cyan" src={image} alt="" aria-hidden="true" placeholder={false} sizes="(max-width: 700px) 90vw, 45vw" />
+                <SmartImage className="project-image-glitch project-image-glitch-violet" src={image} alt="" aria-hidden="true" placeholder={false} sizes="(max-width: 700px) 90vw, 45vw" />
               </>
             )}
           </>

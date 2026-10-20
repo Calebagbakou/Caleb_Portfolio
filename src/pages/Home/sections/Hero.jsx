@@ -4,6 +4,7 @@ import profileWebp from '../../../assets/profile1.webp';
 import { getSettingValue } from '../../../services/settings';
 import { usePresentation } from '../../../context/PresentationContext';
 import AiCore from '../../../components/site/AiCore';
+import { isLowDataNetwork } from '../../../utils/network';
 
 const BR = '\u0001';
 const EM_S = '\u0002';
@@ -50,6 +51,7 @@ export default function Hero() {
   const draggingRef = useRef(false);
 
   function handlePortraitPointerMove(event) {
+    if (isLowDataNetwork()) return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - bounds.left) / bounds.width - 0.5;
     const y = (event.clientY - bounds.top) / bounds.height - 0.5;
@@ -200,8 +202,8 @@ export default function Hero() {
         </p>
         <div
           className="hero-photo"
-          onPointerMove={handlePortraitPointerMove}
-          onPointerLeave={resetPortraitPointer}
+          onPointerMove={isLowDataNetwork() ? undefined : handlePortraitPointerMove}
+          onPointerLeave={isLowDataNetwork() ? undefined : resetPortraitPointer}
         >
           <div className="hero-photo-ring">
             <div className="hero-photo-frame">

@@ -15,10 +15,12 @@
     <meta property="og:title" content="Caleb Creative — Créateur visuel au Bénin" />
     <meta property="og:description" content="Vidéo IA, design, montage vidéo et visuels IA au service de vos projets." />
     <meta property="og:url" content="https://calebcreative.online/" />
-    <meta property="og:image" content="https://calebcreative.online/favicon.svg" />
-    <meta property="og:image:alt" content="Logo Caleb Creative" />
+    <meta property="og:image" content="https://calebcreative.online/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Caleb Creative" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="https://calebcreative.online/favicon.svg" />
+    <meta name="twitter:image" content="https://calebcreative.online/og-image.jpg" />
     <link rel="canonical" href="https://calebcreative.online/" />
     <link id="site-favicon" rel="icon" href="%BASE_URL%favicon-64.png" type="image/png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -29,7 +31,28 @@
     />
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="startup-loader" role="status" aria-label="Chargement de Caleb Creative">
+        <span class="startup-loader-mark">CA</span>
+        <span class="startup-loader-track" aria-hidden="true"><span></span></span>
+      </div>
+    </div>
+    <noscript>
+      <style>.startup-loader{display:none}</style>
+      <section aria-label="Statistiques Caleb Creative">
+        <h2>CALEB CREATIVE</h2>
+        <p>40+ projets réalisés · 100% clients satisfaits · 50+ outils maîtrisés · 2 années d’expérience</p>
+      </section>
+    </noscript>
+    <style>
+      .startup-loader{min-height:100vh;display:grid;align-content:center;justify-items:center;gap:24px;background:#fff}
+      .startup-loader-mark{display:grid;place-items:center;width:54px;height:54px;border:1px solid rgba(24,119,242,.28);border-radius:16px;color:#1877f2;font:800 18px Inter,sans-serif;animation:startup-pulse 1.4s ease-in-out infinite}
+      .startup-loader-track{width:112px;height:2px;overflow:hidden;background:#dce8f7}
+      .startup-loader-track span{display:block;width:40%;height:100%;background:#1877f2;animation:startup-progress 1.1s ease-in-out infinite}
+      @keyframes startup-pulse{50%{transform:translateY(-3px);box-shadow:0 0 24px rgba(24,119,242,.16)}}
+      @keyframes startup-progress{from{transform:translateX(-110%)}to{transform:translateX(280%)}}
+      @media(prefers-reduced-motion:reduce){.startup-loader-mark,.startup-loader-track span{animation:none}.startup-loader-track span{width:100%}}
+    </style>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

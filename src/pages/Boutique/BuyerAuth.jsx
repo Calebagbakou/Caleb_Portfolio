@@ -335,7 +335,10 @@ export default function BuyerAuth() {
         <Link className="buyer-auth-back" to="/boutique/catalogue">Retour au catalogue</Link>
         <div className="eyebrow">COMPTE CLIENT</div>
         <h1>
-          <span className="buyer-auth-lock" aria-hidden="true">🔒</span>
+          <svg className="buyer-auth-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+            <rect x="4" y="10" width="16" height="11" rx="2" />
+            <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" />
+          </svg>
           {awaitingConfirmation ? 'Confirmez votre e-mail' : mode === 'reset' && isRecoveryFlow ? 'Choisissez un nouveau mot de passe' : mode === 'reset' ? 'Réinitialiser votre mot de passe' : 'Connectez-vous pour commander'}
         </h1>
         <p className="buyer-auth-intro">
@@ -358,7 +361,7 @@ export default function BuyerAuth() {
               <button type="button" className={mode === 'signup' ? 'active' : ''} onClick={() => changeMode('signup')}>Créer un compte</button>
             </div>
             <p className="buyer-google-note">Google affichera une adresse technique : c'est notre service de connexion sécurisé.</p>
-            <button className="btn btn-outline buyer-google-btn" type="button" onClick={() => handleOAuthSignIn('google')} disabled={submitting}>
+            <button className="btn btn-outline buyer-google-btn" type="button" onClick={() => handleOAuthSignIn('google')} disabled={submitting} aria-busy={submitting}>
               <svg viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="#4285F4" d="M21.35 12.2c0-.72-.06-1.42-.18-2.1H12v3.98h5.23a4.48 4.48 0 0 1-1.94 2.94v2.45h3.14c1.84-1.7 2.92-4.2 2.92-7.27Z" />
                 <path fill="#34A853" d="M12 21.75c2.63 0 4.84-.87 6.45-2.35l-3.14-2.45c-.87.58-1.98.93-3.31.93-2.54 0-4.7-1.72-5.47-4.04H3.29v2.53A9.75 9.75 0 0 0 12 21.75Z" />
@@ -367,7 +370,7 @@ export default function BuyerAuth() {
               </svg>
               Continuer avec Google
             </button>
-            <button className="btn btn-outline buyer-google-btn buyer-facebook-btn" type="button" onClick={() => handleOAuthSignIn('facebook')} disabled={submitting}>
+            <button className="btn btn-outline buyer-google-btn buyer-facebook-btn" type="button" onClick={() => handleOAuthSignIn('facebook')} disabled={submitting} aria-busy={submitting}>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13.5 21v-8h2.7l.4-3.1h-3.1v-2c0-.9.3-1.5 1.6-1.5h1.7V3.6c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.1H7.3V13h2.8v8h3.4Z" /></svg>
               Continuer avec Facebook
             </button>
@@ -398,7 +401,7 @@ export default function BuyerAuth() {
               </div>
               <small>Vérifiez aussi vos courriers indésirables.</small>
             </div>
-            <button className="btn btn-primary btn-full" type="submit" disabled={submitting}>
+            <button className="btn btn-primary btn-full" type="submit" disabled={submitting} aria-busy={submitting}>
               {submitting ? 'Vérification…' : 'Confirmer mon adresse'}
             </button>
             <button className="buyer-auth-resend" type="button" onClick={resendConfirmationCode} disabled={submitting || resendSeconds > 0}>
@@ -437,7 +440,7 @@ export default function BuyerAuth() {
             <button className="buyer-auth-resend" type="button" onClick={() => setShowPassword((visible) => !visible)}>
               {showPassword ? 'Masquer les mots de passe' : 'Afficher les mots de passe'}
             </button>
-            <button className="btn btn-primary btn-full" type="submit" disabled={submitting}>
+            <button className="btn btn-primary btn-full" type="submit" disabled={submitting} aria-busy={submitting}>
               {submitting ? 'Enregistrement…' : 'Enregistrer le nouveau mot de passe'}
             </button>
           </form>
@@ -457,7 +460,7 @@ export default function BuyerAuth() {
                 onChange={(event) => setEmail(event.target.value)}
               />
             </div>
-            <button className="btn btn-primary btn-full" type="submit" disabled={submitting}>
+            <button className="btn btn-primary btn-full" type="submit" disabled={submitting} aria-busy={submitting}>
               {submitting ? 'Envoi…' : 'Envoyer le lien'}
             </button>
             <button className="buyer-auth-resend" type="button" onClick={() => changeMode('login')} disabled={submitting}>
@@ -479,7 +482,7 @@ export default function BuyerAuth() {
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
               />
-              <small>Fournisseurs acceptés : Gmail, Outlook, Yahoo, iCloud, Proton et d’autres services personnels courants. Les domaines Workspace et les services temporaires sont refusés.</small>
+              <small>Utilisez une adresse e-mail personnelle (Gmail, Outlook, Yahoo, iCloud, Proton).</small>
             </div>
             <div className="form-group">
               <label htmlFor="buyer-password">Mot de passe</label>
@@ -510,7 +513,7 @@ export default function BuyerAuth() {
                 </>
               )}
             </div>
-            <button className="btn btn-primary btn-full" type="submit" disabled={submitting}>
+            <button className="btn btn-primary btn-full" type="submit" disabled={submitting} aria-busy={submitting}>
               {submitting ? 'Un instant…' : mode === 'signup' ? 'Créer mon compte et recevoir un code' : 'Se connecter'}
             </button>
             {mode === 'login' && (

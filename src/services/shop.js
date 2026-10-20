@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { richDocumentToPlainText } from '../utils/richContent';
+import { isApiDelivery } from '../utils/delivery';
 
 const PRODUCT_FIELDS = 'id, name, slug, description, description_rich, tagline, highlights, category_id, badge, cta_label, regular_price, promo_price, allow_multiple_qty, status, featured, sort_order, avatar, gradient, logo_url, image_url, poster_ratio, delivery_type, download_filename, download_size';
 const OPTIONAL_PRODUCT_FIELDS = ['cta_label', 'regular_price', 'promo_price', 'description_rich', 'allow_multiple_qty'];
@@ -64,7 +65,7 @@ function attachShopData(products, plans, categories) {
   });
 }
 
-export async function listShopCatalog({ includeInactive = false } = {}) {
+export async function listShopCatalog({ includeInactive = false, signal } = {}) {
   async function fetchProducts(fields) {
     let query = supabase
       .from('products')
@@ -72,6 +73,7 @@ export async function listShopCatalog({ includeInactive = false } = {}) {
       .order('sort_order', { ascending: true })
       .order('name', { ascending: true });
     if (!includeInactive) query = query.eq('status', 'active');
+    if (signal) query = query.abortSignal(signal);
     return query;
   }
 
@@ -100,7 +102,11 @@ export async function listShopCatalog({ includeInactive = false } = {}) {
   }
 
   const [categoriesResult, productsResult] = await Promise.all([
-    supabase.from('categories').select('id, scope, slug, label, sort_order').eq('scope', 'boutique').order('sort_order'),
+    (() => {
+      let query = supabase.from('categories').select('id, scope, slug, label, sort_order').eq('scope', 'boutique').order('sort_order');
+      if (signal) query = query.abortSignal(signal);
+      return query;
+    })(),
     fetchProductsWithAvailableFields(),
   ]);
 
@@ -111,11 +117,13 @@ export async function listShopCatalog({ includeInactive = false } = {}) {
   const productIds = products.map((product) => product.id);
   let plans = [];
   if (productIds.length) {
-    const plansResult = await supabase
+    let plansQuery = supabase
       .from('product_plans')
       .select(PLAN_FIELDS)
       .in('product_id', productIds)
       .order('sort_order');
+    if (signal) plansQuery = plansQuery.abortSignal(signal);
+    const plansResult = await plansQuery;
     if (plansResult.error) return { data: null, error: plansResult.error };
     const geminiProductIds = new Set(
       products.filter((product) => product.slug === 'gemini-pro').map((product) => product.id)
@@ -134,8 +142,10 @@ export async function listShopCatalog({ includeInactive = false } = {}) {
   };
 }
 
-export async function getShopContent() {
-  const { data, error } = await supabase.from('settings').select('key, value').like('key', 'shop_%');
+export async function getShopContent({ signal } = {}) {
+  let query = supabase.from('settings').select('key, value').like('key', 'shop_%');
+  if (signal) query = query.abortSignal(signal);
+  const { data, error } = await query;
   if (error) return { data: null, error };
   return {
     data: Object.fromEntries((data || []).map((row) => [row.key, hideActivationProvider(row.value)])),
@@ -171,11 +181,16 @@ export function deleteShopPromoCode(id) {
 }
 
 export async function listShopAdminData() {
-  const [catalog, content, deliveryResult] = await Promise.all([
+  const [catalog, content] = await Promise.all([
     listShopCatalog({ includeInactive: true }),
     getShopContent(),
-    supabase.from('product_deliveries').select('product_id, access_url'),
   ]);
+  const deliveryProductIds = (catalog.data?.products || [])
+    .filter((product) => !isApiDelivery(product))
+    .map((product) => product.id);
+  const deliveryResult = deliveryProductIds.length
+    ? await supabase.from('product_deliveries').select('product_id, access_url').in('product_id', deliveryProductIds)
+    : { data: [], error: null };
   const error = catalog.error || content.error || deliveryResult.error;
   const deliveryByProduct = new Map(
     (deliveryResult.data || []).map((delivery) => [delivery.product_id, delivery.access_url]),
@@ -186,7 +201,7 @@ export async function listShopAdminData() {
         ...catalog.data,
         products: catalog.data.products.map((product) => ({
           ...product,
-          access_url: deliveryByProduct.get(product.id) || '',
+          access_url: isApiDelivery(product) ? '' : deliveryByProduct.get(product.id) || '',
         })),
         content: content.data,
       }
@@ -238,7 +253,7 @@ export async function saveShopProduct(product, plans) {
     return { error: productError };
   }
 
-  const deliveryUrl = product.access_url?.trim();
+  const deliveryUrl = isApiDelivery(product) ? '' : product.access_url?.trim();
   const deliveryResult = deliveryUrl
     ? await supabase.from('product_deliveries').upsert({
       product_id: id,

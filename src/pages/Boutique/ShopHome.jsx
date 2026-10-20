@@ -5,6 +5,8 @@ import { useReveal } from '../../hooks/useReveal';
 import { useShop } from '../../context/ShopContext';
 import Seo from '../../components/site/Seo';
 import ShopArrow from '../../components/shop/ShopArrow';
+import { LoadingFeedback, ProductGridSkeleton } from '../../components/site/LoadingStates';
+import { useSlowLoading } from '../../hooks/useSlowLoading';
 
 function TrustItem({ icon, title, desc }) {
   const [ref, visible] = useReveal();
@@ -25,7 +27,8 @@ function TrustItem({ icon, title, desc }) {
 
 export default function ShopHome() {
   const [heroRef, heroVisible] = useReveal();
-  const { categories, products, content, loading, error } = useShop();
+  const { categories, products, content, loading, error, retryLoad } = useShop();
+  const slowLoading = useSlowLoading(loading);
   const featured = products.filter((product) => product.featured).slice(0, 3);
 
   return (
@@ -67,8 +70,15 @@ export default function ShopHome() {
               Voir le catalogue <ShopArrow />
             </Link>
           </div>
-          {loading && <div className="shop-state">Chargement des produits…</div>}
-          {error && <ShopAlert message={error} action="Réessayer" onAction={() => window.location.reload()} />}
+          {loading && slowLoading.phase === 'error' && <LoadingFeedback phase="error" onRetry={retryLoad} />}
+          {loading && slowLoading.phase !== 'error' && slowLoading.showLoader && (
+            <>
+              <LoadingFeedback phase={slowLoading.phase} onRetry={retryLoad} />
+              <ProductGridSkeleton count={3} />
+            </>
+          )}
+          {!loading && error && slowLoading.phase === 'error' && <LoadingFeedback phase="error" onRetry={retryLoad} />}
+          {!loading && error && slowLoading.phase !== 'error' && <ShopAlert message={error} action="Réessayer" onAction={retryLoad} />}
           {!loading && !error && featured.length === 0 && (
             <div className="shop-state">Les produits phares seront bientôt disponibles.</div>
           )}

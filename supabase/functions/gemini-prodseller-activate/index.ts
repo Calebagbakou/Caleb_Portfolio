@@ -1,3 +1,3 @@
-import { handleProdSellerActivation } from '../gemini-pro-activate/prodSellerMulti.ts';
+import { handleProdSellerActivation } from '../_shared/prodSellerMulti.ts';
 
 Deno.serve(handleProdSellerActivation);

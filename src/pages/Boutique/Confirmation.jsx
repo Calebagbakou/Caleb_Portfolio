@@ -6,7 +6,10 @@ import { getBuyerAccount, getShopOrderDeliveries, listShopCatalog, verifySasPayP
 import { supabase } from '../../services/supabase';
 import ShopAlert from '../../components/shop/ShopAlert';
 import ProviderLink from '../../components/shop/ProviderLink';
+import { LoadingFeedback } from '../../components/site/LoadingStates';
+import { useSlowLoading } from '../../hooks/useSlowLoading';
 import { formatOrderReference } from '../../utils/orderReference';
+import { isApiDelivery } from '../../utils/delivery';
 
 const DELIVERY_ESTIMATE_TEXT = 'dès que possible';
 
@@ -40,8 +43,11 @@ export default function Confirmation() {
   const { clear } = useCart();
   const [order, setOrder] = useState(undefined); // undefined = pas encore lu, null = absent
   const [products, setProducts] = useState(null);
+  const [productsLoading, setProductsLoading] = useState(false);
+  const [productsError, setProductsError] = useState('');
+  const [productsRetry, setProductsRetry] = useState(0);
+  const productsSlowLoading = useSlowLoading(productsLoading);
   const [deliveryStatus, setDeliveryStatus] = useState('idle');
-  const [deliveryLinks, setDeliveryLinks] = useState([]);
   const [providerProducts, setProviderProducts] = useState([]);
   const [deliveryError, setDeliveryError] = useState('');
   const [retrying, setRetrying] = useState(false);
@@ -50,6 +56,10 @@ export default function Confirmation() {
   const [shopDeliveryError, setShopDeliveryError] = useState('');
   const [downloadEmail, setDownloadEmail] = useState(null);
   const [referenceCopied, setReferenceCopied] = useState(false);
+  const [paymentVerifying, setPaymentVerifying] = useState(false);
+  const [paymentVerificationError, setPaymentVerificationError] = useState('');
+  const [paymentRetry, setPaymentRetry] = useState(0);
+  const paymentSlowLoading = useSlowLoading(paymentVerifying);
   const requestedShopDelivery = useRef('');
   const paymentVerificationStarted = useRef(false);
 
@@ -59,46 +69,59 @@ export default function Confirmation() {
     if (!orderId || paymentVerificationStarted.current) return;
     paymentVerificationStarted.current = true;
     let cancelled = false;
+    setPaymentVerifying(true);
+    setPaymentVerificationError('');
     async function verifyPayment() {
-      let lastData = null;
-      let lastError = null;
-      for (let attempt = 0; attempt < 30 && !cancelled; attempt += 1) {
-        const result = await verifySasPayPayment({ orderId, sessionId });
-        lastData = result.data;
-        lastError = result.error;
-        if (result.data?.verified && result.data.order) break;
-        if (result.data?.order?.payment_status === 'confirme') {
-          lastData = { ...result.data, verified: true };
-          break;
-        }
-        const accountResult = await getBuyerAccount();
-        const accountOrder = accountResult.data?.orders?.find((entry) => entry.id === orderId);
-        if (accountOrder?.payment_status === 'confirme') {
-          lastData = { order: accountOrder, verified: true };
-          lastError = null;
-          break;
-        }
-        if (attempt < 29) await new Promise((resolve) => setTimeout(resolve, 2000));
-      }
-      if (cancelled) return;
-      if (lastError || !lastData?.verified || !lastData.order) {
-        console.error('La vérification SasPay a échoué :', lastError || lastData?.message);
-        if (lastData?.order) setOrder(lastData.order);
-        return;
-      }
       try {
-        localStorage.setItem(LAST_ORDER_KEY, JSON.stringify(lastData.order));
-      } catch (storageError) {
-        console.error('Le reçu ne peut pas être conservé sur cet appareil :', storageError);
+        let lastData = null;
+        let lastError = null;
+        for (let attempt = 0; attempt < 30 && !cancelled; attempt += 1) {
+          const result = await verifySasPayPayment({ orderId, sessionId });
+          lastData = result.data;
+          lastError = result.error;
+          if (result.data?.verified && result.data.order) break;
+          if (result.data?.order?.payment_status === 'confirme') {
+            lastData = { ...result.data, verified: true };
+            break;
+          }
+          const accountResult = await getBuyerAccount();
+          const accountOrder = accountResult.data?.orders?.find((entry) => entry.id === orderId);
+          if (accountOrder?.payment_status === 'confirme') {
+            lastData = { order: accountOrder, verified: true };
+            lastError = null;
+            break;
+          }
+          if (attempt < 29) await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
+        if (cancelled) return;
+        if (lastError || !lastData?.verified || !lastData.order) {
+          const verificationError = lastError || lastData?.message || new Error('La confirmation du paiement est toujours en attente.');
+          console.error('La vérification SasPay a échoué :', verificationError);
+          if (lastData?.order) setOrder(lastData.order);
+          setPaymentVerificationError('La confirmation du paiement est toujours en attente. Réessayez dans quelques instants.');
+          return;
+        }
+        try {
+          localStorage.setItem(LAST_ORDER_KEY, JSON.stringify(lastData.order));
+        } catch (storageError) {
+          console.error('Le reçu ne peut pas être conservé sur cet appareil :', storageError);
+        }
+        clear();
+        setOrder(lastData.order);
+      } catch (verificationError) {
+        if (cancelled) return;
+        console.error('Une erreur inattendue est survenue pendant la vérification du paiement :', verificationError);
+        setPaymentVerificationError('La vérification du paiement a échoué. Réessayez ou contactez Caleb.');
+      } finally {
+        if (!cancelled) setPaymentVerifying(false);
       }
-      clear();
-      setOrder(lastData.order);
     }
     verifyPayment();
     return () => {
       cancelled = true;
+      paymentVerificationStarted.current = false;
     };
-  }, [location.search]);
+  }, [location.search, paymentRetry]);
 
   useEffect(() => {
     if (location.state?.order) {
@@ -120,40 +143,65 @@ export default function Confirmation() {
     if (!getOrderItems(order).length) return;
 
     let cancelled = false;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 21000);
+    setProductsLoading(true);
+    setProductsError('');
     async function loadProducts() {
-      const { data, error } = await listShopCatalog({ includeInactive: true });
-      if (cancelled) return;
-      if (!error && data?.products) {
+      try {
+        const { data, error } = await listShopCatalog({ includeInactive: true, signal: controller.signal });
+        if (cancelled) return;
+        if (error) throw error;
+        if (data?.products) {
         setProducts(data.products);
-      } else if (error) {
+        } else {
+        throw new Error('Le catalogue n’a pas renvoyé les produits de cette commande.');
+        }
+      } catch (error) {
+        if (cancelled) return;
         console.error('Impossible de charger les produits de la commande :', error);
-        setProducts([]);
+        setProductsError(controller.signal.aborted
+        ? 'Le chargement des produits prend trop de temps. Réessayez.'
+        : 'Les produits de votre commande ne peuvent pas être chargés pour le moment.');
+      } finally {
+        if (!cancelled) setProductsLoading(false);
       }
     }
 
     loadProducts();
     return () => {
       cancelled = true;
+      window.clearTimeout(timeout);
+      controller.abort();
     };
-  }, [order]);
+  }, [order, productsRetry]);
 
-  const prodSellerTargets = useMemo(() => {
+  const apiProducts = useMemo(() => {
     if (!products) return [];
     const targets = new Map();
     for (const line of getOrderItems(order)) {
       const product = line.product || products.find((entry) => entry.id === line.productId);
-      const targetKey = product?.slug === 'canva-pro'
-        ? 'canva_pro'
-        : product?.slug === 'gemini-pro' && line.planLabel === '18 mois'
-          ? 'gemini_18m'
-          : '';
-      if (!targetKey) continue;
-      const current = targets.get(targetKey) || { key: targetKey, name: product.name, quantity: 0 };
+      if (!isApiDelivery(product)) continue;
+      const targetKey = product.id;
+      const current = targets.get(targetKey) || { key: targetKey, productId: targetKey, name: line.name || product.name, quantity: 0 };
       current.quantity += Number(line.qty || 0);
       targets.set(targetKey, current);
     }
     return [...targets.values()];
   }, [order, products]);
+
+  function getProviderProducts(response) {
+    if (Array.isArray(response?.products) && response.products.length) return response.products;
+    const links = Array.isArray(response?.links) ? response.links : [];
+    if (!links.length || !apiProducts.length) return [];
+    const firstApiProduct = apiProducts[0];
+    return [{
+      ...firstApiProduct,
+      status: 'success',
+      accessKeys: links,
+      error: '',
+    }];
+  }
 
   async function requestShopDeliveries() {
     if (!order?.id || !order?.ref || order.payment_status !== 'confirme') return;
@@ -177,7 +225,7 @@ export default function Confirmation() {
   }, [order?.id, order?.payment_status, products]);
 
   async function requestProdSellerDelivery(action = 'deliver') {
-    if (!order?.id || !order?.ref || !prodSellerTargets.length) return;
+    if (!order?.id || !order?.ref || !apiProducts.length) return;
     setDeliveryError('');
     if (action === 'retry') setRetrying(true);
     else if (action === 'deliver') setDeliveryStatus('loading');
@@ -188,8 +236,7 @@ export default function Confirmation() {
 
     if (error || data?.error) {
       const response = await readDeliveryResponse(error, data);
-      setDeliveryLinks(Array.isArray(response.links) ? response.links : []);
-      setProviderProducts(Array.isArray(response.products) ? response.products : []);
+      setProviderProducts(getProviderProducts(response));
       const status = response.status
         || (error?.context?.status === 402 ? 'insufficient_balance' : '');
       const message = status === 'insufficient_balance'
@@ -204,8 +251,7 @@ export default function Confirmation() {
           : 'failed',
       );
     } else {
-      setDeliveryLinks(Array.isArray(data?.links) ? data.links : []);
-      setProviderProducts(Array.isArray(data?.products) ? data.products : []);
+      setProviderProducts(getProviderProducts(data));
       setDeliveryError('');
       setDeliveryStatus(data?.status || 'failed');
     }
@@ -223,12 +269,31 @@ export default function Confirmation() {
   }
 
   useEffect(() => {
-    if (order?.payment_status !== 'confirme' || !products || !prodSellerTargets.length) return;
+    if (order?.payment_status !== 'confirme' || !products || !apiProducts.length) return;
     if (deliveryStatus !== 'idle') return;
     requestProdSellerDelivery();
-  }, [order?.payment_status, products, prodSellerTargets, deliveryStatus]);
+  }, [order?.payment_status, products, apiProducts, deliveryStatus]);
 
-  if (order === undefined) return null;
+  if (order === undefined) {
+    if (!paymentVerifying && !paymentVerificationError) return null;
+    if (paymentSlowLoading.showLoader || paymentVerificationError) {
+      return (
+        <main className="confirm-wrap" aria-live="polite">
+          <h1>Vérification de votre paiement…</h1>
+          {paymentVerifying && <p>Merci de patienter ; ne relancez pas votre paiement.</p>}
+          {paymentVerificationError && <p className="shop-state" role="status">{paymentVerificationError}</p>}
+          <LoadingFeedback
+            phase={paymentVerificationError ? 'error' : paymentSlowLoading.phase}
+            onRetry={() => {
+              paymentVerificationStarted.current = false;
+              setPaymentRetry((current) => current + 1);
+            }}
+          />
+        </main>
+      );
+    }
+    return null;
+  }
   const paymentDetails = [
     order?.payment_method && String(order.payment_method).toLowerCase() !== 'saspay'
       ? order.payment_method
@@ -241,7 +306,7 @@ export default function Confirmation() {
   const orderPromoCode = order?.promoCode || order?.promo_code || '';
   const providerProductsForDisplay = providerProducts.length
     ? providerProducts
-    : prodSellerTargets.map((target) => ({
+    : apiProducts.map((target) => ({
       ...target,
       status: deliveryStatus,
       accessKeys: [],
@@ -316,6 +381,16 @@ export default function Confirmation() {
             ? `Merci ${order.customer?.name} ! Votre code promo a couvert le total de la commande.`
             : `Merci ${order.customer?.name} ! Votre paiement a été vérifié.`}
         </p>
+        {productsLoading && productsSlowLoading.showLoader && (
+          <LoadingFeedback phase={productsSlowLoading.phase} onRetry={() => setProductsRetry((current) => current + 1)} />
+        )}
+        {productsError && (
+          <ShopAlert
+            message={productsError}
+            action="Réessayer"
+            onAction={() => setProductsRetry((current) => current + 1)}
+          />
+        )}
         {(() => {
           const downloads = shopDeliveries.filter((delivery) => delivery.type === 'download');
           if (!downloads.length && shopDeliveryStatus !== 'loading' && shopDeliveryStatus !== 'failed') return null;
@@ -440,7 +515,7 @@ export default function Confirmation() {
           </div>
         </div>
 
-        {prodSellerTargets.length > 0 && (
+        {apiProducts.length > 0 && (
           <section className="confirm-summary" aria-live="polite" style={{ marginTop: 16 }}>
             <h2 style={{ fontSize: '1.1rem', marginTop: 0 }}>Accès numériques</h2>
             {['idle', 'loading'].includes(deliveryStatus) && (
@@ -453,19 +528,6 @@ export default function Confirmation() {
                   Vérifier les accès
                 </button>
               </>
-            )}
-            {deliveryStatus === 'success' && deliveryLinks.length > 0 && (
-              <div>
-                <p>Votre lien d’activation est prêt :</p>
-                {deliveryLinks.map((link, index) => (
-                  <ProviderLink
-                    key={`gemini-link-${index}`}
-                    url={link}
-                    productName="Gemini Pro"
-                    linkNumber={deliveryLinks.length > 1 ? index + 1 : undefined}
-                  />
-                ))}
-              </div>
             )}
             {['insufficient_balance', 'retryable'].includes(deliveryStatus) && (
               <>
@@ -502,6 +564,9 @@ export default function Confirmation() {
                     ))}
                   </div>
                 )}
+                {['starting', 'not_started'].includes(product.status) && (
+                  <p>Activation en cours</p>
+                )}
                 {product.error && (
                   <ShopAlert message="Le lien d’activation n’a pas pu être généré. Contactez le support avec votre référence de commande." />
                 )}
@@ -522,7 +587,7 @@ export default function Confirmation() {
             <li><span className="confirm-next-number">2</span><span>Activation en cours <small>{DELIVERY_ESTIMATE_TEXT}</small></span></li>
             <li><span className="confirm-next-number">3</span><span>Accès disponible dans Mon compte</span></li>
           </ol>
-          {prodSellerTargets.length > 0 && <p>La préparation des accès est lancée automatiquement après confirmation du paiement.</p>}
+          {apiProducts.length > 0 && <p>La préparation des accès est lancée automatiquement après confirmation du paiement.</p>}
         </section>
 
         <div className="confirm-actions">

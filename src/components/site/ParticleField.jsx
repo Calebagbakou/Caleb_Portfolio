@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { isLowDataNetwork } from '../../utils/network';
 
 const CONNECTION_DISTANCE = 132;
 const POINTER_RADIUS = 150;
@@ -11,6 +12,10 @@ export default function ParticleField({ scopeRef, className = 'particle-field' }
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
     const scope = scopeRef?.current || null;
+    if (isLowDataNetwork()) {
+      if (canvas) canvas.style.display = 'none';
+      return undefined;
+    }
     if (!canvas || !context) {
       console.error('Impossible d’initialiser le fond de particules.');
       return undefined;

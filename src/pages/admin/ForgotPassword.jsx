@@ -58,7 +58,7 @@ export default function ForgotPassword() {
             />
           </div>
 
-          <button type="submit" className="btn btn-primary btn-full" disabled={submitting}>
+          <button type="submit" className="btn btn-primary btn-full" disabled={submitting} aria-busy={submitting}>
             {submitting ? 'Envoi...' : success ? 'Lien envoyé' : 'Envoyer le lien'}
           </button>
         </form>

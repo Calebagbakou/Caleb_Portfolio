@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { listShopCatalog, getShopContent } from '../services/shop';
 import { getShopErrorMessage } from '../utils/shopErrors';
 
@@ -20,14 +20,32 @@ export function ShopProvider({ children }) {
   const [content, setContent] = useState(DEFAULT_SHOP_CONTENT);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const retryLoad = useCallback(() => {
+    setError('');
+    setLoading(true);
+    setReloadKey((current) => current + 1);
+  }, []);
 
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 21000);
+    setLoading(true);
+    setError('');
 
     async function loadShop() {
       try {
-        const [catalogResult, contentResult] = await Promise.all([listShopCatalog(), getShopContent()]);
+        const [catalogResult, contentResult] = await Promise.all([
+          listShopCatalog({ signal: controller.signal }),
+          getShopContent({ signal: controller.signal }),
+        ]);
         if (!active) return;
+        if (controller.signal.aborted) {
+          setError('La connexion prend trop de temps. Réessayez ou contactez Caleb sur WhatsApp.');
+          return;
+        }
         const loadError = catalogResult.error || contentResult.error;
         if (loadError) {
           console.error('Impossible de charger le catalogue de la boutique depuis Supabase :', loadError);
@@ -40,7 +58,9 @@ export function ShopProvider({ children }) {
       } catch (loadError) {
         if (!active) return;
         console.error('Erreur inattendue pendant le chargement de la boutique :', loadError);
-        setError(getShopErrorMessage(loadError, 'La boutique est momentanément indisponible. Réessayez dans quelques instants.'));
+        setError(controller.signal.aborted
+          ? 'La connexion prend trop de temps. Réessayez ou contactez Caleb sur WhatsApp.'
+          : getShopErrorMessage(loadError, 'La boutique est momentanément indisponible. Réessayez dans quelques instants.'));
       } finally {
         if (active) setLoading(false);
       }
@@ -49,15 +69,18 @@ export function ShopProvider({ children }) {
     loadShop();
     return () => {
       active = false;
+      window.clearTimeout(timeout);
+      controller.abort();
     };
-  }, []);
+  }, [reloadKey]);
 
   const value = useMemo(() => ({
     ...catalog,
     content,
     loading,
     error,
-  }), [catalog, content, loading, error]);
+    retryLoad,
+  }), [catalog, content, loading, error, retryLoad]);
 
   return <ShopContext.Provider value={value}>{children}</ShopContext.Provider>;
 }

@@ -16,11 +16,12 @@ function mediaTypeFromMedia(media, fallback) {
   return fallback;
 }
 
-async function fetchProjects({ publishedOnly = false } = {}) {
+async function fetchProjects({ publishedOnly = false, signal } = {}) {
   let query = supabase.from('projects').select(PROJECT_COLUMNS);
   if (publishedOnly) {
     query = query.eq('published', true).eq('status', 'published');
   }
+  if (signal) query = query.abortSignal(signal);
 
   const { data, error, count } = await query.order('created_at', { ascending: false });
   if (error || !data?.length) return { data, error, count };
@@ -31,10 +32,12 @@ async function fetchProjects({ publishedOnly = false } = {}) {
   ]).filter(Boolean))];
   if (!mediaIds.length) return { data, error: null, count };
 
-  const { data: mediaRows, error: mediaError } = await supabase
+  let mediaQuery = supabase
     .from('media')
     .select('id, alt_text, external_url, storage_path, thumbnail_url, type')
     .in('id', mediaIds);
+  if (signal) mediaQuery = mediaQuery.abortSignal(signal);
+  const { data: mediaRows, error: mediaError } = await mediaQuery;
   if (mediaError) {
     console.error('Les médias liés aux projets n’ont pas pu être chargés :', mediaError);
   }
@@ -77,12 +80,12 @@ export function listProjects() {
   return fetchProjects();
 }
 
-export function listPublishedProjects() {
-  return fetchProjects({ publishedOnly: true });
+export function listPublishedProjects(options) {
+  return fetchProjects({ ...options, publishedOnly: true });
 }
 
-export async function getPublishedProjectBySlug(slug) {
-  const { data, error } = await listPublishedProjects();
+export async function getPublishedProjectBySlug(slug, options) {
+  const { data, error } = await listPublishedProjects(options);
   return { data: (data || []).find((project) => project.slug === slug) || null, error };
 }
 

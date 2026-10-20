@@ -10,6 +10,7 @@ export default function Login() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(searchParams.get('denied') ? "Ce compte n'a pas les droits d'administration." : '');
   const [submitting, setSubmitting] = useState(false);
 
@@ -64,16 +65,24 @@ export default function Login() {
           <div className="form-group">
             <label htmlFor="password">Mot de passe</label>
             <input
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               id="password"
               required
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <Link to="/admin/forgot-password">Mot de passe oublié ?</Link>
+            <button
+              className="login-password-toggle"
+              type="button"
+              aria-pressed={showPassword}
+              onClick={() => setShowPassword((visible) => !visible)}
+            >
+              {showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+            </button>
+            <Link className="login-forgot-link" to="/admin/forgot-password">Mot de passe oublié ?</Link>
           </div>
-          <button type="submit" className="btn btn-primary btn-full" disabled={submitting}>
+          <button type="submit" className="btn btn-primary btn-full" disabled={submitting} aria-busy={submitting}>
             {submitting ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>

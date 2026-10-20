@@ -1,46 +1,60 @@
-import { Navigate, Routes, Route } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { Navigate, Routes, Route, useLocation } from 'react-router-dom';
 
 import PublicLayout from './layouts/PublicLayout';
-import ShopLayout from './layouts/ShopLayout';
-import AdminLayout from './layouts/AdminLayout';
 import ProtectedRoute from './components/admin/ProtectedRoute';
-
-import Home from './pages/Home/Home';
-
-import ShopHome from './pages/Boutique/ShopHome';
-import Catalogue from './pages/Boutique/Catalogue';
-import Produit from './pages/Boutique/Produit';
-import Commande from './pages/Boutique/Commande';
-import Confirmation from './pages/Boutique/Confirmation';
-
-import Login from './pages/admin/Login';
-import ForgotPassword from './pages/admin/ForgotPassword';
-import ResetPassword from './pages/admin/ResetPassword';
-import Dashboard from './pages/admin/Dashboard';
-import Messages from './pages/admin/Messages';
-import Testimonials from './pages/admin/Testimonials';
-import Parametres from './pages/admin/Parametres';
-import Projects from './pages/admin/Projects';
-import Shop from './pages/admin/Shop';
-import Orders from './pages/admin/Orders';
-import Clients from './pages/admin/Clients';
-import Media from './pages/admin/Media';
-import Competencies from './pages/admin/Competencies';
-import Services from './pages/admin/Services';
-import BuyerAuth from './pages/Boutique/BuyerAuth';
-import Account from './pages/Boutique/Account';
 import BuyerAuthGate from './components/shop/BuyerAuthGate';
-
-import NotFound from './pages/NotFound';
-import ProjectDetail from './pages/ProjectDetail';
-import Legal from './pages/Legal';
 import useSiteFavicon from './hooks/useSiteFavicon';
 import ScrollToTop from './components/site/ScrollToTop';
+import { OfflineBanner, PageSkeleton, RouteProgress } from './components/site/LoadingStates';
+
+const ShopLayout = lazy(() => import('./layouts/ShopLayout'));
+const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
+const Home = lazy(() => import('./pages/Home/Home'));
+const ShopHome = lazy(() => import('./pages/Boutique/ShopHome'));
+const Catalogue = lazy(() => import('./pages/Boutique/Catalogue'));
+const Produit = lazy(() => import('./pages/Boutique/Produit'));
+const Commande = lazy(() => import('./pages/Boutique/Commande'));
+const Confirmation = lazy(() => import('./pages/Boutique/Confirmation'));
+const Login = lazy(() => import('./pages/admin/Login'));
+const ForgotPassword = lazy(() => import('./pages/admin/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/admin/ResetPassword'));
+const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
+const Messages = lazy(() => import('./pages/admin/Messages'));
+const Testimonials = lazy(() => import('./pages/admin/Testimonials'));
+const Parametres = lazy(() => import('./pages/admin/Parametres'));
+const Projects = lazy(() => import('./pages/admin/Projects'));
+const Shop = lazy(() => import('./pages/admin/Shop'));
+const Orders = lazy(() => import('./pages/admin/Orders'));
+const Clients = lazy(() => import('./pages/admin/Clients'));
+const Media = lazy(() => import('./pages/admin/Media'));
+const Competencies = lazy(() => import('./pages/admin/Competencies'));
+const Services = lazy(() => import('./pages/admin/Services'));
+const BuyerAuth = lazy(() => import('./pages/Boutique/BuyerAuth'));
+const Account = lazy(() => import('./pages/Boutique/Account'));
+const NotFound = lazy(() => import('./pages/NotFound'));
+const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
+const Legal = lazy(() => import('./pages/Legal'));
 
 export default function App() {
   useSiteFavicon();
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    const robots = document.querySelector('meta[name="robots"]');
+    if (!robots) return undefined;
+    const previousContent = robots.content;
+    if (pathname.startsWith('/admin')) robots.content = 'noindex, nofollow';
+    return () => {
+      robots.content = previousContent;
+    };
+  }, [pathname]);
 
   return (
+    <>
+    <RouteProgress />
+    <OfflineBanner />
+    <Suspense fallback={<PageSkeleton />}>
     <Routes>
       <Route element={<ScrollToTop />}>
       {/* ================= SITE PUBLIC (portfolio one-page) ================= */}
@@ -111,5 +125,7 @@ export default function App() {
       <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
+    </Suspense>
+    </>
   );
 }

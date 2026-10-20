@@ -21,6 +21,7 @@ export default function Commande() {
   const [promoOpen, setPromoOpen] = useState(false);
   const [promoQuote, setPromoQuote] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [checkoutInProgress, setCheckoutInProgress] = useState(false);
   const [error, setError] = useState('');
   const needsEmail = details.some((line) => line.deliveryType === 'download');
 
@@ -99,6 +100,7 @@ export default function Commande() {
       return;
     }
     setSaving(true);
+    setCheckoutInProgress(true);
     try {
       const { data, error: createError } = await createShopCheckout({
         customer: { name: fname.trim(), contact: fcontact.trim(), email: user.email },
@@ -134,11 +136,19 @@ export default function Commande() {
       setError(getShopErrorMessage(checkoutError, 'Le paiement n’a pas pu être lancé. Vous pouvez réessayer.'));
     } finally {
       setSaving(false);
+      setCheckoutInProgress(false);
     }
   }
 
   return (
     <main className="wrap">
+      {checkoutInProgress && (
+        <div className="checkout-redirect-overlay" role="status" aria-live="polite">
+          <span className="checkout-loader-mark" aria-hidden="true">CA</span>
+          <strong>Redirection vers la page de paiement sécurisée…</strong>
+          <span>Merci de ne pas fermer cette page.</span>
+        </div>
+      )}
       <div className="section" style={{ paddingTop: 32 }}>
         <div className="eyebrow">COMMANDE</div>
         <h1 style={{ fontSize: 'clamp(1.7rem,4vw,2.2rem)', margin: '0 0 8px' }}>Finaliser votre commande</h1>
@@ -234,7 +244,7 @@ export default function Commande() {
                   }}
                 />
               </div>
-              <button type="button" className="btn btn-outline" onClick={applyPromoCode} disabled={saving || !promoCode.trim()}>
+              <button type="button" className="btn btn-outline" onClick={applyPromoCode} disabled={saving || !promoCode.trim()} aria-busy={saving}>
                 {promoQuote?.promoCode ? 'Code appliqué' : 'Appliquer le code'}
               </button>
             </div>
@@ -257,7 +267,7 @@ export default function Commande() {
               : 'Votre commande sera confirmée après validation du paiement par le prestataire. Les moyens disponibles s’affichent sur la page de paiement selon votre pays.'}
           </p>
 
-          <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 22 }} disabled={saving}>
+          <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 22 }} disabled={saving} aria-busy={checkoutInProgress}>
             <span aria-hidden="true">🔒</span>
             {saving
               ? 'Traitement…'

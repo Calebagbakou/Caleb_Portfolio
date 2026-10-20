@@ -7,6 +7,7 @@ export default function ResetPassword() {
   const navigate = useNavigate();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPasswords, setShowPasswords] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -66,7 +67,7 @@ export default function ResetPassword() {
           <div className="form-group">
             <label htmlFor="password">Nouveau mot de passe</label>
             <input
-              type="password"
+              type={showPasswords ? 'text' : 'password'}
               id="password"
               minLength={6}
               required
@@ -78,16 +79,19 @@ export default function ResetPassword() {
           <div className="form-group">
             <label htmlFor="confirmPassword">Confirmer le mot de passe</label>
             <input
-              type="password"
+              type={showPasswords ? 'text' : 'password'}
               id="confirmPassword"
               minLength={6}
               required
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
             />
+            <button className="login-password-toggle" type="button" aria-pressed={showPasswords} onClick={() => setShowPasswords((visible) => !visible)}>
+              {showPasswords ? 'Masquer les mots de passe' : 'Afficher les mots de passe'}
+            </button>
           </div>
 
-          <button type="submit" className="btn btn-primary btn-full" disabled={submitting}>
+          <button type="submit" className="btn btn-primary btn-full" disabled={submitting} aria-busy={submitting}>
             {submitting ? 'Modification...' : success ? 'Mot de passe enregistré' : 'Modifier le mot de passe'}
           </button>
         </form>

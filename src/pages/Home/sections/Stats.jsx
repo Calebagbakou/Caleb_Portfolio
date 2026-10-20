@@ -6,18 +6,21 @@ const prefersReducedMotion =
 
 function Counter({ count }) {
   const ref = useRef(null);
-  const [value, setValue] = useState(prefersReducedMotion ? count : 0);
+  const [value, setValue] = useState(count);
 
   useEffect(() => {
     if (prefersReducedMotion) return;
     const el = ref.current;
     if (!el) return;
+    const bounds = el.getBoundingClientRect();
+    if (bounds.top >= window.innerHeight || bounds.bottom <= 0) setValue(0);
 
     const io = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (!entry.isIntersecting) return;
           io.unobserve(entry.target);
+          if (bounds.top < window.innerHeight && bounds.bottom > 0) return;
           const duration = 1200;
           const start = performance.now();
           function tick(now) {
@@ -49,6 +52,7 @@ export default function Stats() {
           <div className="stat" key={s.label}>
             <div className="stat-num">
               <Counter count={s.count} />
+              <span className="stat-print-value" aria-hidden="true">{s.count}</span>
               {s.suffix && <span>{s.suffix}</span>}
             </div>
             <div className="stat-label">{s.label}</div>

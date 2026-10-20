@@ -5,6 +5,7 @@ import { deleteBuyerAccount, getBuyerAccount, getShopOrderDeliveries } from '../
 import { formatPrice } from '../../data/products';
 import ShopAlert from '../../components/shop/ShopAlert';
 import ProviderLink from '../../components/shop/ProviderLink';
+import { isApiDelivery } from '../../utils/delivery';
 import { getShopErrorMessage } from '../../utils/shopErrors';
 import { formatOrderReference } from '../../utils/orderReference';
 import { supabase } from '../../services/supabase';
@@ -128,8 +129,7 @@ export default function Account() {
       if (order.payment_status !== 'confirme' || requestedProviderOrders.current.has(order.id)) continue;
       const hasProviderProduct = (order.order_items || []).some((item) => {
         const product = Array.isArray(item.products) ? item.products[0] : item.products;
-        return product?.slug === 'canva-pro'
-          || (product?.slug === 'gemini-pro' && item.plan_label === '18 mois');
+        return isApiDelivery(product);
       });
       if (!hasProviderProduct) continue;
 
