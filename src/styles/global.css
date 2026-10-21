@@ -945,6 +945,11 @@
     .nav-links a{ padding:8px 0; }
     .nav-foot{ margin-top:16px; }
   }
+  @media (max-height:640px){
+    .nav-overlay{ justify-content:flex-start; overflow-y:auto; }
+    .nav-links a{ padding:6px 0; font-size:clamp(1.15rem,5vh,1.5rem); }
+    .nav-foot{ margin-top:12px; }
+  }
   @media (prefers-reduced-motion: reduce){
     .ai-core-art{ transition:none; }
     .ai-core-orbit{ animation:none; }
