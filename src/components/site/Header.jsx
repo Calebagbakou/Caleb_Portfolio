@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { usePresentation } from '../../context/PresentationContext';
 import useSiteLogo from '../../hooks/useSiteLogo';
 
@@ -44,6 +44,8 @@ function PresentationSwitch({ isProfessional, compact, onToggle }) {
 
 export default function Header() {
   const { isProfessional, togglePresentation } = usePresentation();
+  const { pathname } = useLocation();
+  const isHome = pathname === '/';
   const [logoUrl, clearLogoUrl] = useSiteLogo();
   const [theme, setTheme] = useState(() => {
     const saved = window.localStorage.getItem('caleb-theme');
@@ -203,10 +205,15 @@ export default function Header() {
       <nav className={`nav-overlay${menuOpen ? ' open' : ''}`} ref={navRef} aria-hidden={!menuOpen}>
         <div className="nav-links">
           {NAV_LINKS.map((link) => (
-            <a key={link.href} className={activeSection === link.href ? 'active' : ''} href={link.href} onClick={() => setMenuOpen(false)}>
+            <Link
+              key={link.href}
+              className={isHome && activeSection === link.href ? 'active' : ''}
+              to={isHome ? link.href : `/${link.href}`}
+              onClick={() => setMenuOpen(false)}
+            >
               <span>{link.label}</span>
               <span className="idx">{link.idx}</span>
-            </a>
+            </Link>
           ))}
           <Link to={SHOP_URL} onClick={() => setMenuOpen(false)}>
             <span>Boutique</span>
@@ -215,14 +222,14 @@ export default function Header() {
         </div>
         <div className="nav-foot">
           <span className="footer-note">Abomey, Bénin</span>
-          <a
-            href="#contact"
+          <Link
+            to={isHome ? '#contact' : '/#contact'}
             onClick={() => setMenuOpen(false)}
             className="btn btn-ghost"
             style={{ maxWidth: 180, padding: '11px 16px', fontSize: 13 }}
           >
             Écrire
-          </a>
+          </Link>
         </div>
       </nav>
     </>

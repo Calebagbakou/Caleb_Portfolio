@@ -6,6 +6,7 @@ import { getBuyerAccount, getShopOrderDeliveries, listShopCatalog, verifySasPayP
 import { supabase } from '../../services/supabase';
 import ShopAlert from '../../components/shop/ShopAlert';
 import ProviderLink from '../../components/shop/ProviderLink';
+import DownloadSupport from '../../components/shop/DownloadSupport';
 import { LoadingFeedback } from '../../components/site/LoadingStates';
 import { useSlowLoading } from '../../hooks/useSlowLoading';
 import { formatOrderReference } from '../../utils/orderReference';
@@ -415,7 +416,6 @@ export default function Confirmation() {
               )}
               {downloads.map((file) => (
                 <div className="download-file" key={file.productId}>
-                  <div className="download-file-name">{file.filename}</div>
                   {file.error || !file.url ? (
                     <>
                       <div className="shop-admin-alert error" role="alert">
@@ -433,9 +433,9 @@ export default function Confirmation() {
                   ) : (
                     <>
                       <div className="download-file-meta">
-                        {file.size} · {file.name} · payé {formatPrice(file.lineTotal)}
+                        {file.name} · payé {formatPrice(file.lineTotal)}
                       </div>
-                      <ProviderLink url={file.url} productName={file.filename} actionLabel="Télécharger" />
+                      <DownloadSupport item={file} orderRef={order.ref} />
                       <p className="download-expiry">Lien temporaire valable 24 heures. Le lien source reste privé.</p>
                     </>
                   )}

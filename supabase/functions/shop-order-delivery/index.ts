@@ -2,6 +2,12 @@ import { getServiceClient, jsonResponse } from '../_shared/shop.ts';
 import { isApiDelivery } from '../_shared/delivery.ts';
 
 const TOKEN_TTL_HOURS = 24;
+const OPTIONAL_DOWNLOAD_FIELDS = ['download_platform', 'download_instructions'];
+
+function getMissingDownloadField(error: { code?: string; message?: string }, fields: string[]) {
+  if (!['42703', 'PGRST204'].includes(error.code || '')) return null;
+  return fields.find((field) => error.message?.includes(field)) || null;
+}
 
 function toHex(bytes: Uint8Array) {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
@@ -93,17 +99,29 @@ Deno.serve(async (request) => {
     if (authError || !user?.email || !user.email_confirmed_at) {
       return jsonResponse({ error: 'Une adresse e-mail confirmée est obligatoire.' }, 401);
     }
-    const { data: order, error: orderError } = await client
-      .from('orders')
-      .select(`
-        id, ref, payment_status,
-        customers ( name, email ),
-        order_items ( product_id, product_name, plan_label, qty, line_total,
-          products ( id, slug, delivery_type, download_filename, download_size ) )
-      `)
-      .eq('id', orderId)
-      .eq('ref', orderRef.trim())
-      .maybeSingle();
+    const availableDownloadFields = [...OPTIONAL_DOWNLOAD_FIELDS];
+    let orderResult;
+    while (true) {
+      const optionalSelection = availableDownloadFields.length
+        ? `, ${availableDownloadFields.join(', ')}`
+        : '';
+      orderResult = await client
+        .from('orders')
+        .select(`
+          id, ref, payment_status,
+          customers ( name, email ),
+          order_items ( product_id, product_name, plan_label, qty, line_total,
+            products ( id, slug, delivery_type, download_filename, download_size${optionalSelection} ) )
+        `)
+        .eq('id', orderId)
+        .eq('ref', orderRef.trim())
+        .maybeSingle();
+      if (!orderResult.error) break;
+      const missingField = getMissingDownloadField(orderResult.error, availableDownloadFields);
+      if (!missingField) break;
+      availableDownloadFields.splice(availableDownloadFields.indexOf(missingField), 1);
+    }
+    const { data: order, error: orderError } = orderResult;
     if (orderError) throw orderError;
     if (!order) return jsonResponse({ error: 'Cette commande est introuvable.' }, 404);
     const customer = Array.isArray(order.customers) ? order.customers[0] : order.customers;
@@ -172,6 +190,8 @@ Deno.serve(async (request) => {
         name: String(item.product_name),
         filename: String(product.download_filename || ''),
         size: String(product.download_size || ''),
+        platform: String(product.download_platform || ''),
+        instructions: String(product.download_instructions || ''),
         lineTotal: Number(item.line_total),
         url: `${supabaseUrl}/functions/v1/shop-download?token=${encodeURIComponent(token)}`,
         expiresAt,

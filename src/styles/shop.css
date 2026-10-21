@@ -601,6 +601,23 @@ body.shop-theme .product-name{ font-family:'Nunito', sans-serif; font-weight:800
 .download-email-sent{ color:var(--accent); }
 .download-email-warning{ color:#ffd48a; }
 .download-delivery .shop-admin-alert{ color:var(--ink); }
+.download-support{ display:grid; gap:14px; min-width:0; margin-top:14px; }
+.download-support-facts{ display:grid; gap:8px; margin:0; }
+.download-support-facts>div{ display:grid; grid-template-columns:minmax(90px,120px) minmax(0,1fr); gap:10px; font-size:13px; line-height:1.5; }
+.download-support-facts dt{ color:rgba(255,255,255,.72); font-weight:600; }
+.download-support-facts dd{ min-width:0; margin:0; overflow-wrap:anywhere; }
+.download-support-instructions,.download-support-warning,.download-support-tip,.download-support-troubleshooting{ margin:0; font-size:13px; line-height:1.6; overflow-wrap:anywhere; }
+.download-support-instructions{ white-space:pre-line; }
+.download-support-warning,.download-support-tip,.download-support-troubleshooting{ padding:12px; border:1px solid rgba(255,255,255,.2); border-radius:var(--radius-sm); }
+.download-support-warning a,.download-support-troubleshooting a{ color:var(--accent); text-decoration:underline; text-underline-offset:2px; }
+.download-support-tip p,.download-support-troubleshooting p{ margin:0 0 8px; font-size:13px; }
+.download-support-tip .btn{ min-height:44px; font-size:13px; }
+.download-support-copy-status{ display:block; min-height:20px; margin-top:5px; font-size:13px; }
+.download-support-troubleshooting strong{ display:block; margin-bottom:5px; }
+.download-support .provider-link{ min-width:0; }
+.download-support .provider-link-heading{ color:#fff; }
+.download-support .provider-link-preview{ color:rgba(255,255,255,.72); font-size:13px; }
+.download-support .provider-link-full{ background:rgba(255,255,255,.12); color:#fff; }
 .gemini-activation-url{ overflow-wrap:anywhere; font-size:.85rem; }
 .gemini-access-keys{ display:grid; gap:10px; margin-top:14px; }
 .gemini-access-key{ display:grid; gap:8px; padding:12px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-alt); }

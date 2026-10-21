@@ -5,6 +5,7 @@ import { deleteBuyerAccount, getBuyerAccount, getShopOrderDeliveries } from '../
 import { formatPrice } from '../../data/products';
 import ShopAlert from '../../components/shop/ShopAlert';
 import ProviderLink from '../../components/shop/ProviderLink';
+import DownloadSupport from '../../components/shop/DownloadSupport';
 import { isApiDelivery } from '../../utils/delivery';
 import { getShopErrorMessage } from '../../utils/shopErrors';
 import { formatOrderReference } from '../../utils/orderReference';
@@ -356,9 +357,11 @@ export default function Account() {
                       )}
                       {delivery?.data?.deliveries?.map((item) => (
                         item.url
-                          ? item.type === 'activate'
+                          ? item.type === 'download'
+                            ? <DownloadSupport item={item} orderRef={order.ref} key={`${item.productId}-${item.type}`} />
+                            : item.type === 'activate'
                             ? <ProviderLink url={item.url} productName={item.name} key={`${item.productId}-${item.type}`} />
-                            : <ProviderLink url={item.url} productName={item.name} actionLabel="Télécharger" key={`${item.productId}-${item.type}`} />
+                            : null
                           : <span className="account-error" key={`${item.productId}-${item.type}`}>Le lien de livraison n’est pas encore disponible.</span>
                       ))}
                       <div className="account-order-secondary-actions">

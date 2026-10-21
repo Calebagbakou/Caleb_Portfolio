@@ -2,8 +2,8 @@ import { supabase } from './supabase';
 import { richDocumentToPlainText } from '../utils/richContent';
 import { isApiDelivery } from '../utils/delivery';
 
-const PRODUCT_FIELDS = 'id, name, slug, description, description_rich, tagline, highlights, category_id, badge, cta_label, regular_price, promo_price, allow_multiple_qty, status, featured, sort_order, avatar, gradient, logo_url, image_url, poster_ratio, delivery_type, download_filename, download_size';
-const OPTIONAL_PRODUCT_FIELDS = ['cta_label', 'regular_price', 'promo_price', 'description_rich', 'allow_multiple_qty'];
+const PRODUCT_FIELDS = 'id, name, slug, description, description_rich, tagline, highlights, category_id, badge, cta_label, regular_price, promo_price, allow_multiple_qty, status, featured, sort_order, avatar, gradient, logo_url, image_url, poster_ratio, delivery_type, download_filename, download_size, download_platform, download_instructions';
+const OPTIONAL_PRODUCT_FIELDS = ['cta_label', 'regular_price', 'promo_price', 'description_rich', 'allow_multiple_qty', 'download_platform', 'download_instructions'];
 const BASE_PRODUCT_FIELDS = PRODUCT_FIELDS
   .split(', ')
   .filter((field) => !OPTIONAL_PRODUCT_FIELDS.includes(field));
@@ -19,6 +19,7 @@ function getProductFieldMigration(field) {
   if (field === 'regular_price' || field === 'promo_price') return '016_shop_product_prices.sql';
   if (field === 'description_rich') return '018_shop_product_rich_description.sql';
   if (field === 'allow_multiple_qty') return '020_shop_product_multiple_quantity.sql';
+  if (field === 'download_platform' || field === 'download_instructions') return '028_shop_download_platform_instructions.sql';
   return null;
 }
 
@@ -237,6 +238,8 @@ export async function saveShopProduct(product, plans) {
     delivery_type: product.delivery_type || 'activate',
     download_filename: product.download_filename || null,
     download_size: product.download_size || null,
+    download_platform: product.download_platform || null,
+    download_instructions: product.download_instructions || null,
     updated_at: new Date().toISOString(),
   };
   if (!product.id) productRow.created_at = productRow.updated_at;

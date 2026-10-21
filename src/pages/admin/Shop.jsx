@@ -17,6 +17,10 @@ import { DEFAULT_SHOP_CONTENT } from '../../context/ShopContext';
 import { supabase } from '../../services/supabase';
 import { plainTextToRichDocument, richDocumentToPlainText } from '../../utils/richContent';
 import { isApiDelivery } from '../../utils/delivery';
+import {
+  getDownloadExtension,
+  isValidDownloadFilename,
+} from '../../../supabase/functions/_shared/downloadFile.mjs';
 
 const RichTextEditor = lazy(() => import('../../components/admin/RichTextEditor'));
 
@@ -45,6 +49,8 @@ const EMPTY_PRODUCT = {
   delivery_type: 'activate',
   download_filename: '',
   download_size: '',
+  download_platform: '',
+  download_instructions: '',
   plans: [{ id: null, slug: '', label: '', currency: 'XOF', active: true }],
 };
 
@@ -128,6 +134,8 @@ function productForm(product) {
     delivery_type: product.delivery_type || 'activate',
     download_filename: product.download_filename || '',
     download_size: product.download_size || '',
+    download_platform: product.download_platform || '',
+    download_instructions: product.download_instructions || '',
     plans: product.plans.length
       ? product.plans.map((plan) => ({ ...plan }))
       : EMPTY_PRODUCT.plans,
@@ -248,8 +256,16 @@ export default function Shop({ shopSection = 'products' }) {
       return;
     }
     if (form.delivery_type === 'download'
-      && (!form.access_url.trim() || !form.download_filename.trim() || !form.download_size.trim())) {
-      setError('Pour un téléchargement, renseigne le lien source privé, le nom du fichier et sa taille.');
+      && (!form.access_url.trim() || !form.download_size.trim())) {
+      setError('Pour un téléchargement, renseigne le lien source privé et la taille du fichier.');
+      return;
+    }
+    if (form.delivery_type === 'download' && !getDownloadExtension(form.download_filename.trim())) {
+      setError("Ajoutez l'extension du fichier, par exemple CapCut-Pro.apk");
+      return;
+    }
+    if (form.delivery_type === 'download' && !isValidDownloadFilename(form.download_filename.trim())) {
+      setError('Le nom du fichier doit faire au maximum 120 caractères et ne contenir ni barre oblique ni guillemet.');
       return;
     }
     if (form.delivery_type === 'download' && !form.access_url.trim().startsWith('https://')) {
@@ -283,6 +299,8 @@ export default function Shop({ shopSection = 'products' }) {
       delivery_type: form.delivery_type,
       download_filename: form.download_filename.trim() || null,
       download_size: form.download_size.trim() || null,
+      download_platform: form.download_platform || null,
+      download_instructions: form.download_instructions.trim() || null,
     };
     const { error: saveError, partial } = await saveShopProduct(product, form.plans);
     if (saveError) {
@@ -912,11 +930,27 @@ export default function Shop({ shopSection = 'products' }) {
               <>
                 <div className="form-group">
                   <label htmlFor="shop-product-download-name">Nom du fichier</label>
-                  <input id="shop-product-download-name" name="download_filename" value={form.download_filename || ''} onChange={updateProductField} required />
+                  <input id="shop-product-download-name" name="download_filename" value={form.download_filename || ''} onChange={updateProductField} maxLength={120} required />
+                  <small className="project-form-hint">Nom exact du fichier avec son extension, tel que le client doit le recevoir (ex. CapCut-Pro-14.2.0.apk).</small>
                 </div>
                 <div className="form-group">
                   <label htmlFor="shop-product-download-size">Taille du fichier (ex. 250 Mo)</label>
                   <input id="shop-product-download-size" name="download_size" value={form.download_size || ''} onChange={updateProductField} required />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="shop-product-download-platform">Plateforme du fichier</label>
+                  <select id="shop-product-download-platform" name="download_platform" value={form.download_platform || ''} onChange={updateProductField}>
+                    <option value="">Sélectionner une plateforme</option>
+                    <option value="Android">Android</option>
+                    <option value="Windows">Windows</option>
+                    <option value="macOS">macOS</option>
+                    <option value="iPhone/iPad">iPhone/iPad</option>
+                    <option value="Tous">Tous</option>
+                  </select>
+                </div>
+                <div className="form-group shop-admin-wide">
+                  <label htmlFor="shop-product-download-instructions">Instructions d’installation (facultatif)</label>
+                  <textarea id="shop-product-download-instructions" name="download_instructions" rows="3" maxLength={500} value={form.download_instructions || ''} onChange={updateProductField} />
                 </div>
               </>
             )}
@@ -998,6 +1032,11 @@ export default function Shop({ shopSection = 'products' }) {
                     {product.plans.filter((plan) => plan.active).map((plan) => plan.label).join(' / ') || 'Aucune formule active'}
                     {product.promo_price ? ` · Promo ${Number(product.promo_price).toLocaleString('fr-FR')} FCFA` : ''}
                   </p>
+                  {product.delivery_type === 'download' && !isValidDownloadFilename(product.download_filename) && (
+                    <div className="shop-admin-alert error" role="alert">
+                      Nom de fichier invalide : ajoute une extension autorisée (ex. CapCut-Pro.apk) et retire les barres obliques ou guillemets.
+                    </div>
+                  )}
                 </div>
                 <div className="row-actions">
                   <button className="btn btn-secondary btn-sm" type="button" onClick={() => editProduct(product)}>Modifier</button>

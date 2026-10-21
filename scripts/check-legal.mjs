@@ -44,6 +44,7 @@ for (const file of files) {
 
     const textForBracketCheck = line
       .replace(/PAGE_CONFIG\[pathname\]/g, '')
+      .replace(/PAGE_CONFIG\[pageKey\]/g, '')
       .replace(/PAGE_CONFIG\[legalFacts\.legalRoutes\.privacy\]/g, '');
 
     if (/\[[^\]\r\n]+\]/u.test(textForBracketCheck)) {

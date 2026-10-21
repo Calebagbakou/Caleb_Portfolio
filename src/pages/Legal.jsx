@@ -205,7 +205,7 @@ const LEGAL_NOTICES_SECTIONS = [
 ];
 
 const PAGE_CONFIG = {
-  '/confidentialite': {
+  privacy: {
     title: 'Confidentialité',
     description: 'Données traitées par Caleb Creative, utilisation du navigateur et suppression du compte.',
     sections: PRIVACY_SECTIONS,
@@ -217,7 +217,7 @@ const PAGE_CONFIG = {
       'Le contact du site est disponible par e-mail et WhatsApp.',
     ],
   },
-  '/conditions': {
+  terms: {
     title: 'Conditions de vente et d’utilisation',
     description: 'Conditions des commandes numériques et des prestations créatives Caleb Creative.',
     sections: TERMS_SECTIONS,
@@ -229,7 +229,7 @@ const PAGE_CONFIG = {
       'Les prestations créatives sont convenues directement avec le client.',
     ],
   },
-  '/mentions-legales': {
+  notices: {
     title: 'Mentions légales',
     description: 'Éditeur et coordonnées de Caleb Creative.',
     sections: LEGAL_NOTICES_SECTIONS,
@@ -243,9 +243,9 @@ const PAGE_CONFIG = {
   },
 };
 
-export default function Legal() {
+export default function Legal({ pageKey }) {
   const { pathname } = useLocation();
-  const page = PAGE_CONFIG[pathname] || PAGE_CONFIG[legalFacts.legalRoutes.privacy];
+  const page = PAGE_CONFIG[pageKey];
 
   return (
     <main className="legal-page" id="top">
@@ -257,6 +257,17 @@ export default function Legal() {
       <nav className="legal-return-links" aria-label="Navigation principale">
         <Link to="/">← Retour au portfolio</Link>
         <Link to="/boutique">Aller à la boutique</Link>
+      </nav>
+      <nav className="legal-page-links" aria-label="Pages légales">
+        <Link to={legalFacts.legalRoutes.privacy} aria-current={pageKey === 'privacy' ? 'page' : undefined}>
+          Confidentialité
+        </Link>
+        <Link to={legalFacts.legalRoutes.terms} aria-current={pageKey === 'terms' ? 'page' : undefined}>
+          Conditions
+        </Link>
+        <Link to={legalFacts.legalRoutes.notices} aria-current={pageKey === 'notices' ? 'page' : undefined}>
+          Mentions légales
+        </Link>
       </nav>
       <div className="legal-layout">
         <aside className="legal-toc-wrap">

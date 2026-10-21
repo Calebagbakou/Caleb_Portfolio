@@ -18,6 +18,10 @@
 .legal-return-links{ display:flex; justify-content:space-between; gap:16px; width:min(100%,1060px); margin:0 auto 28px; }
 .legal-return-links a,.legal-back-top{ min-height:44px; display:inline-flex; align-items:center; color:var(--legal-accent); font-weight:650; text-decoration:none; }
 .legal-return-links a:hover,.legal-back-top:hover{ text-decoration:underline; }
+.legal-page-links{ display:flex; flex-wrap:wrap; gap:8px; width:min(100%,1060px); margin:0 auto 28px; }
+.legal-page-links a{ min-height:44px; display:inline-flex; align-items:center; padding:0 14px; border:1px solid var(--legal-border); border-radius:8px; color:var(--legal-accent); font-weight:650; text-decoration:none; }
+.legal-page-links a[aria-current="page"]{ border-color:var(--legal-accent); background:#f4f8ff; color:var(--legal-ink); }
+.legal-page-links a:hover{ background:#eaf2ff; }
 .legal-toc-wrap{ position:sticky; top:24px; max-height:calc(100dvh - 48px); overflow-y:auto; padding:14px; border:1px solid var(--legal-border); border-radius:12px; background:#f7faff; }
 .legal-toc summary{ min-height:44px; display:flex; align-items:center; cursor:pointer; color:var(--legal-ink); font-weight:750; }
 .legal-toc nav{ display:block; }
@@ -46,7 +50,7 @@
 .legal-section li{ margin:0 0 8px; overflow-wrap:anywhere; }
 .legal-section strong{ color:var(--legal-ink); }
 .legal-section a,.legal-notice a{ color:var(--legal-accent); text-decoration:underline; text-underline-offset:3px; }
-.legal-section a:focus-visible,.legal-notice a:focus-visible,.legal-toc a:focus-visible,.legal-return-links a:focus-visible,.legal-back-top:focus-visible{ outline:2px solid var(--legal-accent); outline-offset:3px; }
+.legal-section a:focus-visible,.legal-notice a:focus-visible,.legal-toc a:focus-visible,.legal-return-links a:focus-visible,.legal-page-links a:focus-visible,.legal-back-top:focus-visible{ outline:2px solid var(--legal-accent); outline-offset:3px; }
 .legal-table-wrap{ width:100%; max-width:100%; overflow-x:auto; }
 .legal-section table{ width:100%; border-collapse:collapse; table-layout:fixed; color:var(--legal-muted); font-size:14px; }
 .legal-section th,.legal-section td{ padding:10px 9px; border:1px solid var(--legal-border); text-align:left; vertical-align:top; overflow-wrap:anywhere; }

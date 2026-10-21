@@ -61,9 +61,9 @@ export default function App() {
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/projet/:slug" element={<ProjectDetail />} />
-        <Route path="/confidentialite" element={<Legal />} />
-        <Route path="/conditions" element={<Legal />} />
-        <Route path="/mentions-legales" element={<Legal />} />
+        <Route path="/confidentialite" element={<Legal pageKey="privacy" />} />
+        <Route path="/conditions" element={<Legal pageKey="terms" />} />
+        <Route path="/mentions-legales" element={<Legal pageKey="notices" />} />
       </Route>
 
       {/* ================= BOUTIQUE ================= */}

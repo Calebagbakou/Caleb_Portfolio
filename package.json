@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "check:legal": "node scripts/check-legal.mjs",
+    "test:download": "node --test tests/shop-download.test.mjs",
     "prebuild": "npm run check:legal",
     "build": "vite build",
     "preview": "vite preview"
