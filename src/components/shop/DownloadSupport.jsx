@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react';
 import ProviderLink from './ProviderLink';
 import { formatOrderReference } from '../../utils/orderReference';
 
-const ANDROID_APK_INSTRUCTIONS = '1. Ouvrez ce lien avec Chrome (et non dans WhatsApp ou Facebook). 2. Téléchargez le fichier. 3. Autorisez l’installation depuis cette source si Android le demande. 4. Ouvrez le fichier depuis Téléchargements pour l’installer.';
-
 function getPlatformState() {
   if (typeof navigator === 'undefined') return { android: false, ios: false, desktop: false, embedded: false };
   const userAgent = navigator.userAgent || '';
@@ -24,10 +22,8 @@ export default function DownloadSupport({ item, orderRef }) {
   const filename = item.filename || item.download_filename || '';
   const size = item.size || item.download_size || '';
   const platform = item.platform || item.download_platform || item.product?.download_platform || '';
-  const instructions = item.instructions || item.download_instructions || item.product?.download_instructions || '';
   const extension = filename.split('.').pop()?.toLowerCase();
   const isAndroidFile = platform.toLowerCase() === 'android' || extension === 'apk';
-  const shownInstructions = instructions || (isAndroidFile && extension === 'apk' ? ANDROID_APK_INSTRUCTIONS : '');
   const needsAndroidWarning = isAndroidFile && (platformState.ios || platformState.desktop);
   const displayedReference = orderRef ? formatOrderReference(orderRef) : '';
   const supportMessage = encodeURIComponent(`Bonjour, mon téléchargement ${filename || ''} concernant la commande ${displayedReference} ne fonctionne pas. Pouvez-vous m’aider ?`);
@@ -54,8 +50,6 @@ export default function DownloadSupport({ item, orderRef }) {
         {platform && <div><dt>Plateforme</dt><dd>{platform}</dd></div>}
       </dl>
 
-      {shownInstructions && <p className="download-support-instructions">{shownInstructions}</p>}
-
       {needsAndroidWarning && (
         <p className="download-support-warning" role="status">
           Ce fichier est prévu pour Android. Il ne s’ouvrira pas sur cet appareil.{' '}
@@ -75,7 +69,6 @@ export default function DownloadSupport({ item, orderRef }) {
 
       <div className="download-support-troubleshooting">
         <strong>Le fichier ne s’ouvre pas ?</strong>
-        <p>Vérifiez qu’il est ouvert sur le bon appareil, que son nom se termine par l’extension attendue (et non .bin) et que l’installation depuis une source inconnue est autorisée si Android le demande.</p>
         <a href={supportUrl} target="_blank" rel="noopener noreferrer">Contacter le support avec la référence {displayedReference}</a>
       </div>
     </div>
