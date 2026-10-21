@@ -144,6 +144,7 @@ function productForm(product) {
 
 export default function Shop({ shopSection = 'products' }) {
   const productEditorPanelRef = useRef(null);
+  const downloadFilenameInputRef = useRef(null);
   const promoEditorPanelRef = useRef(null);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -237,6 +238,12 @@ export default function Shop({ shopSection = 'products' }) {
 
   async function saveProduct(event) {
     event.preventDefault();
+    function focusDownloadFilename() {
+      requestAnimationFrame(() => {
+        downloadFilenameInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        downloadFilenameInputRef.current?.focus({ preventScroll: true });
+      });
+    }
     if (!form.name.trim() || !form.slug.trim() || !form.category_id) {
       setError('Le nom, l’URL courte et la catégorie du produit sont obligatoires.');
       return;
@@ -261,11 +268,13 @@ export default function Shop({ shopSection = 'products' }) {
       return;
     }
     if (form.delivery_type === 'download' && !getDownloadExtension(form.download_filename.trim())) {
-      setError("Ajoutez l'extension du fichier, par exemple CapCut-Pro.apk");
+      setError("Le champ « Nom du fichier » (section Téléchargement) doit inclure l’extension, par exemple CapCut-Pro.apk. Le champ « Nom » indique le nom du produit dans la boutique.");
+      focusDownloadFilename();
       return;
     }
     if (form.delivery_type === 'download' && !isValidDownloadFilename(form.download_filename.trim())) {
-      setError('Le nom du fichier doit faire au maximum 120 caractères et ne contenir ni barre oblique ni guillemet.');
+      setError('Le champ « Nom du fichier » doit faire au maximum 120 caractères et ne contenir ni barre oblique ni guillemet.');
+      focusDownloadFilename();
       return;
     }
     if (form.delivery_type === 'download' && !form.access_url.trim().startsWith('https://')) {
@@ -930,7 +939,7 @@ export default function Shop({ shopSection = 'products' }) {
               <>
                 <div className="form-group">
                   <label htmlFor="shop-product-download-name">Nom du fichier</label>
-                  <input id="shop-product-download-name" name="download_filename" value={form.download_filename || ''} onChange={updateProductField} maxLength={120} required />
+                  <input ref={downloadFilenameInputRef} id="shop-product-download-name" name="download_filename" value={form.download_filename || ''} onChange={updateProductField} maxLength={120} required />
                   <small className="project-form-hint">Nom exact du fichier avec son extension, tel que le client doit le recevoir (ex. CapCut-Pro-14.2.0.apk).</small>
                 </div>
                 <div className="form-group">
