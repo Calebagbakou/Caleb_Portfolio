@@ -52,6 +52,28 @@ values ('UUID-DU-COMPTE', 'Caleb')
 on conflict (id) do nothing;
 ```
 
+Si la page de connexion indique maintenant que la vérification admin a échoué,
+contrôle dans **Supabase → SQL Editor** que la table existe et que le compte est
+bien inscrit. Remplace l'adresse par celle utilisée dans **Authentication → Users** :
+
+```sql
+select id, email, email_confirmed_at
+from auth.users
+where lower(email) = lower('adresse-admin@example.com');
+
+select id, name
+from public.admins;
+```
+
+Si l'adresse n'apparaît pas dans la première requête, crée ou retrouve le compte
+dans **Authentication → Users**. Si l'UUID est absent de `public.admins`, ajoute
+le compte avec la requête ci-dessus. Si la connexion échoue avec l'adresse ou le
+mot de passe incorrect, utilise **Mot de passe oublié ?** sur la page admin et
+ouvre le lien reçu sur le même domaine que celui enregistré dans
+**Supabase → Authentication → URL Configuration**. Un message d'erreur de
+configuration ou de réseau n'indique pas que le mot de passe est mauvais :
+vérifie alors les paramètres Supabase du déploiement et son état.
+
 Ne crée pas de clé `service_role` dans le navigateur ni dans les variables
 `VITE_*`.
 

@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import '../../styles/admin.css';
 
 export default function Login() {
-  const { session, isAdmin, login } = useAuth();
+  const { session, isAdmin, adminCheckError, login } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -26,14 +26,18 @@ export default function Login() {
     setSubmitting(true);
     setError('');
 
-    const { error: loginError } = await login(email, password);
-
-    setSubmitting(false);
-    if (loginError) {
-      setError(loginError);
-      return;
+    try {
+      const { error: loginError } = await login(email, password);
+      if (loginError) {
+        setError(loginError);
+        return;
+      }
+      navigate('/admin');
+    } catch (loginError) {
+      setError(`Connexion impossible : ${loginError instanceof Error ? loginError.message : String(loginError)}`);
+    } finally {
+      setSubmitting(false);
     }
-    navigate('/admin');
   }
 
   return (
@@ -48,7 +52,11 @@ export default function Login() {
         <h1>Connexion</h1>
         <p>Accès réservé à l'administrateur du site.</p>
 
-        {error && <div className="form-error show">{error}</div>}
+        {(error || (adminCheckError && `Impossible de vérifier les droits admin. Détail : ${adminCheckError}`)) && (
+          <div className="form-error show">
+            {error || `Impossible de vérifier les droits admin. Détail : ${adminCheckError}`}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
