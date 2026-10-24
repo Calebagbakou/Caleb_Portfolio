@@ -160,41 +160,47 @@ l’option explicite **code cadeau**. Appliquer un code dans le checkout ne cré
 pas de commande; les limites ne sont consommées qu’à la confirmation finale de
 la commande. Le prix final et les limites sont recalculés côté serveur.
 
-## 8. Configurer la livraison Gemini Pro via ProdSeller
+## 8. Configurer la livraison des produits API
 
-L’Edge Function `gemini-prodseller-activate` remplace le fournisseur uniquement
-pour l’activation Gemini Pro 18 mois. Elle ne lance l’achat ProdSeller qu’après
-confirmation du paiement boutique. Les autres paiements et livraisons ne sont
-pas concernés.
+L’Edge Function `gemini-prodseller-activate` traite les activations API après
+confirmation du paiement boutique. Dans **Admin → Fournisseurs**, le
+fournisseur se choisit individuellement pour chaque produit. Les commandes
+déjà commencées restent épinglées à leur fournisseur d’origine.
 
-1. Dans ProdSeller, crée une clé API et vérifie le solde disponible. Ne place
-  jamais cette clé dans le code du site, un fichier `VITE_*` ou Git.
-2. Configure les secrets du projet Supabase `PRODSELLER_API_KEY`,
-  `PRODSELLER_GEMINI_18M_PRODUCT_ID` et `PRODSELLER_CANVA_PRODUCT_ID`. Les deux
-  derniers sont les identifiants exacts des produits lus dans le catalogue,
-  pas leurs noms affichés.
-3. Après configuration de la clé, ouvre `/admin/shop` et utilise **Charger le
-  catalogue**. Cette lecture seule affiche le prix, le stock et
-  `requiresEmailActivation`; elle ne dépense pas le solde. Vérifie que le
-  produit choisi correspond bien à l’offre Gemini Pro 18 mois.
-4. Applique manuellement
-  [`supabase/migrations/022_gemini_prodseller_tracking.sql`](./supabase/migrations/022_gemini_prodseller_tracking.sql)
-  au projet Supabase, puis déploie `gemini-prodseller-activate`,
-  `gemini-pro-activate`, `shop-account` et `shop-order-delivery`. Ces versions
-  suivent séparément Canva et Gemini pour une même commande, gardent les accès
-  visibles dans Mon compte et n’utilisent plus de lien Canva chargé
-  manuellement.
-5. N’effectue le premier achat qu’avec une commande boutique payée et confirmée
-  dont tu acceptes le débit réel. ProdSeller débite le solde USDT; la
-  documentation consultée ne décrit pas de sandbox. Les tentatives utilisent
-  une clé d’idempotence stable par commande et tentative; ne supprime pas la
-  ligne d’activation pour forcer un nouvel achat.
+1. Exécute dans l’ordre les migrations
+  [`supabase/migrations/030_duolingo_super_api_product.sql`](./supabase/migrations/030_duolingo_super_api_product.sql)
+  puis [`supabase/migrations/031_shop_zfourstore_provider.sql`](./supabase/migrations/031_shop_zfourstore_provider.sql)
+  et [`supabase/migrations/032_shop_product_api_mappings.sql`](./supabase/migrations/032_shop_product_api_mappings.sql).
+  La migration 030 ajoute Duolingo Super 12 mois au catalogue à 1 000 FCFA;
+  la 031 configure Z FOUR STORE et protège les commandes contre une seconde
+  tentative après une réponse incertaine; la 032 ajoute les IDs fournisseur
+  et le choix fournisseur par produit.
+2. Configure les secrets Supabase `PRODSELLER_API_KEY` et
+  `ZFOURSTORE_API_KEY`. Les clés ne vont jamais dans le code du site, les
+  variables `VITE_*` ou Git.
+3. Dans `/admin/shop`, règle le mode de livraison sur **Activation par API**
+  puis saisis, pour chaque fournisseur où le produit existe, l’identifiant
+  retourné par son catalogue (`GET /products`). Les identifiants sont stockés
+  dans les colonnes `prodseller_product_id` et `zfourstore_product_id`; il
+  n’est plus nécessaire de créer un secret Supabase par produit. L’API Z FOUR
+  STORE utilise
+  `https://zfourstore.online/api/v1` (documentation :
+  <https://zfourstore.up.railway.app/api-docs>). Les produits peuvent être
+  disponibles chez un seul fournisseur; dans ce cas seul celui-ci peut être
+  sélectionné. Dans **Admin → Fournisseurs**, le contrôle vérifie le produit
+  auprès du fournisseur actuellement sélectionné.
+4. Déploie `gemini-prodseller-activate`, `gemini-pro-activate`, `shop-account`
+  et `shop-order-delivery`. Vérifie les produits et leurs prix dans les
+  catalogues fournisseur avant le premier achat.
+5. Effectue le premier achat uniquement avec une commande payée et confirmée
+  dont tu acceptes le débit réel. La documentation ProdSeller consultée ne
+  décrit pas de sandbox. Z FOUR STORE ne documente pas de clé d’idempotence :
+  si la création d’une commande renvoie une réponse réseau incertaine, le
+  système bloque toute nouvelle tentative automatique. Vérifie l’état de la
+  commande auprès de Z FOUR STORE avant toute intervention manuelle.
 
-L’API peut livrer immédiatement ou laisser l’ordre en `paid` pendant une
-activation manuelle. Dans ce dernier cas, la confirmation et Mon compte peuvent
-vérifier `GET /v1/orders/:id` et ne montrent les identifiants qu’après
-`delivered`. Si `requiresEmailActivation` vaut vrai, l’Edge Function transmet
-l’adresse du compte client; pour une quantité supérieure à un, elle transmet
-une entrée par unité. Les identifiants fournisseur sont stockés dans la table
-protégée `gemini_pro_activations` et ne sont renvoyés qu’au client propriétaire
-de la commande.
+ProdSeller peut nécessiter une activation différée et l’adresse du client selon
+`requiresEmailActivation`. Z FOUR STORE renvoie les articles livrés avec la
+commande ou dans `GET /api/v1/order/:id`. Les identifiants sont stockés dans
+la table protégée `gemini_pro_activations` et ne sont renvoyés qu’au client
+propriétaire de la commande.

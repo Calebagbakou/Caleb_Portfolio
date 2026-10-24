@@ -4,6 +4,7 @@ import { isApiDelivery } from '../utils/delivery';
 
 const PRODUCT_FIELDS = 'id, name, slug, description, description_rich, tagline, highlights, category_id, badge, cta_label, regular_price, promo_price, allow_multiple_qty, status, featured, sort_order, avatar, gradient, logo_url, image_url, poster_ratio, delivery_type, download_filename, download_size, download_platform, download_instructions';
 const OPTIONAL_PRODUCT_FIELDS = ['cta_label', 'regular_price', 'promo_price', 'description_rich', 'allow_multiple_qty', 'download_platform', 'download_instructions'];
+const API_PROVIDER_FIELDS = 'id, prodseller_product_id, zfourstore_product_id, active_api_provider';
 const BASE_PRODUCT_FIELDS = PRODUCT_FIELDS
   .split(', ')
   .filter((field) => !OPTIONAL_PRODUCT_FIELDS.includes(field));
@@ -25,7 +26,7 @@ function getProductFieldMigration(field) {
 
 export function hideActivationProvider(value) {
   return typeof value === 'string'
-    ? value.replace(/pixverify(?:\.shop)?/gi, 'service d’activation')
+    ? value.replace(/(?:pixverify(?:\.shop)?|zfourstore)/gi, 'service d’activation')
     : value;
 }
 
@@ -192,16 +193,26 @@ export async function listShopAdminData() {
   const deliveryResult = deliveryProductIds.length
     ? await supabase.from('product_deliveries').select('product_id, access_url').in('product_id', deliveryProductIds)
     : { data: [], error: null };
-  const error = catalog.error || content.error || deliveryResult.error;
+  const apiProductIds = (catalog.data?.products || []).filter(isApiDelivery).map((product) => product.id);
+  const providerResult = apiProductIds.length
+    ? await supabase.from('products').select(API_PROVIDER_FIELDS).in('id', apiProductIds)
+    : { data: [], error: null };
+  const error = catalog.error || content.error || deliveryResult.error || providerResult.error;
   const deliveryByProduct = new Map(
     (deliveryResult.data || []).map((delivery) => [delivery.product_id, delivery.access_url]),
   );
+  const providerByProduct = new Map(
+    (providerResult.data || []).map((product) => [product.id, product]),
+  );
   return {
-    data: catalog.data && content.data && deliveryResult.data
+    data: catalog.data && content.data && deliveryResult.data && providerResult.data
       ? {
         ...catalog.data,
         products: catalog.data.products.map((product) => ({
           ...product,
+          prodseller_product_id: providerByProduct.get(product.id)?.prodseller_product_id || '',
+          zfourstore_product_id: providerByProduct.get(product.id)?.zfourstore_product_id || '',
+          active_api_provider: providerByProduct.get(product.id)?.active_api_provider || 'prodseller',
           access_url: isApiDelivery(product) ? '' : deliveryByProduct.get(product.id) || '',
         })),
         content: content.data,
@@ -236,6 +247,8 @@ export async function saveShopProduct(product, plans) {
     image_url: product.image_url,
     poster_ratio: product.poster_ratio || '4/3',
     delivery_type: product.delivery_type || 'activate',
+    prodseller_product_id: product.prodseller_product_id?.trim() || null,
+    zfourstore_product_id: product.zfourstore_product_id?.trim() || null,
     download_filename: product.download_filename || null,
     download_size: product.download_size || null,
     download_platform: product.download_platform || null,

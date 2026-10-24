@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   archiveShopProduct,
   createShopPromoCode,
@@ -47,6 +48,9 @@ const EMPTY_PRODUCT = {
   poster_ratio: '4/3',
   access_url: '',
   delivery_type: 'activate',
+  prodseller_product_id: '',
+  zfourstore_product_id: '',
+  active_api_provider: 'prodseller',
   download_filename: '',
   download_size: '',
   download_platform: '',
@@ -132,6 +136,9 @@ function productForm(product) {
     poster_ratio: product.poster_ratio || '4/3',
     access_url: product.access_url || '',
     delivery_type: product.delivery_type || 'activate',
+    prodseller_product_id: product.prodseller_product_id || '',
+    zfourstore_product_id: product.zfourstore_product_id || '',
+    active_api_provider: product.active_api_provider || 'prodseller',
     download_filename: product.download_filename || '',
     download_size: product.download_size || '',
     download_platform: product.download_platform || '',
@@ -147,6 +154,7 @@ export default function Shop({ shopSection = 'products' }) {
   const downloadFilenameInputRef = useRef(null);
   const promoEditorPanelRef = useRef(null);
   const [products, setProducts] = useState([]);
+  const [apiProviders, setApiProviders] = useState(null);
   const [categories, setCategories] = useState([]);
   const [content, setContent] = useState(DEFAULT_SHOP_CONTENT);
   const [form, setForm] = useState(EMPTY_PRODUCT);
@@ -168,10 +176,19 @@ export default function Shop({ shopSection = 'products' }) {
 
   async function load() {
     setLoading(true);
-    const [{ data, error: loadError }, promoResult] = await Promise.all([
+    const [{ data, error: loadError }, promoResult, providerResult] = await Promise.all([
       listShopAdminData(),
       listShopPromoCodes(),
+      shopSection === 'products'
+        ? supabase.functions.invoke('shop-provider-admin', { body: { action: 'overview' } })
+        : Promise.resolve({ data: null, error: null }),
     ]);
+    if (providerResult.error) {
+      console.error('Impossible de charger le fournisseur Gemini Pro :', providerResult.error);
+      setApiProviders(null);
+    } else {
+      setApiProviders(providerResult.data?.providers || null);
+    }
     if (promoResult.error) {
       console.error('Impossible de charger les codes promo :', promoResult.error);
       setPromoError('Impossible de charger les codes promo. Vérifie que la migration promo est appliquée.');
@@ -183,7 +200,13 @@ export default function Shop({ shopSection = 'products' }) {
       console.error('Impossible de charger les données de la boutique :', loadError);
       setError(`Chargement impossible : ${loadError.message}. Vérifie que la migration boutique a été exécutée.`);
     } else {
-      setProducts(data.products);
+      const providerProducts = new Map(
+        (providerResult.data?.products || []).map((product) => [product.id, product]),
+      );
+      setProducts(data.products.map((product) => ({
+        ...product,
+        ...providerProducts.get(product.id),
+      })));
       setCategories(data.categories);
       setContent({ ...DEFAULT_SHOP_CONTENT, ...data.content });
       setError('');
@@ -285,6 +308,12 @@ export default function Shop({ shopSection = 'products' }) {
       setError('Renseigne le lien d’activation pour ce produit.');
       return;
     }
+    if (form.delivery_type === 'api'
+      && !form.prodseller_product_id.trim()
+      && !form.zfourstore_product_id.trim()) {
+      setError('Ajoute l’identifiant du produit chez ProdSeller ou Z FOUR STORE.');
+      return;
+    }
 
     setSaving(true);
     setError('');
@@ -306,6 +335,8 @@ export default function Shop({ shopSection = 'products' }) {
       image_url: form.image_url.trim() || null,
       access_url: isApiDelivery(form) ? null : form.access_url.trim() || null,
       delivery_type: form.delivery_type,
+      prodseller_product_id: form.prodseller_product_id.trim(),
+      zfourstore_product_id: form.zfourstore_product_id.trim(),
       download_filename: form.download_filename.trim() || null,
       download_size: form.download_size.trim() || null,
       download_platform: form.download_platform || null,
@@ -917,10 +948,42 @@ export default function Shop({ shopSection = 'products' }) {
               </select>
             </div>
             {isApiDelivery(form) && (
-              <div className="form-group shop-admin-wide">
-                <span className="form-label">Livraison automatique</span>
-                <small className="project-form-hint">Livraison automatique : le lien est généré par l’API après le paiement.</small>
-              </div>
+              <>
+                <div className="form-group">
+                  <label htmlFor="shop-product-prodseller-id">ID produit ProdSeller</label>
+                  <input
+                    id="shop-product-prodseller-id"
+                    name="prodseller_product_id"
+                    value={form.prodseller_product_id}
+                    onChange={updateProductField}
+                    placeholder="ID du catalogue ProdSeller"
+                  />
+                  <small className="project-form-hint">
+                    API {apiProviders?.prodseller ? 'configurée' : 'non configurée'}.
+                  </small>
+                </div>
+                <div className="form-group">
+                  <label htmlFor="shop-product-zfourstore-id">ID produit Z FOUR STORE</label>
+                  <input
+                    id="shop-product-zfourstore-id"
+                    name="zfourstore_product_id"
+                    value={form.zfourstore_product_id}
+                    onChange={updateProductField}
+                    placeholder="ID du catalogue Z FOUR STORE"
+                  />
+                  <small className="project-form-hint">
+                    API {apiProviders?.zfourstore ? 'configurée' : 'non configurée'}.
+                  </small>
+                </div>
+                <div className="form-group shop-admin-wide">
+                  <span className="form-label">Livraison automatique</span>
+                  <small className="project-form-hint">
+                    La livraison utilise l’identifiant du fournisseur actif. Configure les IDs disponibles dans cette fiche, puis choisis le fournisseur dans{' '}
+                    <Link to="/admin/shop/fournisseurs">Admin → Fournisseurs</Link>.
+                    Un fournisseur sans ID pour ce produit ne pourra pas être sélectionné.
+                  </small>
+                </div>
+              </>
             )}
             {!isApiDelivery(form) && (
               <div className="form-group shop-admin-wide">

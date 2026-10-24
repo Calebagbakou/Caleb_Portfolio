@@ -28,6 +28,7 @@ const GROUPS = [
       { label: 'Commandes', to: '/admin/orders' },
       { label: 'Clients', to: '/admin/clients' },
       { label: 'Produits', to: '/admin/shop/products' },
+      { label: 'Fournisseurs', to: '/admin/shop/fournisseurs' },
       { label: 'Catégories', to: '/admin/shop/categories' },
       { label: 'Codes promo', to: '/admin/shop/promos' },
       { label: 'Contenu de la boutique', to: '/admin/shop/content' },

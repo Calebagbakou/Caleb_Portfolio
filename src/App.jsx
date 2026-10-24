@@ -25,6 +25,7 @@ const Testimonials = lazy(() => import('./pages/admin/Testimonials'));
 const Parametres = lazy(() => import('./pages/admin/Parametres'));
 const Projects = lazy(() => import('./pages/admin/Projects'));
 const Shop = lazy(() => import('./pages/admin/Shop'));
+const Providers = lazy(() => import('./pages/admin/Providers'));
 const Orders = lazy(() => import('./pages/admin/Orders'));
 const Clients = lazy(() => import('./pages/admin/Clients'));
 const Media = lazy(() => import('./pages/admin/Media'));
@@ -106,6 +107,7 @@ export default function App() {
         <Route path="media/images" element={<Media />} />
         <Route path="shop" element={<Navigate to="/admin/shop/products" replace />} />
         <Route path="shop/products" element={<Shop shopSection="products" />} />
+        <Route path="shop/fournisseurs" element={<Providers />} />
         <Route path="shop/categories" element={<Shop shopSection="categories" />} />
         <Route path="shop/promos" element={<Shop shopSection="promos" />} />
         <Route path="shop/content" element={<Shop shopSection="content" />} />

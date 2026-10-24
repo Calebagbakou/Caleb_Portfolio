@@ -2,19 +2,24 @@ export function isApiDelivery(product: { delivery_type?: unknown } | null | unde
   return product?.delivery_type === 'api';
 }
 
-const API_DELIVERY_PRODUCTS: Record<string, { key: 'gemini_18m' | 'canva_pro'; planSlug?: string }> = {
+const LEGACY_TARGET_KEYS: Record<string, { key: string; planSlug?: string }> = {
   'gemini-pro': { key: 'gemini_18m', planSlug: '18mois' },
   'canva-pro': { key: 'canva_pro' },
+  'duolingo-super': { key: 'duolingo_super_12m', planSlug: '12mois' },
 };
 
-export function getProdSellerTargetKey(product: { slug?: unknown; delivery_type?: unknown }, planSlug?: string) {
-  if (!isApiDelivery(product) || typeof product.slug !== 'string') return null;
-  const target = API_DELIVERY_PRODUCTS[product.slug];
-  if (!target || (target.planSlug && target.planSlug !== planSlug)) return null;
-  return target.key;
+export function getProdSellerTargetKey(
+  product: { id?: unknown; slug?: unknown; delivery_type?: unknown },
+  planSlug?: string,
+) {
+  if (!isApiDelivery(product)) return null;
+  const legacy = typeof product.slug === 'string' ? LEGACY_TARGET_KEYS[product.slug] : null;
+  if (legacy?.planSlug && legacy.planSlug !== planSlug) return null;
+  if (legacy) return legacy.key;
+  return typeof product.id === 'string' ? product.id : null;
 }
 
 export function getProdSellerProductKey(product: { slug?: unknown; delivery_type?: unknown }) {
   if (!isApiDelivery(product) || typeof product.slug !== 'string') return null;
-  return API_DELIVERY_PRODUCTS[product.slug]?.key || null;
+  return LEGACY_TARGET_KEYS[product.slug]?.key || null;
 }

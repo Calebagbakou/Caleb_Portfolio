@@ -12,6 +12,7 @@ const PAGES = {
   '/admin/portfolio/temoignages': { title: 'Témoignages', section: 'Portfolio' },
   '/admin/media/images': { title: 'Images', section: 'Médias' },
   '/admin/shop/products': { title: 'Produits', section: 'Boutique' },
+  '/admin/shop/fournisseurs': { title: 'Fournisseurs', section: 'Boutique' },
   '/admin/shop/categories': { title: 'Catégories', section: 'Boutique' },
   '/admin/shop/promos': { title: 'Codes promo', section: 'Boutique' },
   '/admin/shop/content': { title: 'Contenu de la boutique', section: 'Boutique' },
