@@ -811,6 +811,7 @@ h1,h2,h3,.brand{ font-family:'Unbounded',sans-serif; letter-spacing:-0.01em; }
 .provider-admin-message.is-success,.provider-admin-availability.is-available{ border-color:#bfe8d0; background:#effaf4; color:#18794e; }
 .provider-admin-availability{ display:grid; gap:5px; }
 .provider-admin-availability strong{ font-size:14px; }
+.provider-admin-check-results{ display:grid; grid-column:1 / -1; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
 .provider-admin-skeleton{ display:grid; gap:12px; }
 .provider-admin-skeleton span{ display:block; height:44px; border-radius:9px; background:linear-gradient(90deg,#edf1f6,#f8fafc,#edf1f6); background-size:200% 100%; animation:provider-skeleton 1.4s ease-in-out infinite; }
 @keyframes provider-skeleton{ to{ background-position:-200% 0; } }

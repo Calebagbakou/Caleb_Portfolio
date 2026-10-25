@@ -25,6 +25,8 @@ export type ProviderAvailability = {
   available: boolean;
   stock?: number | null;
   balanceOk?: boolean | null;
+  price?: number | null;
+  currency?: string | null;
   message?: string;
 };
 

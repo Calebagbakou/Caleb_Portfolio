@@ -116,7 +116,7 @@ test('availability and order lookup use the expected provider data without expos
   await withMockedFetch(async (url) => {
     urls.push(String(url));
     if (String(url).includes('/products/')) {
-      return jsonResponse({ product: { stock: 4, inStock: true } });
+      return jsonResponse({ product: { stock: 4, inStock: true, price: 2.5, currency: 'USD' } });
     }
     return jsonResponse({ orderId: 'supplier-order-2', status: 'delivered', deliveredKeys: ['key-2'] });
   }, async () => {
@@ -125,7 +125,10 @@ test('availability and order lookup use the expected provider data without expos
       available: true,
       stock: 4,
       balanceOk: null,
+      price: 2.5,
+      currency: 'USD',
     });
+
     const state = await adapter.fetchOrderState(
       { status: 'starting', attempt: 1, orderId: 'supplier-order-2' },
       target,
@@ -138,6 +141,15 @@ test('availability and order lookup use the expected provider data without expos
     ]);
     assert.equal(JSON.stringify(state).includes('test-api-key'), false);
   });
+});
+
+test('ProdSeller recognizes a product ID stored on the shop target', () => {
+  const adapter = createProdSellerAdapter({
+    getApiKey: () => 'test-key',
+    getProductId: () => '',
+    isConfigured: () => true,
+  });
+  assert.equal(adapter.isConfigured({ ...target, productId: 'mapped-product-id' }), true);
 });
 
 test('catalogue errors remain in the existing public response format', async () => {

@@ -40,7 +40,7 @@ test('Z FOUR STORE reads product availability and wallet balance with its secret
   await withMockedFetch(async (url, init) => {
     calls.push({ url: String(url), init });
     if (String(url).endsWith('/products')) {
-      return jsonResponse({ success: true, data: [{ id: target.productId, stock: 3, price: 1.5 }] });
+      return jsonResponse({ success: true, data: [{ id: target.productId, stock: 3, price: 1.5, currency: 'USDT' }] });
     }
     return jsonResponse({ success: true, data: { balance: 4.5 } });
   }, async () => {
@@ -48,6 +48,8 @@ test('Z FOUR STORE reads product availability and wallet balance with its secret
       available: true,
       stock: 3,
       balanceOk: true,
+      price: 1.5,
+      currency: 'USDT',
     });
   });
   assert.deepEqual(calls.map(({ url }) => url).sort(), [
@@ -55,6 +57,15 @@ test('Z FOUR STORE reads product availability and wallet balance with its secret
     'https://zfourstore.up.railway.app/api/v1/products',
   ]);
   assert.equal(calls.every(({ init }) => init.headers['X-API-Key'] === 'zfour-test-key'), true);
+});
+
+test('Z FOUR STORE recognizes a product ID stored on the shop target', () => {
+  const adapter = createZFourStoreAdapter({
+    getApiKey: () => 'zfour-test-key',
+    getProductId: () => '',
+    isConfigured: () => true,
+  });
+  assert.equal(adapter.isConfigured({ ...target, productId: 'mapped-product-id' }), true);
 });
 
 test('Z FOUR STORE lists catalog IDs and supplier details without exposing its API key', async () => {

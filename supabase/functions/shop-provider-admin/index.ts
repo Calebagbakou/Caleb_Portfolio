@@ -140,31 +140,42 @@ async function checkAvailability(client: ReturnType<typeof getServiceClient>, pr
     .maybeSingle();
   if (productError) throw productError;
   if (!product) return jsonResponse({ error: 'Produit API introuvable.' }, 404);
-  const provider = product.active_api_provider === 'zfourstore' ? 'zfourstore' : 'prodseller';
   const ids = getProductProviderIds(product);
-  const target: ProviderTarget = {
-    key: LEGACY_TARGET_KEYS[product.slug] || product.id,
-    productId: ids[provider],
-    providerProductIds: ids,
-    configuredProvider: provider,
-    shopProductId: product.id,
-    name: product.name,
-    quantity: 1,
-  };
-  if (!target.productId || !providers[provider].isConfigured(target)) {
-    return jsonResponse({ error: `L’identifiant ${provider === 'zfourstore' ? 'Z FOUR STORE' : 'ProdSeller'} de ce produit n’est pas configuré.` }, 503);
-  }
-  const availability = await providers[provider].checkAvailability(target);
-  if (availability.message) return jsonResponse({ provider, ...availability }, 502);
-  if (!availability.available && (availability.stock === 0 || availability.stock === null)) {
-    const { error } = await client.from('shop_provider_events').insert({
-      target_key: target.key,
-      provider,
-      event_type: 'out_of_stock',
-    });
-    if (error) throw error;
-  }
-  return jsonResponse({ provider, ...availability });
+  const key = LEGACY_TARGET_KEYS[product.slug] || product.id;
+  const providerResults = await Promise.all(
+    (['prodseller', 'zfourstore'] as const).map(async (provider) => {
+      const target: ProviderTarget = {
+        key,
+        productId: ids[provider],
+        providerProductIds: ids,
+        configuredProvider: provider,
+        shopProductId: product.id,
+        name: product.name,
+        quantity: 1,
+      };
+      if (!target.productId) {
+        return [provider, { available: false, message: 'Identifiant fournisseur non renseigné sur la fiche produit.' }] as const;
+      }
+      if (!providers[provider].isConfigured(target)) {
+        return [provider, { available: false, message: 'Clé API fournisseur non configurée.' }] as const;
+      }
+      const availability = await providers[provider].checkAvailability(target);
+      if (!availability.available && (availability.stock === 0 || availability.stock === null) && !availability.message) {
+        const { error } = await client.from('shop_provider_events').insert({
+          target_key: target.key,
+          provider,
+          event_type: 'out_of_stock',
+        });
+        if (error) throw error;
+      }
+      return [provider, availability] as const;
+    }),
+  );
+  return jsonResponse({
+    productId: product.id,
+    activeProvider: product.active_api_provider || 'prodseller',
+    providers: Object.fromEntries(providerResults),
+  });
 }
 
 Deno.serve(async (request) => {

@@ -16,6 +16,27 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function formatSupplierPrice(availability) {
+  if (availability?.price === null || availability?.price === undefined) return 'Non communiqué';
+  const currency = availability.currency || 'USDT';
+  return `${Number(availability.price).toLocaleString('fr-FR')} ${currency}`;
+}
+
+async function getFunctionErrorMessage(error) {
+  if (error?.context instanceof Response) {
+    try {
+      const responseData = await error.context.clone().json();
+      if (typeof responseData?.error === 'string') return responseData.error;
+    } catch {
+      console.warn('La réponse d’erreur du contrôle fournisseur n’est pas un JSON lisible.');
+    }
+  }
+  if (error?.name === 'FunctionsFetchError' || /failed to send a request/i.test(error?.message || '')) {
+    return 'La fonction de contrôle fournisseur est injoignable. Vérifie son déploiement et ses journaux Supabase, puis réessaie.';
+  }
+  return error?.message || 'Le contrôle fournisseur a échoué.';
+}
+
 function describeEvent(event, products = []) {
   const target = products.find((product) =>
     product.id === event.target_key || product.slug === event.target_key,
@@ -61,18 +82,24 @@ export default function Providers() {
     setChecking(true);
     setError('');
     setAvailability(null);
-    const { data, error: invokeError } = await supabase.functions.invoke('shop-provider-admin', {
-      body: { action: 'availability', productId },
-    });
-    if (invokeError) {
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke('shop-provider-admin', {
+        body: { action: 'availability', productId },
+      });
+      if (invokeError) {
+        console.error('Vérification fournisseur impossible :', invokeError);
+        setError(await getFunctionErrorMessage(invokeError));
+      } else if (data?.error) {
+        setError(data.error);
+      } else {
+        setAvailability(data);
+      }
+    } catch (invokeError) {
       console.error('Vérification fournisseur impossible :', invokeError);
-      setError('La vérification du stock et du solde a échoué. Réessayez.');
-    } else {
-      setAvailability(data);
-      if (data?.error) setError(data.error);
-      await load();
+      setError('La requête de disponibilité a échoué. Vérifie la connexion puis réessaie.');
+    } finally {
+      setChecking(false);
     }
-    setChecking(false);
   }
 
   async function changeProvider(product, nextProvider) {
@@ -145,7 +172,7 @@ export default function Providers() {
                 const active = product.active_api_provider || 'prodseller';
                 const prodSellerAvailable = Boolean(overview.providers?.prodseller && product.prodseller_mapping_saved);
                 const zFourStoreAvailable = Boolean(overview.providers?.zfourstore && product.zfourstore_mapping_saved);
-                const productAvailability = availabilityProductId === product.id ? availability : null;
+                const productAvailability = availabilityProductId === product.id ? availability?.providers : null;
                 return (
                   <article className="provider-admin-product" key={product.id}>
                     <div>
@@ -179,20 +206,38 @@ export default function Providers() {
                       className="btn btn-secondary provider-admin-action"
                       type="button"
                       onClick={() => checkAvailability(product.id)}
-                      disabled={checking || loading || !overview.providers?.[active] || !(active === 'zfourstore' ? product.zfourstore_product_id : product.prodseller_product_id)}
+                      disabled={checking || loading || !(
+                        (overview.providers?.prodseller && product.prodseller_product_id)
+                        || (overview.providers?.zfourstore && product.zfourstore_product_id)
+                      )}
                     >
-                      {checking && availabilityProductId === product.id ? 'Vérification…' : 'Vérifier la disponibilité'}
+                      {checking && availabilityProductId === product.id ? 'Vérification…' : 'Vérifier stocks et prix'}
                     </button>
                     {productAvailability && (
-                      <div className={`provider-admin-availability${productAvailability.available ? ' is-available' : ' is-unavailable'}`} role="status">
-                        <strong>{productAvailability.available ? 'Produit en stock' : 'Disponibilité non confirmée'}</strong>
-                        {productAvailability.stock !== null && productAvailability.stock !== undefined && <span>Stock : {productAvailability.stock}</span>}
-                        <span>
-                          Solde : {productAvailability.balanceOk === null || productAvailability.balanceOk === undefined
-                            ? 'non vérifié'
-                            : productAvailability.balanceOk ? 'suffisant' : 'insuffisant'}
-                        </span>
-                        {productAvailability.message && <span>{productAvailability.message}</span>}
+                      <div className="provider-admin-check-results" role="status">
+                        {['prodseller', 'zfourstore'].map((provider) => {
+                          const result = productAvailability[provider];
+                          const configured = provider === 'prodseller' ? prodSellerAvailable : zFourStoreAvailable;
+                          return (
+                            <div
+                              className={`provider-admin-availability${result?.available ? ' is-available' : ' is-unavailable'}`}
+                              key={provider}
+                            >
+                              <strong>{PROVIDER_LABELS[provider]} · {result?.available ? 'En stock' : 'Non confirmé'}</strong>
+                              <span>Prix fournisseur : {formatSupplierPrice(result)}</span>
+                              {result?.stock !== null && result?.stock !== undefined && <span>Stock : {result.stock}</span>}
+                              {provider === 'zfourstore' && (
+                                <span>
+                                  Solde : {result?.balanceOk === null || result?.balanceOk === undefined
+                                    ? 'non vérifié'
+                                    : result.balanceOk ? 'suffisant' : 'insuffisant'}
+                                </span>
+                              )}
+                              {!configured && <span>ID ou clé fournisseur non configuré pour ce produit.</span>}
+                              {result?.message && <span>{result.message}</span>}
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </article>

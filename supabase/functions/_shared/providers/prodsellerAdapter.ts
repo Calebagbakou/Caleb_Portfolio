@@ -85,6 +85,9 @@ export function createProdSellerAdapter(
     }
 
     const record = product as Record<string, unknown>;
+    const priceValue = Number(record.price);
+    const price = Number.isFinite(priceValue) ? priceValue : null;
+    const currency = typeof record.currency === 'string' ? record.currency : null;
     const stockValue = record.stock;
     const inStock = record.inStock;
     const stock = typeof stockValue === 'number'
@@ -93,13 +96,13 @@ export function createProdSellerAdapter(
         ? Number(stockValue)
         : null;
     if (inStock === false || (stock !== null && stock <= 0)) {
-      return { available: false, stock, balanceOk: null };
+      return { available: false, stock, balanceOk: null, price, currency };
     }
     if (stock !== null || typeof inStock === 'boolean') {
-      return { available: inStock ?? (stock !== null && stock > 0), stock, balanceOk: null };
+      return { available: inStock ?? (stock !== null && stock > 0), stock, balanceOk: null, price, currency };
     }
     console.error('ProdSeller availability response does not include stock information.');
-    return { available: false, stock: null, balanceOk: null, message: 'La disponibilité momentanément indisponible.' };
+    return { available: false, stock: null, balanceOk: null, price, currency, message: 'La disponibilité momentanément indisponible.' };
   }
 
   async function fetchOrderState(
@@ -258,7 +261,7 @@ export function createProdSellerAdapter(
   return {
     id: 'prodseller',
     isConfigured(target) {
-      return dependencies.isConfigured() && (!target || Boolean(dependencies.getProductId(target)));
+      return dependencies.isConfigured() && (!target || Boolean(target.productId || dependencies.getProductId(target)));
     },
     checkAvailability,
     loadProduct,

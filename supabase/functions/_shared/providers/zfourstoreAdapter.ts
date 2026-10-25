@@ -164,6 +164,8 @@ export function createZFourStoreAdapter(dependencies: ZFourStoreDependencies): Z
       available: product.inStock === true,
       stock,
       balanceOk,
+      price: Number.isFinite(price) ? price : null,
+      currency: typeof product.currency === 'string' ? product.currency : null,
     };
   }
 
@@ -275,7 +277,7 @@ export function createZFourStoreAdapter(dependencies: ZFourStoreDependencies): Z
     id: 'zfourstore',
     listProducts,
     isConfigured(target) {
-      return dependencies.isConfigured() && (!target || Boolean(dependencies.getProductId(target)));
+      return dependencies.isConfigured() && (!target || Boolean(target.productId || dependencies.getProductId(target)));
     },
     checkAvailability,
     loadProduct,

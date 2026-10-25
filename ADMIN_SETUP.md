@@ -189,8 +189,9 @@ déjà commencées restent épinglées à leur fournisseur d’origine.
   disponibles chez un seul fournisseur; dans ce cas seul celui-ci peut être
   sélectionné. Les catalogues sont accessibles dans `/admin/shop/prodseller`
   et `/admin/shop/zfourstore`; les pages sont en lecture seule et affichent
-  les IDs, prix et stocks fournisseur. Dans **Admin → Fournisseurs**, le
-  contrôle vérifie le produit auprès du fournisseur actuellement sélectionné.
+  les   IDs, prix et stocks fournisseur. Dans **Admin → Fournisseurs**, le bouton
+  vérifie le stock et affiche le prix de chaque fournisseur configuré pour le
+  produit.
 4. Déploie `shop-provider-admin`, `gemini-prodseller-activate`,
   `gemini-pro-activate`, `shop-account` et `shop-order-delivery`. Vérifie les
   produits et leurs prix dans les catalogues fournisseur avant le premier achat.
