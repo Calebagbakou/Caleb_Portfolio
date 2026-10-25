@@ -6,7 +6,7 @@ import type {
   ProviderTarget,
 } from './providerTypes.ts';
 
-const API_URL = 'https://zfourstore.online/api/v1';
+const API_URL = 'https://zfourstore.up.railway.app/api/v1';
 
 type ZFourStoreDependencies = {
   getApiKey(): string;

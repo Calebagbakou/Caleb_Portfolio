@@ -183,8 +183,8 @@ déjà commencées restent épinglées à leur fournisseur d’origine.
   retourné par son catalogue (`GET /products`). Les identifiants sont stockés
   dans les colonnes `prodseller_product_id` et `zfourstore_product_id`; il
   n’est plus nécessaire de créer un secret Supabase par produit. L’API Z FOUR
-  STORE utilise
-  `https://zfourstore.online/api/v1` (documentation :
+  STORE utilise l’hôte Railway documenté
+  `https://zfourstore.up.railway.app/api/v1` (documentation :
   <https://zfourstore.up.railway.app/api-docs>). Les produits peuvent être
   disponibles chez un seul fournisseur; dans ce cas seul celui-ci peut être
   sélectionné. Les catalogues sont accessibles dans `/admin/shop/prodseller`

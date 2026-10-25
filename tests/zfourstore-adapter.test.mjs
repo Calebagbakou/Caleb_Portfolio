@@ -51,8 +51,8 @@ test('Z FOUR STORE reads product availability and wallet balance with its secret
     });
   });
   assert.deepEqual(calls.map(({ url }) => url).sort(), [
-    'https://zfourstore.online/api/v1/balance',
-    'https://zfourstore.online/api/v1/products',
+    'https://zfourstore.up.railway.app/api/v1/balance',
+    'https://zfourstore.up.railway.app/api/v1/products',
   ]);
   assert.equal(calls.every(({ init }) => init.headers['X-API-Key'] === 'zfour-test-key'), true);
 });
@@ -85,13 +85,13 @@ test('Z FOUR STORE lists catalog IDs and supplier details without exposing its A
       }],
     });
   });
-  assert.equal(calls[0].url, 'https://zfourstore.online/api/v1/products');
+  assert.equal(calls[0].url, 'https://zfourstore.up.railway.app/api/v1/products');
   assert.equal(calls[0].init.headers['X-API-Key'], 'zfour-test-key');
 });
 
 test('Z FOUR STORE creates an order and normalizes delivered access links', async () => {
   await withMockedFetch(async (url, init) => {
-    assert.equal(String(url), 'https://zfourstore.online/api/v1/order');
+    assert.equal(String(url), 'https://zfourstore.up.railway.app/api/v1/order');
     assert.deepEqual(JSON.parse(init.body), { productId: target.productId, quantity: 1 });
     return jsonResponse({
       success: true,
