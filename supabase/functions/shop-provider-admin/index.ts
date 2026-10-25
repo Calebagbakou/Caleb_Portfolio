@@ -3,6 +3,10 @@ import { createProdSellerAdapter } from '../_shared/providers/prodsellerAdapter.
 import { createZFourStoreAdapter } from '../_shared/providers/zfourstoreAdapter.ts';
 import type { ProviderAdapter, ProviderTarget } from '../_shared/providers/providerTypes.ts';
 
+type CatalogProvider = ProviderAdapter & {
+  listProducts(): Promise<{ body: unknown; status: number }>;
+};
+
 const denoEnv = (globalThis as typeof globalThis & {
   Deno: { env: { get(name: string): string | undefined } };
 }).Deno.env;
@@ -49,7 +53,7 @@ function getProductProviderIds(product: {
   };
 }
 
-const providers: Record<ProviderAdapter['id'], ProviderAdapter> = {
+const providers: Record<ProviderAdapter['id'], CatalogProvider> = {
   prodseller: createProdSellerAdapter({
     getApiKey() {
       return denoEnv.get('PRODSELLER_API_KEY')?.trim() || '';
@@ -176,6 +180,17 @@ Deno.serve(async (request) => {
     if (action === 'overview') {
       const providers = await syncRuntimeConfiguration(client);
       return jsonResponse({ ...(await getOverview(client)), providers });
+    }
+    if (action === 'catalog') {
+      const providerId = body?.provider;
+      if (providerId !== 'zfourstore') {
+        return jsonResponse({ error: 'Fournisseur de catalogue invalide.' }, 400);
+      }
+      if (!getProviderConfiguration().zfourstore) {
+        return jsonResponse({ error: 'Configuration manquante : ajoutez le secret ZFOURSTORE_API_KEY dans Supabase.' }, 503);
+      }
+      const catalog = await providers.zfourstore.listProducts();
+      return jsonResponse(catalog.body, catalog.status);
     }
     if (action === 'availability') return await checkAvailability(client, body?.productId);
     return jsonResponse({ error: 'Action invalide.' }, 400);

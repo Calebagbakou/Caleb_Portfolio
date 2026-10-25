@@ -208,7 +208,16 @@ export default function Providers() {
         <div className="provider-admin-heading">
           <div>
             <h2>Configuration des fournisseurs</h2>
-            <p>ProdSeller : {overview?.providers?.prodseller ? 'API configurée' : 'clé API manquante'} · Z FOUR STORE : {overview?.providers?.zfourstore ? 'API configurée' : 'clé API manquante'}.</p>
+            <p>
+              ProdSeller : {overview?.providers?.prodseller ? 'API configurée' : 'clé API manquante'} ·{' '}
+              Z FOUR STORE : {overview?.providers?.zfourstore ? 'API configurée' : 'clé API manquante'}.
+              {' '}Les IDs produit se consultent dans les catalogues fournisseurs.
+            </p>
+            <p>
+              <Link to="/admin/shop/prodseller">Catalogue ProdSeller</Link>
+              {' · '}
+              <Link to="/admin/shop/zfourstore">Catalogue Z FOUR STORE</Link>
+            </p>
           </div>
         </div>
       </section>

@@ -33,6 +33,7 @@ const GROUPS = [
       { label: 'Codes promo', to: '/admin/shop/promos' },
       { label: 'Contenu de la boutique', to: '/admin/shop/content' },
       { label: 'ProdSeller', to: '/admin/shop/prodseller' },
+      { label: 'Z FOUR STORE', to: '/admin/shop/zfourstore' },
     ],
   },
   {

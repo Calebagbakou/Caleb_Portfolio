@@ -57,6 +57,38 @@ test('Z FOUR STORE reads product availability and wallet balance with its secret
   assert.equal(calls.every(({ init }) => init.headers['X-API-Key'] === 'zfour-test-key'), true);
 });
 
+test('Z FOUR STORE lists catalog IDs and supplier details without exposing its API key', async () => {
+  const calls = [];
+  await withMockedFetch(async (url, init) => {
+    calls.push({ url: String(url), init });
+    return jsonResponse({
+      success: true,
+      data: [{
+        id: 'catalog-product-1',
+        name: 'Duolingo Super',
+        description: '12 mois',
+        price: 3.5,
+        stock: 8,
+      }],
+    });
+  }, async () => {
+    const result = await makeAdapter().listProducts();
+    assert.equal(result.status, 200);
+    assert.deepEqual(result.body, {
+      products: [{
+        id: 'catalog-product-1',
+        name: 'Duolingo Super',
+        description: '12 mois',
+        price: 3.5,
+        stock: 8,
+        inStock: true,
+      }],
+    });
+  });
+  assert.equal(calls[0].url, 'https://zfourstore.online/api/v1/products');
+  assert.equal(calls[0].init.headers['X-API-Key'], 'zfour-test-key');
+});
+
 test('Z FOUR STORE creates an order and normalizes delivered access links', async () => {
   await withMockedFetch(async (url, init) => {
     assert.equal(String(url), 'https://zfourstore.online/api/v1/order');

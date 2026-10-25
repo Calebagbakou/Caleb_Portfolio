@@ -165,9 +165,9 @@ export default function Shop({ shopSection = 'products' }) {
   const [contentSaving, setContentSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [prodSellerProducts, setProdSellerProducts] = useState(null);
-  const [prodSellerLoading, setProdSellerLoading] = useState(false);
-  const [prodSellerError, setProdSellerError] = useState('');
+  const [providerProducts, setProviderProducts] = useState(null);
+  const [providerCatalogLoading, setProviderCatalogLoading] = useState(false);
+  const [providerCatalogError, setProviderCatalogError] = useState('');
   const [promoCodes, setPromoCodes] = useState([]);
   const [promoForm, setPromoForm] = useState(EMPTY_PROMO_FORM);
   const [promoSaving, setPromoSaving] = useState(false);
@@ -418,30 +418,34 @@ export default function Shop({ shopSection = 'products' }) {
     setContentSaving(false);
   }
 
-  async function loadProdSellerProducts() {
-    setProdSellerLoading(true);
-    setProdSellerError('');
+  async function loadProviderProducts(provider) {
+    setProviderCatalogLoading(true);
+    setProviderCatalogError('');
     try {
-      const { data, error: invokeError } = await supabase.functions.invoke('gemini-prodseller-activate', {
-        body: { action: 'products' },
-      });
+      const { data, error: invokeError } = provider === 'zfourstore'
+        ? await supabase.functions.invoke('shop-provider-admin', {
+          body: { action: 'catalog', provider },
+        })
+        : await supabase.functions.invoke('gemini-prodseller-activate', {
+          body: { action: 'products' },
+        });
       if (invokeError || data?.error) {
         const detail = data?.error || await getInvocationErrorMessage(invokeError);
-        console.error('Impossible de charger le catalogue ProdSeller :', {
+        console.error(`Impossible de charger le catalogue ${provider} :`, {
           message: detail || 'Réponse de la fonction indisponible.',
           status: invokeError?.context?.status,
         });
-        setProdSellerError(detail || 'La fonction ProdSeller ne répond pas. Vérifiez son déploiement puis réessayez.');
-        setProdSellerProducts(null);
+        setProviderCatalogError(detail || `La fonction ${provider} ne répond pas. Vérifiez son déploiement puis réessayez.`);
+        setProviderProducts(null);
       } else {
-        setProdSellerProducts(data.products || []);
+        setProviderProducts(data.products || []);
       }
     } catch (error) {
-      console.error('Impossible de charger le catalogue ProdSeller :', error instanceof Error ? error.message : 'Unknown error');
-      setProdSellerError('La requête vers la fonction ProdSeller a échoué. Vérifiez votre connexion puis réessayez.');
-      setProdSellerProducts(null);
+      console.error(`Impossible de charger le catalogue ${provider} :`, error instanceof Error ? error.message : 'Unknown error');
+      setProviderCatalogError(`La requête vers la fonction ${provider} a échoué. Vérifiez votre connexion puis réessayez.`);
+      setProviderProducts(null);
     } finally {
-      setProdSellerLoading(false);
+      setProviderCatalogLoading(false);
     }
   }
 
@@ -595,20 +599,25 @@ export default function Shop({ shopSection = 'products' }) {
       {error && <div className="shop-admin-alert error" role="alert">{error}</div>}
       {notice && <div className="shop-admin-alert success" role="status">{notice}</div>}
 
-      {shopSection === 'prodseller' && <section className="panel">
-        <h2>Catalogue ProdSeller</h2>
+      {(shopSection === 'prodseller' || shopSection === 'zfourstore') && <section className="panel">
+        <h2>Catalogue {shopSection === 'zfourstore' ? 'Z FOUR STORE' : 'ProdSeller'}</h2>
         <p>
-          Consulte les produits disponibles pour relever l’identifiant exact de Gemini Pro 18 mois.
+          Consulte les produits disponibles et leurs identifiants, prix et stocks.
           Cette action est en lecture seule et ne lance aucun achat.
         </p>
-        <button className="btn btn-secondary" type="button" onClick={loadProdSellerProducts} disabled={prodSellerLoading}>
-          {prodSellerLoading ? 'Chargement…' : 'Charger le catalogue'}
+        <button
+          className="btn btn-secondary"
+          type="button"
+          onClick={() => loadProviderProducts(shopSection)}
+          disabled={providerCatalogLoading}
+        >
+          {providerCatalogLoading ? 'Chargement…' : 'Charger le catalogue'}
         </button>
-        {prodSellerError && <div className="shop-admin-alert error" role="alert">{prodSellerError}</div>}
-        {prodSellerProducts && (
+        {providerCatalogError && <div className="shop-admin-alert error" role="alert">{providerCatalogError}</div>}
+        {providerProducts && (
           <div className="shop-admin-list" style={{ marginTop: 16 }}>
-            {prodSellerProducts.length === 0 && <p>Aucun produit disponible.</p>}
-            {prodSellerProducts.map((product) => (
+            {providerProducts.length === 0 && <p>Aucun produit disponible.</p>}
+            {providerProducts.map((product) => (
               <div className="shop-admin-category" key={product.id}>
                 <div>
                   <strong>{hideActivationProvider(product.name)}</strong>
@@ -616,10 +625,12 @@ export default function Shop({ shopSection = 'products' }) {
                   {product.description && (
                     <small>{hideActivationProvider(product.description)}</small>
                   )}
-                  {product.price !== undefined && <div>Prix débité du solde : {product.price} USDT</div>}
+                  {product.price !== undefined && <div>Prix fournisseur : {product.price}</div>}
                   {product.stock !== undefined && <div>Stock : {product.stock ?? 'non communiqué'}</div>}
                   <div>Stock disponible : {product.inStock === true ? 'Oui' : product.inStock === false ? 'Non' : 'Non communiqué'}</div>
-                  <div>Activation par e-mail : {product.requiresEmailActivation === true ? 'Oui' : product.requiresEmailActivation === false ? 'Non' : 'Non communiqué'}</div>
+                  {product.requiresEmailActivation !== undefined && (
+                    <div>Activation par e-mail : {product.requiresEmailActivation ? 'Oui' : 'Non'}</div>
+                  )}
                 </div>
               </div>
             ))}

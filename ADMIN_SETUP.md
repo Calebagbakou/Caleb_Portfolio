@@ -187,11 +187,13 @@ déjà commencées restent épinglées à leur fournisseur d’origine.
   `https://zfourstore.online/api/v1` (documentation :
   <https://zfourstore.up.railway.app/api-docs>). Les produits peuvent être
   disponibles chez un seul fournisseur; dans ce cas seul celui-ci peut être
-  sélectionné. Dans **Admin → Fournisseurs**, le contrôle vérifie le produit
-  auprès du fournisseur actuellement sélectionné.
-4. Déploie `gemini-prodseller-activate`, `gemini-pro-activate`, `shop-account`
-  et `shop-order-delivery`. Vérifie les produits et leurs prix dans les
-  catalogues fournisseur avant le premier achat.
+  sélectionné. Les catalogues sont accessibles dans `/admin/shop/prodseller`
+  et `/admin/shop/zfourstore`; les pages sont en lecture seule et affichent
+  les IDs, prix et stocks fournisseur. Dans **Admin → Fournisseurs**, le
+  contrôle vérifie le produit auprès du fournisseur actuellement sélectionné.
+4. Déploie `shop-provider-admin`, `gemini-prodseller-activate`,
+  `gemini-pro-activate`, `shop-account` et `shop-order-delivery`. Vérifie les
+  produits et leurs prix dans les catalogues fournisseur avant le premier achat.
 5. Effectue le premier achat uniquement avec une commande payée et confirmée
   dont tu acceptes le débit réel. La documentation ProdSeller consultée ne
   décrit pas de sandbox. Z FOUR STORE ne documente pas de clé d’idempotence :

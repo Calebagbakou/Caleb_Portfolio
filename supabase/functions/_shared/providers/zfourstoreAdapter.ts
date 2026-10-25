@@ -14,6 +14,10 @@ type ZFourStoreDependencies = {
   isConfigured(): boolean;
 };
 
+type ZFourStoreAdapter = ProviderAdapter & {
+  listProducts(): Promise<{ body: unknown; status: number }>;
+};
+
 async function request(path: string, apiKey: string, init: RequestInit = {}) {
   return fetch(`${API_URL}${path}`, {
     ...init,
@@ -46,7 +50,64 @@ function getItems(value: unknown) {
     : [];
 }
 
-export function createZFourStoreAdapter(dependencies: ZFourStoreDependencies): ProviderAdapter {
+export function createZFourStoreAdapter(dependencies: ZFourStoreDependencies): ZFourStoreAdapter {
+  async function listProducts(): Promise<{ body: unknown; status: number }> {
+    let response: Response;
+    try {
+      response = await request('/products', dependencies.getApiKey(), {
+        signal: AbortSignal.timeout(8000),
+      });
+    } catch (error) {
+      console.error('Z FOUR STORE catalogue connection failed:', error instanceof Error ? error.message : 'Unknown error');
+      return {
+        body: { error: 'Connexion à Z FOUR STORE impossible. Vérifiez la connexion au fournisseur puis réessayez.' },
+        status: 502,
+      };
+    }
+    const result = await responseJson(response);
+    if (!response.ok) {
+      console.error('Z FOUR STORE catalogue request returned HTTP status:', response.status);
+      const message = response.status === 401
+        ? 'Z FOUR STORE refuse la clé API configurée. Vérifiez le secret ZFOURSTORE_API_KEY dans Supabase.'
+        : response.status === 403
+          ? 'La clé Z FOUR STORE ne possède pas l’autorisation de consulter le catalogue.'
+          : response.status === 404
+            ? 'Le point d’accès du catalogue Z FOUR STORE est introuvable.'
+            : response.status === 429
+              ? 'Z FOUR STORE limite temporairement les requêtes. Patientez puis réessayez.'
+              : response.status >= 500
+                ? 'Le service Z FOUR STORE rencontre une erreur temporaire. Réessayez dans quelques minutes.'
+                : `Z FOUR STORE a refusé la requête (HTTP ${response.status}).`;
+      return { body: { error: message, providerStatus: response.status }, status: 502 };
+    }
+    if (result?.success !== true || !Array.isArray(result.data)) {
+      console.error('Z FOUR STORE catalogue response has an unexpected shape.');
+      return {
+        body: { error: 'La réponse du catalogue Z FOUR STORE est inattendue. Vérifiez la compatibilité de son API.' },
+        status: 502,
+      };
+    }
+    return {
+      status: 200,
+      body: {
+        products: result.data.map((entry: unknown) => {
+          const product = entry && typeof entry === 'object'
+            ? entry as Record<string, unknown>
+            : {};
+          const stock = Number(product.stock);
+          return {
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            price: product.price,
+            stock: Number.isFinite(stock) ? stock : null,
+            inStock: Number.isFinite(stock) ? stock > 0 : null,
+          };
+        }),
+      },
+    };
+  }
+
   async function loadProduct(target: ProviderTarget) {
     let response: Response;
     try {
@@ -212,6 +273,7 @@ export function createZFourStoreAdapter(dependencies: ZFourStoreDependencies): P
 
   return {
     id: 'zfourstore',
+    listProducts,
     isConfigured(target) {
       return dependencies.isConfigured() && (!target || Boolean(dependencies.getProductId(target)));
     },

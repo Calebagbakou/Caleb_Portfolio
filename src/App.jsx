@@ -112,6 +112,7 @@ export default function App() {
         <Route path="shop/promos" element={<Shop shopSection="promos" />} />
         <Route path="shop/content" element={<Shop shopSection="content" />} />
         <Route path="shop/prodseller" element={<Shop shopSection="prodseller" />} />
+        <Route path="shop/zfourstore" element={<Shop shopSection="zfourstore" />} />
         <Route path="orders" element={<Orders />} />
         <Route path="clients" element={<Clients />} />
         <Route path="messages" element={<Messages />} />
