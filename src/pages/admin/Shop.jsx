@@ -40,7 +40,7 @@ const EMPTY_PRODUCT = {
   promo_price: '',
   allow_multiple_qty: false,
   status: 'active',
-  featured: false,
+  featured: true,
   avatar: '',
   gradient: 'linear-gradient(135deg,#4285F4,#34A853)',
   logo_url: '',

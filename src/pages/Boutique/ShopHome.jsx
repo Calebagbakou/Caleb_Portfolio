@@ -29,7 +29,7 @@ export default function ShopHome() {
   const [heroRef, heroVisible] = useReveal();
   const { categories, products, content, loading, error, retryLoad } = useShop();
   const slowLoading = useSlowLoading(loading);
-  const featured = products.filter((product) => product.featured).slice(0, 3);
+  const featured = products.filter((product) => product.featured);
 
   return (
     <>
