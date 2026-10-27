@@ -14,8 +14,8 @@ function upsertMeta(attribute, value, content) {
 }
 
 export default function Seo({
-  title = 'Caleb Creative — Créateur visuel au Bénin',
-  description = 'Caleb Jesugnon Agbakou crée des vidéos IA, designs, montages vidéo et visuels IA pour vos projets au Bénin et au-delà.',
+  title = 'Caleb Creative | Créateur visuel au Bénin',
+  description = 'Caleb Jesugnon Agbakou, créateur visuel au Bénin. Découvrez ses réalisations en vidéo, design graphique et montage.',
   path = '/',
   noIndex = false,
   product = null,
@@ -85,7 +85,7 @@ export default function Seo({
     canonical.setAttribute('href', canonicalUrl);
 
     return () => {
-      document.title = 'Caleb Creative — Portfolio';
+      document.title = 'Caleb Creative | Portfolio';
     };
   }, [description, noIndex, path, product, title]);
 
