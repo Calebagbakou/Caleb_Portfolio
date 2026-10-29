@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getApiProductAvailability } from '../../services/shop';
 import Seo from '../../components/site/Seo';
 import ShopArrow from '../../components/shop/ShopArrow';
+import GuaranteeBox from '../../components/shop/GuaranteeBox';
 import RichContent from '../../components/shop/RichContent';
 import { LoadingFeedback, ProductDetailSkeleton } from '../../components/site/LoadingStates';
 import { useSlowLoading } from '../../hooks/useSlowLoading';
@@ -262,6 +263,8 @@ export default function Produit() {
               ))}
             </ul>
           )}
+
+          <GuaranteeBox />
 
         </div>
       </div>

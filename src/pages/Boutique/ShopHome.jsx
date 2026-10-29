@@ -5,6 +5,7 @@ import { useReveal } from '../../hooks/useReveal';
 import { useShop } from '../../context/ShopContext';
 import Seo from '../../components/site/Seo';
 import ShopArrow from '../../components/shop/ShopArrow';
+import AssuranceBar from '../../components/shop/AssuranceBar';
 import { LoadingFeedback, ProductGridSkeleton } from '../../components/site/LoadingStates';
 import { useSlowLoading } from '../../hooks/useSlowLoading';
 
@@ -39,7 +40,7 @@ export default function ShopHome() {
         path="/boutique"
       />
       <section className="shop-hero" ref={heroRef}>
-        <div className="eyebrow">CALEB CREATIVE — BOUTIQUE</div>
+        <div className="eyebrow">Caleb Creative · Boutique officielle</div>
         <h1 className={`reveal${heroVisible ? ' in' : ''}`}>{content.shop_hero_title}</h1>
         <p className={`reveal${heroVisible ? ' in' : ''}`}>{content.shop_hero_description}</p>
         <div className={`shop-hero-cta reveal${heroVisible ? ' in' : ''}`}>
@@ -52,6 +53,7 @@ export default function ShopHome() {
       </section>
 
       <main className="wrap">
+        <AssuranceBar />
         <div className="chip-row">
           <Link to="/boutique/catalogue" className="chip active">
             Tous les produits
