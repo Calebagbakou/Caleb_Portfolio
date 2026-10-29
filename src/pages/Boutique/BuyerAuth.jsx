@@ -13,6 +13,8 @@ import {
   isAllowedBuyerEmail,
 } from '../../utils/buyerAuth';
 
+const CONFIRMATION_CODE_LENGTH = 8;
+
 export default function BuyerAuth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -26,7 +28,6 @@ export default function BuyerAuth() {
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [confirmationCode, setConfirmationCode] = useState('');
   const confirmationCodeRef = useRef('');
-  const confirmationInputs = useRef([]);
   const confirmationForm = useRef(null);
   const firstField = useRef(null);
   const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
@@ -106,8 +107,8 @@ export default function BuyerAuth() {
     setError('');
     setNotice('');
     if (!validateEmail()) return;
-    if (awaitingConfirmation && !/^\d{6}$/.test(confirmationCodeRef.current)) {
-      setError('Saisissez les 6 chiffres du code reçu par e-mail.');
+    if (awaitingConfirmation && !/^\d{8}$/.test(confirmationCodeRef.current)) {
+      setError(`Saisissez les ${CONFIRMATION_CODE_LENGTH} chiffres du code reçu par e-mail.`);
       return;
     }
     setSubmitting(true);
@@ -269,35 +270,12 @@ export default function BuyerAuth() {
     setNotice('');
   }
 
-  function handleConfirmationChange(index, value) {
-    const digit = value.replace(/\D/g, '').slice(-1);
-    const nextCode = confirmationCodeRef.current.padEnd(6, ' ').split('');
-    nextCode[index] = digit || ' ';
-    const normalizedCode = nextCode.join('').trimEnd();
-    confirmationCodeRef.current = normalizedCode;
-    setConfirmationCode(normalizedCode);
+  function handleConfirmationChange(value) {
+    const nextCode = value.replace(/\D/g, '').slice(0, CONFIRMATION_CODE_LENGTH);
+    confirmationCodeRef.current = nextCode;
+    setConfirmationCode(nextCode);
     setError('');
-
-    if (digit && index < 5) confirmationInputs.current[index + 1]?.focus();
-    if (normalizedCode.length === 6 && !normalizedCode.includes(' ')) confirmationForm.current?.requestSubmit();
-  }
-
-  function handleConfirmationKeyDown(index, event) {
-    if (event.key === 'Backspace' && !confirmationCodeRef.current[index] && index > 0) {
-      confirmationInputs.current[index - 1]?.focus();
-    }
-    if (event.key === 'ArrowLeft' && index > 0) confirmationInputs.current[index - 1]?.focus();
-    if (event.key === 'ArrowRight' && index < 5) confirmationInputs.current[index + 1]?.focus();
-  }
-
-  function handleConfirmationPaste(event) {
-    const pasted = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (!pasted) return;
-    event.preventDefault();
-    confirmationCodeRef.current = pasted;
-    setConfirmationCode(pasted);
-    confirmationInputs.current[Math.min(pasted.length, 5)]?.focus();
-    if (pasted.length === 6) confirmationForm.current?.requestSubmit();
+    if (nextCode.length === CONFIRMATION_CODE_LENGTH) confirmationForm.current?.requestSubmit();
   }
 
   function handleChangeEmail() {
@@ -383,24 +361,18 @@ export default function BuyerAuth() {
           <form className="buyer-auth-form" ref={confirmationForm} onSubmit={handleEmailSubmit}>
             <div className="form-group">
               <label htmlFor="buyer-confirmation-code">Code de confirmation</label>
-              <div className="buyer-code-inputs" onPaste={handleConfirmationPaste}>
-                {Array.from({ length: 6 }, (_, index) => (
-                  <input
-                    aria-label={`Chiffre ${index + 1} du code`}
-                    autoComplete={index === 0 ? 'one-time-code' : 'off'}
-                    autoFocus={index === 0}
-                    id={index === 0 ? 'buyer-confirmation-code' : undefined}
-                    inputMode="numeric"
-                    key={index}
-                    maxLength={1}
-                    onChange={(event) => handleConfirmationChange(index, event.target.value)}
-                    onKeyDown={(event) => handleConfirmationKeyDown(index, event)}
-                    ref={(element) => { confirmationInputs.current[index] = element; }}
-                    value={confirmationCode[index]?.trim() || ''}
-                  />
-                ))}
-              </div>
-              <small>Vérifiez aussi vos courriers indésirables.</small>
+              <input
+                autoComplete="one-time-code"
+                autoFocus
+                id="buyer-confirmation-code"
+                inputMode="numeric"
+                maxLength={CONFIRMATION_CODE_LENGTH}
+                onChange={(event) => handleConfirmationChange(event.target.value)}
+                pattern={`[0-9]{${CONFIRMATION_CODE_LENGTH}}`}
+                required
+                value={confirmationCode}
+              />
+              <small>Saisissez les {CONFIRMATION_CODE_LENGTH} chiffres. Vous pouvez coller le code en une seule fois.</small>
             </div>
             <button className="btn btn-primary btn-full" type="submit" disabled={submitting} aria-busy={submitting}>
               {submitting ? 'Vérification…' : 'Confirmer mon adresse'}

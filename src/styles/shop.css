@@ -526,7 +526,6 @@ body.shop-theme .product-name{ font-family:'Nunito', sans-serif; font-weight:800
 .buyer-auth-divider{ display:flex; align-items:center; gap:12px; margin:18px 0; color:var(--ink-faint); font-size:11px; }
 .buyer-auth-divider::before,.buyer-auth-divider::after{ content:""; height:1px; flex:1; background:var(--border); }
 .buyer-auth-form .form-group small{ display:block; margin-top:7px; color:var(--ink-faint); font-size:11px; line-height:1.45; }
-.buyer-auth-form input[autocomplete="one-time-code"]{ letter-spacing:.24em; font-size:20px; }
 .buyer-auth-resend{ display:block; margin:14px auto 0; border:0; background:transparent; color:var(--ink-dim); font:600 12px 'Inter',sans-serif; text-decoration:underline; cursor:pointer; }
 .buyer-auth-resend:disabled{ opacity:.55; cursor:wait; }
 .buyer-auth-footnote{ margin:18px 0 0; color:var(--ink-faint); font-size:12px; text-align:center; }
@@ -787,8 +786,7 @@ body.shop-theme :where(a, button, input, textarea, select, [tabindex]):focus-vis
 .buyer-password-strength.moyen strong{ color:#a66a00; }
 .buyer-password-strength.fort strong{ color:#20804b; }
 .buyer-caps-warning{ display:block; margin-top:6px; color:var(--danger)!important; font-weight:700; }
-.buyer-code-inputs{ display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:8px; }
-.buyer-code-inputs input{ min-width:0; text-align:center; font-size:20px!important; font-weight:700; }
+.buyer-auth-form input[autocomplete="one-time-code"]{ text-align:center; font-size:22px!important; font-weight:700; letter-spacing:.28em; }
 .pay-redirect-note{ margin:10px 0 0; color:var(--ink-faint); text-align:center; font-size:12px; }
 .checkout-summary-product{ display:flex; align-items:center; gap:9px; min-width:0; }
 
@@ -801,7 +799,6 @@ body.shop-theme :where(a, button, input, textarea, select, [tabindex]):focus-vis
   .buyer-journey{ width:calc(100% - 32px); justify-content:space-between; gap:0; }
   .buyer-journey-step{ flex-direction:column; gap:4px; font-size:10px; }
   .buyer-auth-wrap{ gap:18px; padding-block:24px; }
-  .buyer-code-inputs{ gap:5px; }
 }
 @media(max-width:420px){
   .buyer-journey-label{ display:none!important; }
