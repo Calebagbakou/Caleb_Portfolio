@@ -194,15 +194,23 @@ async function getPaidProviderOrder(
   );
   const planIds = [...new Set(apiItems.map((item: { plan_id: string }) => item.plan_id).filter(Boolean))];
   const { data: plans, error: plansError } = planIds.length
-    ? await client.from('product_plans').select('id, slug').in('id', planIds)
+    ? await client.from('product_plans')
+      .select('id, slug, active_api_provider, provider_product_id')
+      .in('id', planIds)
     : { data: [], error: null };
   if (plansError) throw plansError;
-  const planSlugsById = new Map((plans || []).map((plan: { id: string; slug: string }) => [plan.id, plan.slug]));
+  const plansById = new Map((plans || []).map((plan: {
+    id: string;
+    slug: string;
+    active_api_provider: ProviderAdapter['id'] | null;
+    provider_product_id: string | null;
+  }) => [plan.id, plan]));
 
   const groups = new Map<string, ProviderTarget>();
   for (const item of apiItems) {
     const product = productsById.get(item.product_id);
-    const key = product ? getProdSellerTargetKey(product, planSlugsById.get(item.plan_id)) : null;
+    const plan = plansById.get(item.plan_id);
+    const key = product && plan ? getProdSellerTargetKey(product, plan.slug, plan.id) : null;
     if (!key) continue;
     const productRecord = product as {
       id: string;
@@ -213,6 +221,13 @@ async function getPaidProviderOrder(
       zfourstore_product_id?: string | null;
       active_api_provider?: ProviderAdapter['id'] | null;
     };
+    const selectedProvider = plan?.active_api_provider === 'zfourstore'
+      ? 'zfourstore'
+      : plan?.active_api_provider === 'prodseller'
+        ? 'prodseller'
+        : productRecord.active_api_provider === 'zfourstore'
+          ? 'zfourstore'
+          : 'prodseller';
 
     const current = groups.get(key);
     if (current) current.quantity += Number(item.qty);
@@ -221,10 +236,12 @@ async function getPaidProviderOrder(
         key,
         productId: '',
         providerProductIds: {
-          prodseller: productRecord.prodseller_product_id || getProductId(key, 'prodseller'),
-          zfourstore: productRecord.zfourstore_product_id || getProductId(key, 'zfourstore'),
+          prodseller: (selectedProvider === 'prodseller' ? plan?.provider_product_id : null)
+            || getProductId(key, 'prodseller'),
+          zfourstore: (selectedProvider === 'zfourstore' ? plan?.provider_product_id : null)
+            || getProductId(key, 'zfourstore'),
         },
-        configuredProvider: productRecord.active_api_provider === 'zfourstore' ? 'zfourstore' : 'prodseller',
+        configuredProvider: selectedProvider,
         shopProductId: item.product_id,
         name: String(productRecord.name || item.product_name || 'Produit API'),
         quantity: Number(item.qty),
@@ -268,8 +285,8 @@ async function saveActivation(
   if (error) throw error;
 }
 
-async function getProductAvailability(client: ReturnType<typeof getServiceClient>, slug: string) {
-  if (!slug) return jsonResponse({ error: 'Produit API inconnu.' }, 400);
+async function getProductAvailability(client: ReturnType<typeof getServiceClient>, slug: string, planId: string) {
+  if (!slug || !planId) return jsonResponse({ error: 'Formule API inconnue.' }, 400);
   const { data: product, error } = await client
     .from('products')
     .select('id, slug, name, delivery_type, prodseller_product_id, zfourstore_product_id, active_api_provider')
@@ -278,8 +295,18 @@ async function getProductAvailability(client: ReturnType<typeof getServiceClient
     .maybeSingle();
   if (error) throw error;
   if (!product) return jsonResponse({ error: 'Produit API inconnu.' }, 404);
-  const key = getProdSellerTargetKey(product);
+  const { data: plan, error: planError } = await client
+    .from('product_plans')
+    .select('id, slug, active_api_provider, provider_product_id')
+    .eq('id', planId)
+    .eq('product_id', product.id)
+    .eq('active', true)
+    .maybeSingle();
+  if (planError) throw planError;
+  if (!plan) return jsonResponse({ error: 'Formule API indisponible.' }, 404);
+  const key = getProdSellerTargetKey(product, plan.slug, plan.id);
   if (!key) return jsonResponse({ error: 'Produit API inconnu.' }, 400);
+  const provider = plan.active_api_provider === 'zfourstore' ? 'zfourstore' : 'prodseller';
 
   const target: ProviderTarget = {
     key,
@@ -288,19 +315,21 @@ async function getProductAvailability(client: ReturnType<typeof getServiceClient
       prodseller: '',
       zfourstore: '',
     },
-    configuredProvider: product.active_api_provider === 'zfourstore' ? 'zfourstore' : 'prodseller',
+    configuredProvider: provider,
     shopProductId: product.id,
     name: product.name,
     quantity: 1,
   };
   target.providerProductIds = {
-    prodseller: product.prodseller_product_id || getProductId(key, 'prodseller'),
-    zfourstore: product.zfourstore_product_id || getProductId(key, 'zfourstore'),
+    prodseller: (provider === 'prodseller' ? plan.provider_product_id : null)
+      || getProductId(key, 'prodseller'),
+    zfourstore: (provider === 'zfourstore' ? plan.provider_product_id : null)
+      || getProductId(key, 'zfourstore'),
   };
-  const provider = await getConfiguredProvider(client, target);
-  target.productId = getProviderProductId(provider, target);
-  const adapter = providerAdapters[provider];
-  const cacheKey = `${provider}:${slug}`;
+  const selectedProvider = await getConfiguredProvider(client, target);
+  target.productId = getProviderProductId(selectedProvider, target);
+  const adapter = providerAdapters[selectedProvider];
+  const cacheKey = `${selectedProvider}:${slug}:${planId}`;
   const cached = availabilityCache.get(cacheKey);
   if (cached && cached.expiresAt > Date.now()) {
     return jsonResponse({ available: cached.available });
@@ -314,7 +343,7 @@ async function getProductAvailability(client: ReturnType<typeof getServiceClient
   }
 
   if (!availability.available && (availability.stock === 0 || availability.stock === null)) {
-    await recordProviderEvent(client, target, provider, 'out_of_stock');
+    await recordProviderEvent(client, target, selectedProvider, 'out_of_stock');
   }
   availabilityCache.set(cacheKey, { available: availability.available, expiresAt: Date.now() + AVAILABILITY_CACHE_TTL });
   return jsonResponse({ available: availability.available });
@@ -584,7 +613,11 @@ export async function handleProdSellerActivation(request: Request) {
     const body = await request.json();
     const action = typeof body?.action === 'string' ? body.action : 'invalid';
     if (action === 'availability') {
-      return await getProductAvailability(getServiceClient(), typeof body?.slug === 'string' ? body.slug : '');
+      return await getProductAvailability(
+        getServiceClient(),
+        typeof body?.slug === 'string' ? body.slug : '',
+        typeof body?.planId === 'string' ? body.planId : '',
+      );
     }
     if (action === 'categories' || action === 'products') {
       const accessToken = request.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1];

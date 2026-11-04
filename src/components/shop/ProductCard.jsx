@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { formatPrice } from '../../data/products';
+import { formatPrice, getDefaultPlan } from '../../data/products';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import SmartImage from '../site/SmartImage';
@@ -8,21 +8,14 @@ export default function ProductCard({ product }) {
   const navigate = useNavigate();
   const { buyNow } = useCart();
   const { user } = useAuth();
+  const defaultPlan = getDefaultPlan(product);
   const availablePlans = product.plans.filter((plan) => plan.active !== false);
-  const pricedPlan = availablePlans
-    .filter((plan) => plan.price > 0)
-    .sort((left, right) => left.price - right.price)[0] || availablePlans[0];
-  const hasProductPrices = Number.isFinite(product.regular_price)
-    && Number.isFinite(product.promo_price);
-  const priceLabel = hasProductPrices
-    ? formatPrice(product.promo_price)
-    : !pricedPlan
-      ? 'Indisponible'
-      : availablePlans.length > 1
-        ? `Dès ${formatPrice(pricedPlan.price)}`
-        : formatPrice(pricedPlan.price);
-  const crossedPrice = hasProductPrices ? formatPrice(product.regular_price) : null;
-  const defaultPlan = pricedPlan || availablePlans[0];
+  const priceLabel = !defaultPlan
+    ? 'Indisponible'
+    : availablePlans.length > 1
+      ? `Dès ${formatPrice(defaultPlan.price)}`
+      : formatPrice(defaultPlan.price);
+  const crossedPrice = defaultPlan?.old_price != null ? formatPrice(defaultPlan.old_price) : null;
   function goToCheckout() {
     if (!defaultPlan) return;
     buyNow(product.id, defaultPlan.id);

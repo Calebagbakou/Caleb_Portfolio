@@ -12,7 +12,7 @@ import { useSlowLoading } from '../../hooks/useSlowLoading';
 import { formatOrderReference } from '../../utils/orderReference';
 import { isApiDelivery } from '../../utils/delivery';
 
-const DELIVERY_ESTIMATE_TEXT = 'dès que possible';
+const DELIVERY_ESTIMATE_TEXT = 'immédiatement après confirmation du paiement';
 
 function formatPaymentDate(value) {
   if (!value) return 'Date du paiement indisponible';
@@ -587,7 +587,7 @@ export default function Confirmation() {
             <li><span className="confirm-next-number">2</span><span>Activation en cours <small>{DELIVERY_ESTIMATE_TEXT}</small></span></li>
             <li><span className="confirm-next-number">3</span><span>Accès disponible dans Mon compte</span></li>
           </ol>
-          {apiProducts.length > 0 && <p>La préparation des accès est lancée automatiquement après confirmation du paiement.</p>}
+          {apiProducts.length > 0 && <p>Vos accès sont préparés immédiatement après confirmation du paiement. En cas de problème, contactez Caleb : la situation sera résolue sous 24 h.</p>}
         </section>
 
         <div className="confirm-actions">

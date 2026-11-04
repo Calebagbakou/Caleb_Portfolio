@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { findProduct, formatPrice } from '../../data/products';
+import { findProduct, formatPrice, getDefaultPlan } from '../../data/products';
 import { useCart } from '../../context/CartContext';
 import { useShop } from '../../context/ShopContext';
 import { useAuth } from '../../context/AuthContext';
@@ -28,7 +28,7 @@ export default function Produit() {
   const [availability, setAvailability] = useState('available');
 
   const [selectedPlanId, setSelectedPlanId] = useState(
-    product?.plans.find((plan) => plan.active)?.id ?? null
+    getDefaultPlan(product)?.id ?? null
   );
   const [qty, setQty] = useState(1);
   const allowMultipleQty = product?.allow_multiple_qty === true;
@@ -38,7 +38,7 @@ export default function Produit() {
     document.title = product.name + ' — Boutique Caleb Creative';
     setSelectedPlanId((current) => product.plans.some((plan) => plan.id === current && plan.active)
       ? current
-      : product.plans.find((plan) => plan.active)?.id ?? null);
+      : getDefaultPlan(product)?.id ?? null);
     setQty(1);
   }, [product]);
 
@@ -50,7 +50,7 @@ export default function Produit() {
 
     let active = true;
     setAvailability('available');
-    getApiProductAvailability(product.slug).then(({ data, error: availabilityError }) => {
+    getApiProductAvailability(product.slug, selectedPlanId).then(({ data, error: availabilityError }) => {
       if (!active) return;
       setAvailability(availabilityError || typeof data?.available !== 'boolean'
         ? 'available'
@@ -62,7 +62,7 @@ export default function Produit() {
     return () => {
       active = false;
     };
-  }, [product]);
+  }, [product, selectedPlanId]);
 
   useEffect(() => {
     const purchaseRow = purchaseRowRef.current;
@@ -136,10 +136,8 @@ export default function Produit() {
 
   const selectedPlan = product.plans.find((plan) => plan.id === selectedPlanId && plan.active);
   const purchaseDisabled = !selectedPlan;
-  const currentPrice = product.promo_price ?? selectedPlan?.price;
-  const crossedPrice = product.promo_price != null
-    ? product.regular_price
-    : selectedPlan?.old_price;
+  const currentPrice = selectedPlan?.price;
+  const crossedPrice = selectedPlan?.old_price;
   const purchaseLabel = purchaseDisabled ? 'Indisponible' : 'Acheter maintenant';
 
   return (
@@ -211,11 +209,15 @@ export default function Produit() {
                     <span>{pl.label}{!pl.active && <small className="plan-unavailable-label">Indisponible pour le moment</small>}</span>
                   </span>
                   <span className="price">
-                    {formatPrice(product.promo_price ?? pl.price)}
-                    {product.promo_price == null && pl.priceEur && (
-                      <small style={{ display: 'block', fontWeight: 500, color: 'var(--ink-faint)', fontSize: 11 }}>
-                        {pl.priceEur}
-                      </small>
+                    {pl.active && (
+                      <>
+                        {formatPrice(pl.price)}
+                        {pl.old_price != null && (
+                          <small style={{ display: 'block', fontWeight: 500, color: 'var(--ink-faint)', fontSize: 11 }}>
+                            Ancien prix : {formatPrice(pl.old_price)}
+                          </small>
+                        )}
+                      </>
                     )}
                   </span>
                 </label>
@@ -273,8 +275,8 @@ export default function Produit() {
           <RichContent doc={product.description_rich} fallbackText={product.description} />
           <p className="product-note">
             {isApiDelivery(product)
-              ? 'Après confirmation du paiement, votre lien d’activation est généré automatiquement.'
-              : 'Livraison numérique : les identifiants ou instructions d’activation te sont envoyés directement par Caleb après validation de la commande.'}
+              ? 'Après confirmation du paiement, votre lien d’activation est généré immédiatement. En cas de problème, contactez Caleb : la situation sera résolue sous 24 h.'
+              : 'La livraison est effectuée immédiatement après confirmation du paiement. En cas de problème, contactez Caleb : la situation sera résolue sous 24 h.'}
           </p>
         </div>
       </section>

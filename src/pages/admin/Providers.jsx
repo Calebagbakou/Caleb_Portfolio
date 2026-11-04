@@ -51,12 +51,9 @@ export default function Providers() {
   const [overview, setOverview] = useState(null);
   const [availability, setAvailability] = useState(null);
   const [availabilityProductId, setAvailabilityProductId] = useState('');
-  const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(true);
   const [checking, setChecking] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -102,51 +99,16 @@ export default function Providers() {
     }
   }
 
-  async function changeProvider(product, nextProvider) {
-    const activeProvider = product.active_api_provider || 'prodseller';
-    if (nextProvider === activeProvider) return;
-    const productId = nextProvider === 'zfourstore'
-      ? product.zfourstore_product_id
-      : product.prodseller_product_id;
-    if (!overview?.providers?.[nextProvider] || !productId) {
-      setError(`Le fournisseur ${PROVIDER_LABELS[nextProvider]} ou son identifiant produit n’est pas configuré.`);
-      return;
-    }
-    const confirmation = `Les nouvelles commandes de « ${product.name} » utiliseront ${PROVIDER_LABELS[nextProvider]}. Les commandes déjà commencées restent chez leur fournisseur d’origine.`;
-    if (!window.confirm(confirmation)) return;
-
-    setSaving(true);
-    setError('');
-    setNotice('');
-    const { error: rpcError } = await supabase.rpc('set_shop_product_provider', {
-      p_product_id: product.id,
-      p_provider: nextProvider,
-      p_reason: reason.trim() || null,
-    });
-    if (rpcError) {
-      console.error('Bascule du fournisseur impossible :', rpcError);
-      setError(rpcError.message?.includes('n’est pas configuré')
-        ? 'Le fournisseur sélectionné n’est pas configuré côté serveur.'
-        : 'Le changement de fournisseur a échoué. Vérifiez vos droits et réessayez.');
-    } else {
-      setNotice(`${product.name} utilisera maintenant ${PROVIDER_LABELS[nextProvider]}.`);
-      setReason('');
-      setAvailability(null);
-      await load();
-    }
-    setSaving(false);
-  }
-
   return (
     <div className="provider-admin-page">
       {error && <div className="provider-admin-message is-error" role="alert">{error}</div>}
-      {notice && <div className="provider-admin-message is-success" role="status">{notice}</div>}
 
       <section className="panel provider-admin-panel">
         <div className="provider-admin-heading">
           <div>
-            <h2>Fournisseurs par produit API</h2>
-            <p>Choisis le fournisseur de chaque produit. Seuls les fournisseurs configurés avec un identifiant pour ce produit peuvent être sélectionnés. Les commandes déjà commencées restent chez leur fournisseur d’origine.</p>
+            <h2>Fournisseurs par formule API</h2>
+            <p>Le fournisseur et son ID se règlent pour chaque formule dans la fiche produit. Les commandes déjà commencées restent épinglées à leur fournisseur d’origine.</p>
+            <p><Link to="/admin/shop">Ouvrir les produits de la boutique</Link> et modifier un produit pour régler ses formules.</p>
           </div>
         </div>
 
@@ -156,20 +118,8 @@ export default function Providers() {
           </div>
         ) : (
           <>
-            <label className="provider-admin-field" htmlFor="provider-switch-reason">
-              Raison du changement (facultatif)
-              <input
-                id="provider-switch-reason"
-                type="text"
-                maxLength={500}
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-                placeholder="Ex. indisponibilité du fournisseur"
-              />
-            </label>
             <div className="provider-admin-products">
               {overview?.products?.map((product) => {
-                const active = product.active_api_provider || 'prodseller';
                 const prodSellerAvailable = Boolean(overview.providers?.prodseller && product.prodseller_mapping_saved);
                 const zFourStoreAvailable = Boolean(overview.providers?.zfourstore && product.zfourstore_mapping_saved);
                 const productAvailability = availabilityProductId === product.id ? availability?.providers : null;
@@ -177,31 +127,13 @@ export default function Providers() {
                   <article className="provider-admin-product" key={product.id}>
                     <div>
                       <h3>{product.name}</h3>
-                      <small>
-                        ProdSeller : {product.prodseller_product_id || 'ID non renseigné'}
-                        {product.prodseller_product_id && !product.prodseller_mapping_saved ? ' · ID historique à enregistrer dans la fiche produit' : ''}
-                      </small>
-                      <small>
-                        Z FOUR STORE : {product.zfourstore_product_id || 'ID non renseigné'}
-                        {product.zfourstore_product_id && !product.zfourstore_mapping_saved ? ' · ID historique à enregistrer dans la fiche produit' : ''}
-                      </small>
+                      {product.plans?.map((plan) => (
+                        <small key={plan.id}>
+                          {plan.label} · {PROVIDER_LABELS[plan.active_api_provider] || 'Fournisseur non défini'} · ID : {plan.provider_product_id || 'non renseigné'}
+                          {plan.active === false ? ' · formule inactive' : ''}
+                        </small>
+                      ))}
                     </div>
-                    <label className="provider-admin-field" htmlFor={`provider-${product.id}`}>
-                      Fournisseur actif
-                      <select
-                        id={`provider-${product.id}`}
-                        value={active}
-                        onChange={(event) => changeProvider(product, event.target.value)}
-                        disabled={loading || saving}
-                      >
-                        <option value="prodseller" disabled={!prodSellerAvailable}>
-                          ProdSeller{prodSellerAvailable ? '' : ' — indisponible pour ce produit'}
-                        </option>
-                        <option value="zfourstore" disabled={!zFourStoreAvailable}>
-                          Z FOUR STORE{zFourStoreAvailable ? '' : ' — indisponible pour ce produit'}
-                        </option>
-                      </select>
-                    </label>
                     <button
                       className="btn btn-secondary provider-admin-action"
                       type="button"
@@ -211,7 +143,7 @@ export default function Providers() {
                         || (overview.providers?.zfourstore && product.zfourstore_product_id)
                       )}
                     >
-                      {checking && availabilityProductId === product.id ? 'Vérification…' : 'Vérifier stocks et prix'}
+                      {checking && availabilityProductId === product.id ? 'Vérification…' : 'Vérifier les anciens IDs produit'}
                     </button>
                     {productAvailability && (
                       <div className="provider-admin-check-results" role="status">
@@ -271,7 +203,7 @@ export default function Providers() {
         <div className="provider-admin-heading">
           <div>
             <h2>Alertes de disponibilité</h2>
-            <p>Ruptures et soldes insuffisants détectés pendant une vérification ou une livraison.</p>
+            <p>Ruptures et soldes insuffisants détectés pendant une vérification ou une livraison. Le contrôle ci-dessus utilise les anciens IDs au niveau produit.</p>
           </div>
         </div>
         {loading && !overview ? <div className="state-box">Chargement…</div> : null}

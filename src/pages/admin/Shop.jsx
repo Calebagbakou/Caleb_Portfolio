@@ -36,8 +36,6 @@ const EMPTY_PRODUCT = {
   category_id: '',
   badge: '',
   cta_label: 'Acheter maintenant',
-  regular_price: '',
-  promo_price: '',
   allow_multiple_qty: false,
   status: 'active',
   featured: true,
@@ -55,7 +53,17 @@ const EMPTY_PRODUCT = {
   download_size: '',
   download_platform: '',
   download_instructions: '',
-  plans: [{ id: null, slug: '', label: '', currency: 'XOF', active: true }],
+  plans: [{
+    id: null,
+    slug: '',
+    label: '',
+    price: '',
+    old_price: '',
+    currency: 'XOF',
+    active_api_provider: 'prodseller',
+    provider_product_id: '',
+    active: true,
+  }],
 };
 
 const CONTENT_FIELDS = [
@@ -126,8 +134,6 @@ function productForm(product) {
     highlights: (product.highlights || []).join('\n'),
     badge: product.badge || '',
     cta_label: product.cta_label || 'Acheter maintenant',
-    regular_price: product.regular_price ?? '',
-    promo_price: product.promo_price ?? '',
     allow_multiple_qty: product.allow_multiple_qty ?? product.slug === 'gemini-pro',
     avatar: product.avatar || '',
     gradient: product.gradient || EMPTY_PRODUCT.gradient,
@@ -144,8 +150,25 @@ function productForm(product) {
     download_platform: product.download_platform || '',
     download_instructions: product.download_instructions || '',
     plans: product.plans.length
-      ? product.plans.map((plan) => ({ ...plan }))
-      : EMPTY_PRODUCT.plans,
+      ? product.plans.map((plan) => {
+        const provider = plan.active_api_provider || product.active_api_provider || 'prodseller';
+        const isLegacyMappedPlan = (product.slug === 'gemini-pro' && plan.slug === '18mois')
+          || (product.slug === 'canva-pro' && plan.slug === '1an')
+          || (product.slug === 'duolingo-super' && plan.slug === '12mois')
+          || product.plans.length === 1;
+        const legacyProductId = isLegacyMappedPlan
+          ? provider === 'zfourstore' ? product.zfourstore_product_id : product.prodseller_product_id
+          : '';
+        return {
+          ...plan,
+          active_api_provider: provider,
+          provider_product_id: plan.provider_product_id || legacyProductId || '',
+        };
+      })
+      : EMPTY_PRODUCT.plans.map((plan) => ({
+        ...plan,
+        active_api_provider: product.active_api_provider || 'prodseller',
+      })),
   };
 }
 
@@ -276,13 +299,19 @@ export default function Shop({ shopSection = 'products' }) {
       setError('Ajoute au moins une formule active avec un libellé.');
       return;
     }
-    if (!form.regular_price || !form.promo_price
-      || Number(form.regular_price) <= 0 || Number(form.promo_price) <= 0) {
-      setError('Renseigne le prix normal et le prix promotionnel du produit.');
+    if (form.plans.some((plan) => !Number.isFinite(Number(plan.price)) || Number(plan.price) <= 0)) {
+      setError('Renseigne un prix supérieur à zéro pour chaque formule.');
       return;
     }
-    if (Number(form.promo_price) >= Number(form.regular_price)) {
-      setError('Le prix promotionnel doit être inférieur au prix normal du produit.');
+    if (form.plans.some((plan) => plan.old_price !== '' && plan.old_price != null
+      && (!Number.isFinite(Number(plan.old_price)) || Number(plan.old_price) <= Number(plan.price)))) {
+      setError('L’ancien prix doit être supérieur au prix de sa formule.');
+      return;
+    }
+    if (form.delivery_type === 'api' && activePlans.some((plan) =>
+      !['prodseller', 'zfourstore'].includes(plan.active_api_provider)
+      || !plan.provider_product_id?.trim())) {
+      setError('Choisis un fournisseur et renseigne son ID pour chaque formule API active.');
       return;
     }
     if (form.delivery_type === 'download'
@@ -308,13 +337,6 @@ export default function Shop({ shopSection = 'products' }) {
       setError('Renseigne le lien d’activation pour ce produit.');
       return;
     }
-    if (form.delivery_type === 'api'
-      && !form.prodseller_product_id.trim()
-      && !form.zfourstore_product_id.trim()) {
-      setError('Ajoute l’identifiant du produit chez ProdSeller ou Z FOUR STORE.');
-      return;
-    }
-
     setSaving(true);
     setError('');
     setNotice('');
@@ -327,8 +349,8 @@ export default function Shop({ shopSection = 'products' }) {
       highlights: form.highlights.split('\n').map((line) => line.trim()).filter(Boolean),
       badge: form.badge.trim() || null,
       cta_label: form.cta_label,
-      regular_price: Number(form.regular_price),
-      promo_price: Number(form.promo_price),
+      regular_price: null,
+      promo_price: null,
       avatar: form.avatar.trim() || null,
       gradient: form.gradient.trim() || null,
       logo_url: form.logo_url.trim() || null,
@@ -858,15 +880,6 @@ export default function Shop({ shopSection = 'products' }) {
                 {categories.map((category) => <option value={category.id} key={category.id}>{category.label}</option>)}
               </select>
             </div>
-            <div className="form-group">
-              <label htmlFor="shop-product-regular-price">Prix normal du produit (FCFA)</label>
-              <input id="shop-product-regular-price" type="number" min="1" step="1" name="regular_price" value={form.regular_price} onChange={updateProductField} required />
-            </div>
-            <div className="form-group">
-              <label htmlFor="shop-product-promo-price">Prix promotionnel du produit (FCFA)</label>
-              <input id="shop-product-promo-price" type="number" min="1" step="1" name="promo_price" value={form.promo_price} onChange={updateProductField} required />
-              <small className="project-form-hint">Le prix normal sera affiché barré à gauche; celui-ci sera affiché à droite.</small>
-            </div>
             <div className="form-group shop-admin-wide">
               <label className="shop-admin-check">
                 <input
@@ -959,42 +972,14 @@ export default function Shop({ shopSection = 'products' }) {
               </select>
             </div>
             {isApiDelivery(form) && (
-              <>
-                <div className="form-group">
-                  <label htmlFor="shop-product-prodseller-id">ID produit ProdSeller</label>
-                  <input
-                    id="shop-product-prodseller-id"
-                    name="prodseller_product_id"
-                    value={form.prodseller_product_id}
-                    onChange={updateProductField}
-                    placeholder="ID du catalogue ProdSeller"
-                  />
-                  <small className="project-form-hint">
-                    API {apiProviders?.prodseller ? 'configurée' : 'non configurée'}.
-                  </small>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="shop-product-zfourstore-id">ID produit Z FOUR STORE</label>
-                  <input
-                    id="shop-product-zfourstore-id"
-                    name="zfourstore_product_id"
-                    value={form.zfourstore_product_id}
-                    onChange={updateProductField}
-                    placeholder="ID du catalogue Z FOUR STORE"
-                  />
-                  <small className="project-form-hint">
-                    API {apiProviders?.zfourstore ? 'configurée' : 'non configurée'}.
-                  </small>
-                </div>
-                <div className="form-group shop-admin-wide">
-                  <span className="form-label">Livraison automatique</span>
-                  <small className="project-form-hint">
-                    La livraison utilise l’identifiant du fournisseur actif. Configure les IDs disponibles dans cette fiche, puis choisis le fournisseur dans{' '}
-                    <Link to="/admin/shop/fournisseurs">Admin → Fournisseurs</Link>.
-                    Un fournisseur sans ID pour ce produit ne pourra pas être sélectionné.
-                  </small>
-                </div>
-              </>
+              <div className="form-group shop-admin-wide">
+                <span className="form-label">Fournisseur par formule</span>
+                <small className="project-form-hint">
+                  Choisis le fournisseur et son ID dans chaque formule ci-dessous.
+                  API ProdSeller {apiProviders?.prodseller ? 'configurée' : 'non configurée'} ·
+                  Z FOUR STORE {apiProviders?.zfourstore ? 'configurée' : 'non configurée'}.
+                </small>
+              </div>
             )}
             {!isApiDelivery(form) && (
               <div className="form-group shop-admin-wide">
@@ -1055,10 +1040,20 @@ export default function Shop({ shopSection = 'products' }) {
           <div className="shop-admin-plans">
             <div className="shop-admin-plans-heading">
               <h3>Formules</h3>
-              <small className="project-form-hint">Le prix promo saisi plus haut s’applique à toutes les formules et sera facturé.</small>
+              <small className="project-form-hint">Chaque formule possède son propre prix et, pour une livraison API, son fournisseur et son ID.</small>
               <button className="btn btn-secondary btn-sm" type="button" onClick={() => setForm((current) => ({
                 ...current,
-                plans: [...current.plans, { id: null, slug: '', label: '', currency: 'XOF', active: true }],
+                plans: [...current.plans, {
+                  id: null,
+                  slug: '',
+                  label: '',
+                  price: '',
+                  old_price: '',
+                  currency: 'XOF',
+                  active_api_provider: current.active_api_provider || 'prodseller',
+                  provider_product_id: '',
+                  active: true,
+                }],
               }))}>Ajouter une formule</button>
             </div>
             {form.plans.map((plan, index) => (
@@ -1067,6 +1062,36 @@ export default function Shop({ shopSection = 'products' }) {
                   <label htmlFor={`plan-label-${index}`}>Formule</label>
                   <input id={`plan-label-${index}`} value={plan.label} onChange={(event) => updatePlan(index, 'label', event.target.value)} />
                 </div>
+                <div className="form-group">
+                  <label htmlFor={`plan-price-${index}`}>Prix de la formule (FCFA)</label>
+                  <input id={`plan-price-${index}`} type="number" min="1" step="1" value={plan.price ?? ''} onChange={(event) => updatePlan(index, 'price', event.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label htmlFor={`plan-old-price-${index}`}>Ancien prix (facultatif, FCFA)</label>
+                  <input id={`plan-old-price-${index}`} type="number" min="1" step="1" value={plan.old_price ?? ''} onChange={(event) => updatePlan(index, 'old_price', event.target.value)} />
+                </div>
+                {isApiDelivery(form) && (
+                  <>
+                    <div className="form-group">
+                      <label htmlFor={`plan-provider-${index}`}>Fournisseur</label>
+                      <select
+                        id={`plan-provider-${index}`}
+                        value={plan.active_api_provider || 'prodseller'}
+                        onChange={(event) => {
+                          updatePlan(index, 'active_api_provider', event.target.value);
+                          updatePlan(index, 'provider_product_id', '');
+                        }}
+                      >
+                        <option value="prodseller">ProdSeller</option>
+                        <option value="zfourstore">Z FOUR STORE</option>
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor={`plan-provider-product-id-${index}`}>ID chez le fournisseur</label>
+                      <input id={`plan-provider-product-id-${index}`} value={plan.provider_product_id || ''} onChange={(event) => updatePlan(index, 'provider_product_id', event.target.value)} required={plan.active} />
+                    </div>
+                  </>
+                )}
                 <label className="shop-admin-check">
                   <input type="checkbox" checked={plan.active} onChange={(event) => updatePlan(index, 'active', event.target.checked)} />
                   <span>Formule active</span>
@@ -1113,7 +1138,6 @@ export default function Shop({ shopSection = 'products' }) {
                   <h3>{product.name}</h3>
                   <p>
                     {product.plans.filter((plan) => plan.active).map((plan) => plan.label).join(' / ') || 'Aucune formule active'}
-                    {product.promo_price ? ` · Promo ${Number(product.promo_price).toLocaleString('fr-FR')} FCFA` : ''}
                   </p>
                   {product.delivery_type === 'download' && !isValidDownloadFilename(product.download_filename) && (
                     <div className="shop-admin-alert error" role="alert">

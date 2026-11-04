@@ -224,7 +224,7 @@ const PAGE_CONFIG = {
     summary: [
       'Un compte confirmé est requis pour commander.',
       'Les moyens de paiement des commandes de la boutique dépendent du pays.',
-      'La livraison annoncée intervient après confirmation de la commande.',
+      'La livraison numérique intervient immédiatement après confirmation du paiement ; un problème est résolu sous 24 h.',
       'La garantie et les demandes de remboursement suivent les modalités indiquées ici.',
       'Les prestations créatives sont convenues directement avec le client.',
     ],

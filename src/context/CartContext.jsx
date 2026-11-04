@@ -71,7 +71,7 @@ export function CartProvider({ children }) {
     if (!product) return [];
     const plan = findPlan(product, item.planId);
     if (!plan || plan.active === false) return [];
-    const unitPrice = product.promo_price ?? plan.price;
+    const unitPrice = plan.price;
     return [{
       productId: product.id,
       planId: plan.id,

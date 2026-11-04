@@ -54,8 +54,8 @@ export const legalFacts = Object.freeze({
     canva: 'Pour Canva, le client accepte une invitation dans l’application.',
     capcut: 'Pour CapCut, le lien ouvre le téléchargement de l’application.',
     gemini: 'Pour Gemini Pro, le client ouvre le lien d’activation et l’offre indiquée donne accès à Pro pendant 18 mois.',
-    delivery: 'La livraison est annoncée comme immédiate après confirmation de la commande.',
-    accessIssue: 'En cas de problème d’accès, le client contacte le support ; la situation est examinée et un remplacement peut être proposé.',
+    delivery: 'La livraison est effectuée immédiatement après confirmation du paiement.',
+    accessIssue: 'En cas de problème d’accès, le client contacte le support ; la situation est résolue sous 24 h.',
   }),
   payment: Object.freeze({
     currency: 'FCFA/XOF',
@@ -84,7 +84,7 @@ export const legalFacts = Object.freeze({
     suspension: 'Un compte peut être suspendu après avertissement.',
   }),
   legalMetadata: Object.freeze({
-    lastUpdated: '20 octobre 2026',
+    lastUpdated: '4 novembre 2026',
     version: '1.0',
   }),
 });

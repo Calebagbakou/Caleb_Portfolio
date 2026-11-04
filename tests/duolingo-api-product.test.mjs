@@ -30,6 +30,17 @@ test('generic API products use their shop product ID as a provider target', () =
   assert.equal(getProdSellerTargetKey({ ...product, delivery_type: 'download' }), null);
 });
 
+test('API formula targets remain distinct while preserving legacy supplier targets', () => {
+  const gemini = { id: 'gemini-shop-id', slug: 'gemini-pro', delivery_type: 'api' };
+  assert.equal(getProdSellerTargetKey(gemini, '18mois', 'gemini-18-plan'), 'gemini_18m');
+  assert.equal(getProdSellerTargetKey(gemini, '4mois', 'gemini-4-plan'), 'gemini-4-plan');
+  assert.equal(getProdSellerTargetKey(gemini, '12mois', 'gemini-12-plan'), 'gemini-12-plan');
+
+  const canva = { id: 'canva-shop-id', slug: 'canva-pro', delivery_type: 'api' };
+  assert.equal(getProdSellerTargetKey(canva, '1an', 'canva-year-plan'), 'canva_pro');
+  assert.equal(getProdSellerTargetKey(canva, 'monthly', 'canva-month-plan'), 'canva-month-plan');
+});
+
 test('Duolingo Super migration seeds the API product and its 12-month price idempotently', () => {
   assert.match(migration, /'duolingo-super'/);
   assert.match(migration, /'Duolingo Super'/);

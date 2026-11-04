@@ -85,5 +85,14 @@ export function findProduct(id, products = PRODUCTS) {
 
 export function findPlan(product, planId) {
   if (!product) return null;
-  return product.plans.find((plan) => plan.id === planId || plan.slug === planId) || product.plans[0] || null;
+  return product.plans.find((plan) => plan.id === planId || plan.slug === planId) || null;
+}
+
+export function getDefaultPlan(product) {
+  const availablePlans = product?.plans.filter((plan) => plan.active !== false) || [];
+  return availablePlans
+    .filter((plan) => Number.isFinite(Number(plan.price)) && Number(plan.price) > 0)
+    .sort((left, right) => Number(left.price) - Number(right.price))[0]
+    || availablePlans[0]
+    || null;
 }

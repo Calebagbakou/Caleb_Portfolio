@@ -4,18 +4,19 @@ export function isApiDelivery(product: { delivery_type?: unknown } | null | unde
 
 const LEGACY_TARGET_KEYS: Record<string, { key: string; planSlug?: string }> = {
   'gemini-pro': { key: 'gemini_18m', planSlug: '18mois' },
-  'canva-pro': { key: 'canva_pro' },
+  'canva-pro': { key: 'canva_pro', planSlug: '1an' },
   'duolingo-super': { key: 'duolingo_super_12m', planSlug: '12mois' },
 };
 
 export function getProdSellerTargetKey(
   product: { id?: unknown; slug?: unknown; delivery_type?: unknown },
   planSlug?: string,
+  planId?: string,
 ) {
   if (!isApiDelivery(product)) return null;
   const legacy = typeof product.slug === 'string' ? LEGACY_TARGET_KEYS[product.slug] : null;
-  if (legacy?.planSlug && legacy.planSlug !== planSlug) return null;
-  if (legacy) return legacy.key;
+  if (legacy?.planSlug && legacy.planSlug === planSlug) return legacy.key;
+  if (typeof planId === 'string') return planId;
   return typeof product.id === 'string' ? product.id : null;
 }
 

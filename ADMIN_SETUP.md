@@ -126,12 +126,11 @@ Supabase ne répond pas, sans masquer les erreurs dans la console.
 Avant de déployer la mise à jour, exécute
 [`supabase/migrations/015_shop_product_cta_label.sql`](./supabase/migrations/015_shop_product_cta_label.sql)
 et [`supabase/migrations/016_shop_product_prices.sql`](./supabase/migrations/016_shop_product_prices.sql),
-puis [`supabase/migrations/017_shop_checkout_uses_product_promo_price.sql`](./supabase/migrations/017_shop_checkout_uses_product_promo_price.sql)
-dans SQL Editor. Dans `/admin/shop`, chaque produit peut ensuite choisir le
-libellé de son bouton et saisir un prix normal ainsi qu’un prix promotionnel.
-Sur les cartes de la boutique, le prix normal apparaît barré à gauche du prix
-promotionnel. Le prix promo est le seul montant utilisé dans les formules, le
-panier et le checkout; le prix normal barré sert uniquement à l’affichage.
+et [`supabase/migrations/017_shop_checkout_uses_product_promo_price.sql`](./supabase/migrations/017_shop_checkout_uses_product_promo_price.sql)
+dans SQL Editor. Après avoir appliqué la migration 033 décrite ci-dessous, dans `/admin/shop`,
+chaque formule peut ensuite avoir son prix et, facultativement, un ancien prix
+affiché barré. Le prix de la formule sélectionnée est affiché sur sa fiche et
+repris dans le panier et le checkout; le serveur le recalcule avant la commande.
 
 ## 6. Gérer les compétences et les services
 
@@ -163,35 +162,42 @@ la commande. Le prix final et les limites sont recalculés côté serveur.
 ## 8. Configurer la livraison des produits API
 
 L’Edge Function `gemini-prodseller-activate` traite les activations API après
-confirmation du paiement boutique. Dans **Admin → Fournisseurs**, le
-fournisseur se choisit individuellement pour chaque produit. Les commandes
+confirmation du paiement boutique. Le fournisseur et son ID se choisissent
+individuellement pour chaque formule dans la fiche du produit. Les commandes
 déjà commencées restent épinglées à leur fournisseur d’origine.
 
 1. Exécute dans l’ordre les migrations
   [`supabase/migrations/030_duolingo_super_api_product.sql`](./supabase/migrations/030_duolingo_super_api_product.sql)
   puis [`supabase/migrations/031_shop_zfourstore_provider.sql`](./supabase/migrations/031_shop_zfourstore_provider.sql)
-  et [`supabase/migrations/032_shop_product_api_mappings.sql`](./supabase/migrations/032_shop_product_api_mappings.sql).
+  puis [`supabase/migrations/032_shop_product_api_mappings.sql`](./supabase/migrations/032_shop_product_api_mappings.sql)
+  puis [`supabase/migrations/033_shop_plan_pricing_and_providers.sql`](./supabase/migrations/033_shop_plan_pricing_and_providers.sql)
+  et [`supabase/migrations/034_shop_immediate_delivery_copy.sql`](./supabase/migrations/034_shop_immediate_delivery_copy.sql).
   La migration 030 ajoute Duolingo Super 12 mois au catalogue à 1 000 FCFA;
   la 031 configure Z FOUR STORE et protège les commandes contre une seconde
-  tentative après une réponse incertaine; la 032 ajoute les IDs fournisseur
-  et le choix fournisseur par produit.
+  tentative après une réponse incertaine; la 032 ajoute les correspondances
+  fournisseur par produit; la 033 ajoute le prix et la correspondance
+  fournisseur à chaque formule. Elle reprend les anciens IDs fournisseur dans
+  les formules existantes et retire les anciens prix globaux du produit. La
+  034 harmonise la promesse de livraison immédiate et le délai de résolution
+  des problèmes d’accès sous 24 h.
 2. Configure les secrets Supabase `PRODSELLER_API_KEY` et
   `ZFOURSTORE_API_KEY`. Les clés ne vont jamais dans le code du site, les
   variables `VITE_*` ou Git.
-3. Dans `/admin/shop`, règle le mode de livraison sur **Activation par API**
-  puis saisis, pour chaque fournisseur où le produit existe, l’identifiant
-  retourné par son catalogue (`GET /products`). Les identifiants sont stockés
-  dans les colonnes `prodseller_product_id` et `zfourstore_product_id`; il
-  n’est plus nécessaire de créer un secret Supabase par produit. L’API Z FOUR
+3. Dans `/admin/shop`, règle le mode de livraison sur **Activation par API**,
+  puis, dans chaque formule, choisis **ProdSeller** ou **Z FOUR STORE** et saisis
+  l’ID retourné par le catalogue correspondant (`GET /products`). L’ID est
+  stocké sur la formule; il n’est pas nécessaire de créer un secret Supabase
+  par produit. Vérifie les IDs repris automatiquement par la migration 033 et
+  remplace-les si les formules ont des IDs fournisseur différents. L’API Z FOUR
   STORE utilise l’hôte Railway documenté
   `https://zfourstore.up.railway.app/api/v1` (documentation :
   <https://zfourstore.up.railway.app/api-docs>). Les produits peuvent être
-  disponibles chez un seul fournisseur; dans ce cas seul celui-ci peut être
-  sélectionné. Les catalogues sont accessibles dans `/admin/shop/prodseller`
-  et `/admin/shop/zfourstore`; les pages sont en lecture seule et affichent
-  les   IDs, prix et stocks fournisseur. Dans **Admin → Fournisseurs**, le bouton
-  vérifie le stock et affiche le prix de chaque fournisseur configuré pour le
-  produit.
+  disponibles chez un seul fournisseur; choisis alors celui-ci pour la formule.
+  Les catalogues sont accessibles dans `/admin/shop/prodseller` et
+  `/admin/shop/zfourstore`; les pages sont en lecture seule et affichent les
+  IDs, prix et stocks fournisseur. **Admin → Fournisseurs** affiche les
+  affectations existantes; son contrôle de stock conserve la compatibilité avec
+  les anciens IDs au niveau produit.
 4. Déploie `shop-provider-admin`, `gemini-prodseller-activate`,
   `gemini-pro-activate`, `shop-account` et `shop-order-delivery`. Vérifie les
   produits et leurs prix dans les catalogues fournisseur avant le premier achat.

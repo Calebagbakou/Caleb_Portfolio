@@ -114,9 +114,24 @@ async function getOverview(client: ReturnType<typeof getServiceClient>) {
   ]);
   const error = productsResult.error || historyResult.error || eventResult.error;
   if (error) throw error;
+  const productIds = (productsResult.data || []).map((product) => product.id);
+  const plansResult = productIds.length
+    ? await client.from('product_plans')
+      .select('id, product_id, label, active_api_provider, provider_product_id, active')
+      .in('product_id', productIds)
+      .order('sort_order', { ascending: true })
+    : { data: [], error: null };
+  if (plansResult.error) throw plansResult.error;
+  const plansByProduct = new Map<string, Array<Record<string, unknown>>>();
+  for (const plan of plansResult.data || []) {
+    const plans = plansByProduct.get(plan.product_id) || [];
+    plans.push(plan);
+    plansByProduct.set(plan.product_id, plans);
+  }
   return {
     products: (productsResult.data || []).map((product) => ({
       ...product,
+      plans: plansByProduct.get(product.id) || [],
       prodseller_mapping_saved: Boolean(product.prodseller_product_id?.trim()),
       zfourstore_mapping_saved: Boolean(product.zfourstore_product_id?.trim()),
       prodseller_product_id: getProductProviderIds(product).prodseller,

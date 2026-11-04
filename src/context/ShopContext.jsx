@@ -3,10 +3,10 @@ import { listShopCatalog, getShopContent } from '../services/shop';
 import { getShopErrorMessage } from '../utils/shopErrors';
 
 export const DEFAULT_SHOP_CONTENT = {
-  shop_hero_title: 'Des outils IA et créatifs premium, activés rapidement.',
-  shop_hero_description: 'Abonnements Gemini Pro, CapCut Pro, Canva Pro et plus — sélectionnés par Caleb Creative, activés après commande, avec un accompagnement direct.',
-  shop_activation_title: 'Activation rapide',
-  shop_activation_description: 'Sous 24 à 48h après commande',
+  shop_hero_title: 'Des outils IA et créatifs premium, livrés immédiatement après paiement.',
+  shop_hero_description: 'Abonnements Gemini Pro, CapCut Pro, Canva Pro et plus — livraison immédiate après confirmation du paiement. En cas de problème, la situation est résolue sous 24 h.',
+  shop_activation_title: 'Livraison immédiate',
+  shop_activation_description: 'Après confirmation du paiement · problème résolu sous 24 h',
   shop_contact_title: 'Suivi par WhatsApp',
   shop_contact_description: 'Un échange direct, sans robot',
   shop_payment_title: 'Paiement local',

@@ -9,6 +9,7 @@ const BASE_PRODUCT_FIELDS = PRODUCT_FIELDS
   .split(', ')
   .filter((field) => !OPTIONAL_PRODUCT_FIELDS.includes(field));
 const PLAN_FIELDS = 'id, product_id, slug, label, price, old_price, currency, sort_order, active';
+const ADMIN_PLAN_FIELDS = `${PLAN_FIELDS}, active_api_provider, provider_product_id`;
 
 function getMissingOptionalProductField(error, fields) {
   if (!['42703', 'PGRST204'].includes(error?.code)) return null;
@@ -32,13 +33,11 @@ export function hideActivationProvider(value) {
 
 function attachShopData(products, plans, categories) {
   const plansByProduct = new Map();
-  const productsById = new Map((products || []).map((product) => [product.id, product]));
   for (const plan of plans || []) {
     const productPlans = plansByProduct.get(plan.product_id) || [];
-    const product = productsById.get(plan.product_id);
     productPlans.push({
       ...plan,
-      price: Number(product.promo_price ?? plan.price),
+      price: Number(plan.price),
       old_price: plan.old_price === null ? null : Number(plan.old_price),
     });
     plansByProduct.set(plan.product_id, productPlans);
@@ -121,7 +120,7 @@ export async function listShopCatalog({ includeInactive = false, signal } = {}) 
   if (productIds.length) {
     let plansQuery = supabase
       .from('product_plans')
-      .select(PLAN_FIELDS)
+      .select(includeInactive ? ADMIN_PLAN_FIELDS : PLAN_FIELDS)
       .in('product_id', productIds)
       .order('sort_order');
     if (signal) plansQuery = plansQuery.abortSignal(signal);
@@ -235,8 +234,8 @@ export async function saveShopProduct(product, plans) {
     category_id: product.category_id,
     badge: product.badge,
     cta_label: product.cta_label || 'Acheter maintenant',
-    regular_price: product.regular_price === '' ? null : Number(product.regular_price),
-    promo_price: product.promo_price === '' ? null : Number(product.promo_price),
+    regular_price: null,
+    promo_price: null,
     allow_multiple_qty: Boolean(product.allow_multiple_qty),
     status: product.status,
     featured: product.featured,
@@ -284,11 +283,13 @@ export async function saveShopProduct(product, plans) {
     product_id: id,
     slug: plan.slug,
     label: plan.label.trim(),
-    price: Number(product.promo_price ?? plan.price),
-    old_price: null,
+    price: Number(plan.price),
+    old_price: plan.old_price === '' || plan.old_price == null ? null : Number(plan.old_price),
     currency: plan.currency || 'XOF',
     sort_order: index * 10 + 10,
     active: Boolean(plan.active),
+    active_api_provider: plan.active_api_provider || 'prodseller',
+    provider_product_id: plan.provider_product_id?.trim() || null,
   }));
 
   if (planRows.length) {
@@ -417,8 +418,8 @@ export function getShopOrderDeliveries({ orderId, orderRef }) {
   });
 }
 
-export function getApiProductAvailability(slug) {
+export function getApiProductAvailability(slug, planId) {
   return supabase.functions.invoke('gemini-prodseller-activate', {
-    body: { action: 'availability', slug },
+    body: { action: 'availability', slug, planId },
   });
 }
