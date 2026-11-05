@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../../services/supabase';
+import { getSupabaseFunctionError } from '../../utils/supabaseFunctionErrors';
 import './SmmServices.css';
 
 const PAGE_SIZE = 50;
@@ -8,7 +9,7 @@ async function invokePanel(action, payload = {}) {
   const { data, error } = await supabase.functions.invoke('smm-panel', {
     body: { action, ...payload },
   });
-  if (error) throw error;
+  if (error) throw await getSupabaseFunctionError(error, 'La fonction du panel social a échoué.');
   if (data?.error) throw new Error(data.error);
   return data;
 }

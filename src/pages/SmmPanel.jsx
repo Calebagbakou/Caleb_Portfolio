@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Seo from '../components/site/Seo';
 import { supabase } from '../services/supabase';
+import { getSupabaseFunctionError } from '../utils/supabaseFunctionErrors';
 import './SmmPanel.css';
 
 const money = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
@@ -37,7 +38,7 @@ async function invokePanel(action, payload = {}) {
   const { data, error } = await supabase.functions.invoke('smm-panel', {
     body: { action, ...payload },
   });
-  if (error) throw error;
+  if (error) throw await getSupabaseFunctionError(error, 'La fonction du panel social a échoué.');
   if (data?.error) throw new Error(data.error);
   return data;
 }
@@ -136,7 +137,7 @@ export default function SmmPanel() {
           const { data, error: verifyError } = await supabase.functions.invoke('smm-wallet-verify', {
             body: { topupId },
           });
-          if (verifyError) throw verifyError;
+          if (verifyError) throw await getSupabaseFunctionError(verifyError, 'La vérification du paiement a échoué.');
           if (data?.error) throw new Error(data.error);
           if (data?.verified) {
             verified = true;
@@ -217,7 +218,7 @@ export default function SmmPanel() {
       const { data, error: checkoutError } = await supabase.functions.invoke('smm-wallet-checkout', {
         body: { amountXof: Number(topupAmount) },
       });
-      if (checkoutError) throw checkoutError;
+      if (checkoutError) throw await getSupabaseFunctionError(checkoutError, 'La création du paiement a échoué.');
       if (data?.error) throw new Error(data.error);
       if (!data?.checkoutUrl) throw new Error('SasPay n’a pas renvoyé le lien de paiement.');
       window.location.assign(data.checkoutUrl);
