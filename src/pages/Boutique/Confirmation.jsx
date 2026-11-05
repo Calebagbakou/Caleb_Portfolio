@@ -602,7 +602,7 @@ export default function Confirmation() {
           </Link>
         </div>
         <footer className="confirm-footer-link">
-          <Link to="/">Voir le portfolio</Link>
+          <Link to="/portfolio">Voir le portfolio</Link>
         </footer>
       </div>
     </main>

@@ -34,6 +34,7 @@ const GROUPS = [
       { label: 'Contenu de la boutique', to: '/admin/shop/content' },
       { label: 'ProdSeller', to: '/admin/shop/prodseller' },
       { label: 'Z FOUR STORE', to: '/admin/shop/zfourstore' },
+      { label: 'Panel social', to: '/admin/smm' },
     ],
   },
   {
@@ -53,6 +54,7 @@ function activeGroupFor(pathname) {
   if (pathname.startsWith('/admin/portfolio/')) return 'portfolio';
   if (pathname.startsWith('/admin/media/')) return 'media';
   if (pathname.startsWith('/admin/shop/')) return 'shop';
+  if (pathname === '/admin/smm') return 'shop';
   if (pathname === '/admin/parametres') return 'settings';
   return null;
 }

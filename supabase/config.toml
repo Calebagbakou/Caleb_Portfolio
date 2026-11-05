@@ -21,3 +21,12 @@ verify_jwt = false
 
 [functions.delete-buyer-account]
 verify_jwt = false
+
+[functions.smm-panel]
+verify_jwt = false
+
+[functions.smm-wallet-checkout]
+verify_jwt = false
+
+[functions.smm-wallet-verify]
+verify_jwt = false

@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import profileWebp from '../../../assets/profile1.webp';
 import { getSettingValue } from '../../../services/settings';
 import { usePresentation } from '../../../context/PresentationContext';
-import AiCore from '../../../components/site/AiCore';
 import { isLowDataNetwork } from '../../../utils/network';
 
 const BR = '\u0001';
@@ -49,6 +48,39 @@ export default function Hero() {
   const [scrubPct, setScrubPct] = useState(0);
   const scrubTrackRef = useRef(null);
   const draggingRef = useRef(false);
+
+  const profilePhoto = (
+    <div
+      className="hero-photo"
+      onPointerMove={isLowDataNetwork() ? undefined : handlePortraitPointerMove}
+      onPointerLeave={isLowDataNetwork() ? undefined : resetPortraitPointer}
+    >
+      <div className="hero-photo-ring">
+        <div className="hero-photo-frame">
+          {profileImage && (
+            <picture>
+              <source srcSet={profileWebp} type="image/webp" />
+              <img
+                src={profileImage}
+                alt="Photo de profil de Caleb Jesugnon AGBAKOU"
+                width="802"
+                height="900"
+                srcSet={`${profileWebp} 802w`}
+                loading="eager"
+                fetchpriority="high"
+                onError={() => {
+                  if (profileImage !== profileWebp) setProfileImage(profileWebp);
+                }}
+              />
+            </picture>
+          )}
+        </div>
+      </div>
+      <div className="hero-photo-info">
+        <span className="hero-photo-title">Caleb Jesugnon AGBAKOU</span>
+      </div>
+    </div>
+  );
 
   function handlePortraitPointerMove(event) {
     if (isLowDataNetwork()) return;
@@ -194,42 +226,12 @@ export default function Hero() {
             <span>{renderTyped(typedCount)}</span>
             <span className="type-cursor">|</span>
           </h1>
-          {!isProfessional && <AiCore />}
         </div>
         <p className="sub">
           Vidéo IA, Design, montage vidéo et Visuels IA{' '}
           <strong>au service de vos projets, au Bénin et au-delà.</strong>
         </p>
-        <div
-          className="hero-photo"
-          onPointerMove={isLowDataNetwork() ? undefined : handlePortraitPointerMove}
-          onPointerLeave={isLowDataNetwork() ? undefined : resetPortraitPointer}
-        >
-          <div className="hero-photo-ring">
-            <div className="hero-photo-frame">
-              {profileImage && (
-                <picture>
-                  <source srcSet={profileWebp} type="image/webp" />
-                  <img
-                  src={profileImage}
-                  alt="Photo de profil de Caleb Jesugnon AGBAKOU"
-                  width="802"
-                  height="900"
-                  srcSet={`${profileWebp} 802w`}
-                  loading="eager"
-                  fetchpriority="high"
-                  onError={() => {
-                    if (profileImage !== profileWebp) setProfileImage(profileWebp);
-                  }}
-                  />
-                </picture>
-              )}
-            </div>
-          </div>
-          <div className="hero-photo-info">
-            <span className="hero-photo-title">Caleb Jesugnon AGBAKOU</span>
-          </div>
-        </div>
+        {profilePhoto}
         <div className="cta-row">
           <a href="#portfolio" className="btn btn-primary">
             Voir mes réalisations

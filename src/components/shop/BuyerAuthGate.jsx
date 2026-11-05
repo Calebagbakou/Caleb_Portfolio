@@ -9,8 +9,12 @@ export default function BuyerAuthGate({ children }) {
   if (loading) {
     return <main className="wrap"><div className="shop-state">Vérification de votre connexion…</div></main>;
   }
-  if (!user?.email_confirmed_at || !isAllowedBuyerEmail(user.email)) {
+  const isSmmRoute = location.pathname.startsWith('/smm');
+  if (!user?.email_confirmed_at || (!isSmmRoute && !isAllowedBuyerEmail(user.email))) {
     const next = `${location.pathname}${location.search}`;
+    if (isSmmRoute) {
+      return <Navigate to={`/smm/connexion?next=${encodeURIComponent(getBuyerNextPath(next))}`} replace />;
+    }
     return <Navigate to={`/boutique/connexion?next=${encodeURIComponent(getBuyerNextPath(next))}`} replace />;
   }
   return children;

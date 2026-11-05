@@ -1,25 +1,9 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useMemo, useState } from 'react';
 
-const PRESENTATION_KEY = 'caleb-portfolio-presentation';
 const PresentationContext = createContext(null);
 
 export function PresentationProvider({ children }) {
-  const [presentation, setPresentation] = useState(() => {
-    try {
-      return localStorage.getItem(PRESENTATION_KEY) === 'creative' ? 'creative' : 'professional';
-    } catch (error) {
-      console.warn('Impossible de lire la présentation mémorisée :', error);
-      return 'professional';
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(PRESENTATION_KEY, presentation);
-    } catch (error) {
-      console.warn('Impossible de mémoriser la présentation choisie :', error);
-    }
-  }, [presentation]);
+  const [presentation, setPresentation] = useState('professional');
 
   const value = useMemo(() => ({
     presentation,

@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { Navigate, Routes, Route, useLocation } from 'react-router-dom';
+import { Navigate, Routes, Route, useLocation, useParams } from 'react-router-dom';
 
 import PublicLayout from './layouts/PublicLayout';
 import ProtectedRoute from './components/admin/ProtectedRoute';
@@ -36,6 +36,16 @@ const Account = lazy(() => import('./pages/Boutique/Account'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
 const Legal = lazy(() => import('./pages/Legal'));
+const Gateway = lazy(() => import('./pages/Gateway'));
+const SmmPanel = lazy(() => import('./pages/SmmPanel'));
+const SmmAuth = lazy(() => import('./pages/SmmAuth'));
+const SmmServices = lazy(() => import('./pages/admin/SmmServices'));
+const SmmLayout = lazy(() => import('./layouts/SmmLayout'));
+
+function LegacyProjectRedirect() {
+  const { slug } = useParams();
+  return <Navigate to={`/portfolio/projet/${slug}`} replace />;
+}
 
 export default function App() {
   useSiteFavicon();
@@ -58,14 +68,23 @@ export default function App() {
     <Suspense fallback={<PageSkeleton />}>
     <Routes>
       <Route element={<ScrollToTop />}>
-      {/* ================= SITE PUBLIC (portfolio one-page) ================= */}
+      {/* ================= SITE PUBLIC ================= */}
       <Route element={<PublicLayout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/projet/:slug" element={<ProjectDetail />} />
-        <Route path="/confidentialite" element={<Legal pageKey="privacy" />} />
-        <Route path="/conditions" element={<Legal pageKey="terms" />} />
-        <Route path="/mentions-legales" element={<Legal pageKey="notices" />} />
+        <Route path="/" element={<Gateway />} />
+        <Route path="/portfolio" element={<Home />} />
+        <Route path="/portfolio/projet/:slug" element={<ProjectDetail />} />
+        <Route path="/portfolio/confidentialite" element={<Legal pageKey="privacy" />} />
+        <Route path="/portfolio/conditions" element={<Legal pageKey="terms" />} />
+        <Route path="/portfolio/mentions-legales" element={<Legal pageKey="notices" />} />
       </Route>
+      <Route element={<SmmLayout />}>
+        <Route path="/smm/connexion" element={<SmmAuth />} />
+        <Route path="/smm" element={<BuyerAuthGate><SmmPanel /></BuyerAuthGate>} />
+      </Route>
+      <Route path="/projet/:slug" element={<LegacyProjectRedirect />} />
+      <Route path="/confidentialite" element={<Navigate to="/portfolio/confidentialite" replace />} />
+      <Route path="/conditions" element={<Navigate to="/portfolio/conditions" replace />} />
+      <Route path="/mentions-legales" element={<Navigate to="/portfolio/mentions-legales" replace />} />
 
       {/* ================= BOUTIQUE ================= */}
       <Route element={<ShopLayout showFullNav showMobileButton />}>
@@ -113,6 +132,7 @@ export default function App() {
         <Route path="shop/content" element={<Shop shopSection="content" />} />
         <Route path="shop/prodseller" element={<Shop shopSection="prodseller" />} />
         <Route path="shop/zfourstore" element={<Shop shopSection="zfourstore" />} />
+        <Route path="smm" element={<SmmServices />} />
         <Route path="orders" element={<Orders />} />
         <Route path="clients" element={<Clients />} />
         <Route path="messages" element={<Messages />} />

@@ -69,7 +69,7 @@ export default function Seo({
       '@type': 'Person',
       name: 'Caleb Jesugnon Agbakou',
       alternateName: 'Caleb Creative',
-      url: SITE_URL,
+      url: canonicalUrl,
       jobTitle: 'Créateur visuel',
       description,
       address: { '@type': 'PostalAddress', addressCountry: 'BJ' },

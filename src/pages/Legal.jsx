@@ -255,7 +255,7 @@ export default function Legal({ pageKey }) {
         path={pathname}
       />
       <nav className="legal-return-links" aria-label="Navigation principale">
-        <Link to="/">← Retour au portfolio</Link>
+        <Link to="/portfolio">← Retour au portfolio</Link>
         <Link to="/boutique">Aller à la boutique</Link>
       </nav>
       <nav className="legal-page-links" aria-label="Pages légales">

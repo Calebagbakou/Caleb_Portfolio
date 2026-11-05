@@ -79,6 +79,68 @@ Deno.serve(async (request) => {
 
     const { apiBaseUrl, authorizationHeader } = getSasPayConfig();
     const client = getServiceClient();
+    let topupQuery = client
+      .from('smm_wallet_topups')
+      .select('id, amount_xof, status, payment_session_id, payment_transaction_id')
+      .limit(1);
+    topupQuery = reference
+      ? topupQuery.eq('reference', reference)
+      : topupQuery.eq('payment_session_id', sessionId);
+    const { data: topup, error: topupError } = await topupQuery.maybeSingle();
+    if (topupError) throw topupError;
+    let matchedTopup = topup;
+    if (!matchedTopup && sessionId && reference) {
+      const sessionTopup = await client
+        .from('smm_wallet_topups')
+        .select('id, amount_xof, status, payment_session_id, payment_transaction_id')
+        .eq('payment_session_id', sessionId)
+        .maybeSingle();
+      if (sessionTopup.error) throw sessionTopup.error;
+      matchedTopup = sessionTopup.data;
+    }
+    if (matchedTopup) {
+      const topupTransactionId = sessionId || matchedTopup.payment_session_id;
+      if (!topupTransactionId) return jsonResponse({ error: 'Transaction SasPay absente.' }, 400);
+      if (matchedTopup.status === 'confirmed') return jsonResponse({ received: true, verified: true });
+
+      const topupResponse = await fetch(
+        `${apiBaseUrl}/payments/${encodeURIComponent(topupTransactionId)}/verify/`,
+        { headers: { Authorization: authorizationHeader } },
+      );
+      const topupPayload = await topupResponse.json();
+      if (!topupResponse.ok) return jsonResponse({ error: 'Vérification SasPay impossible.' }, 502);
+      const topupStatusPayload = (topupPayload.data && typeof topupPayload.data === 'object')
+        ? topupPayload.data as Record<string, unknown>
+        : topupPayload as Record<string, unknown>;
+      const topupStatus = String(topupStatusPayload.transaction_status || topupStatusPayload.status || '').toUpperCase();
+      if (topupStatus !== 'SUCCESS' && topupStatus !== 'PAID') {
+        return jsonResponse({ received: true, verified: false });
+      }
+      const topupNestedData = topupStatusPayload.data && typeof topupStatusPayload.data === 'object'
+        ? topupStatusPayload.data as Record<string, unknown>
+        : {};
+      const topupAmount = firstValue(
+        topupStatusPayload.amount,
+        topupStatusPayload.total,
+        topupNestedData.amount,
+        topupNestedData.total,
+      );
+      if (topupAmount === undefined || !Number.isFinite(Number(topupAmount))
+        || Number(topupAmount) !== Number(matchedTopup.amount_xof)) {
+        return jsonResponse({ error: 'Le montant ne correspond pas à la recharge.' }, 409);
+      }
+      const topupCurrency = String(firstValue(topupStatusPayload.currency, topupNestedData.currency) || '').toUpperCase();
+      if (topupCurrency !== 'XOF') {
+        return jsonResponse({ error: 'La devise ne correspond pas à la recharge.' }, 409);
+      }
+      const creditResult = await client.rpc('smm_credit_topup', {
+        p_topup_id: matchedTopup.id,
+        p_transaction_id: String(topupStatusPayload.id || topupTransactionId),
+      });
+      if (creditResult.error) throw creditResult.error;
+      return jsonResponse({ received: true, verified: true });
+    }
+
     let orderQuery = client
       .from('orders')
       .select('id, ref, total, currency, payment_status, payment_transaction_id')

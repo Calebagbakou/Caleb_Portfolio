@@ -49,7 +49,7 @@ export default function ShopHome() {
             <ShopArrow />
           </Link>
         </div>
-        <Link to="/" className="shop-portfolio-text">Voir le portfolio <ShopArrow /></Link>
+        <Link to="/portfolio" className="shop-portfolio-text">Voir le portfolio <ShopArrow /></Link>
       </section>
 
       <main className="wrap">

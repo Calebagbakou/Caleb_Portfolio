@@ -18,6 +18,7 @@ const PAGES = {
   '/admin/shop/content': { title: 'Contenu de la boutique', section: 'Boutique' },
   '/admin/shop/prodseller': { title: 'Catalogue ProdSeller', section: 'Boutique' },
   '/admin/shop/zfourstore': { title: 'Catalogue Z FOUR STORE', section: 'Boutique' },
+  '/admin/smm': { title: 'Panel social', section: 'Services numériques' },
   '/admin/orders': { title: 'Commandes', section: 'Commerce' },
   '/admin/clients': { title: 'Clients', section: 'Commerce' },
   '/admin/messages': { title: 'Messages', section: 'Communication' },

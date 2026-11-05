@@ -19,9 +19,9 @@ export const legalFacts = Object.freeze({
     locationHref: 'https://www.google.com/maps/search/Abomey+B%C3%A9nin',
   }),
   legalRoutes: Object.freeze({
-    privacy: '/confidentialite',
-    terms: '/conditions',
-    notices: '/mentions-legales',
+    privacy: '/portfolio/confidentialite',
+    terms: '/portfolio/conditions',
+    notices: '/portfolio/mentions-legales',
   }),
   legalNotice: Object.freeze({
     contact: 'En envoyant ce formulaire, vous reconnaissez avoir pris connaissance de la',
@@ -45,7 +45,6 @@ export const legalFacts = Object.freeze({
       Object.freeze({ key: 'caleb_boutique_checkout_v1', purpose: 'Produit, formule et quantité sélectionnés dans le panier.' }),
       Object.freeze({ key: 'caleb_boutique_last_order_v1', purpose: 'Informations du reçu de la dernière commande.' }),
       Object.freeze({ key: 'caleb-theme', purpose: 'Préférence de thème.' }),
-      Object.freeze({ key: 'caleb-portfolio-presentation', purpose: 'Mode de présentation du portfolio.' }),
       Object.freeze({ key: 'admin-open-group', purpose: 'Groupe ouvert dans la navigation d’administration.' }),
     ]),
     deletion: 'La suppression du compte retire les notes administratives associées, anonymise le nom, le téléphone et l’e-mail des données client, puis supprime le compte d’authentification. Les commandes et leurs lignes sont conservées et restent liées aux données client anonymisées.',

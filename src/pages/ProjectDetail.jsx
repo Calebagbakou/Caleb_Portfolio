@@ -49,7 +49,7 @@ export default function ProjectDetail() {
       <main className="project-detail wrap">
         <h1>{status === 'error' ? 'Projet momentanément indisponible' : 'Projet introuvable'}</h1>
         {status === 'error' && <LoadingFeedback phase={slowLoading.phase === 'error' ? 'error' : 'slow'} onRetry={() => setRetryCount((count) => count + 1)} />}
-        <Link className="btn btn-primary" to="/">Retour au portfolio</Link>
+        <Link className="btn btn-primary" to="/portfolio">Retour au portfolio</Link>
       </main>
     );
   }
@@ -57,7 +57,7 @@ export default function ProjectDetail() {
   const image = getProjectThumbnailUrl(project);
   return (
     <main className="project-detail wrap">
-      <Seo title={`${project.title} — Caleb Creative`} description={project.description || `Étude de cas ${project.title}.`} path={`/projet/${project.slug}`} />
+      <Seo title={`${project.title} — Caleb Creative`} description={project.description || `Étude de cas ${project.title}.`} path={`/portfolio/projet/${project.slug}`} />
       <Link className="project-back" to="/#portfolio">← Retour au portfolio</Link>
       <span className="sec-eyebrow">{project.category}</span>
       <h1>{project.title}</h1>

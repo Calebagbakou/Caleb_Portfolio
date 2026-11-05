@@ -30,6 +30,7 @@ export function useTilt() {
     return () => {
       el.removeEventListener('mousemove', onMove);
       el.removeEventListener('mouseleave', onLeave);
+      onLeave();
     };
   }, []);
 

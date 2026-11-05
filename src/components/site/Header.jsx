@@ -45,7 +45,8 @@ function PresentationSwitch({ isProfessional, compact, onToggle }) {
 export default function Header() {
   const { isProfessional, togglePresentation } = usePresentation();
   const { pathname } = useLocation();
-  const isHome = pathname === '/';
+  const isGateway = pathname === '/';
+  const isHome = pathname === '/portfolio';
   const [logoUrl, clearLogoUrl] = useSiteLogo();
   const [theme, setTheme] = useState(() => {
     const saved = window.localStorage.getItem('caleb-theme');
@@ -60,7 +61,10 @@ export default function Header() {
 
   function handlePresentationToggle() {
     setMenuOpen(false);
-    if (isProfessional) window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (isProfessional) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTheme('dark');
+    }
     togglePresentation();
   }
 
@@ -155,7 +159,7 @@ export default function Header() {
           </div>
           <div className="top-actions">
             <span className="timecode" ref={timecodeRef}>00:00:24:07</span>
-            {isProfessional && (
+            {!isGateway && isProfessional && (
               <PresentationSwitch
                 isProfessional={isProfessional}
                 compact
@@ -169,16 +173,18 @@ export default function Header() {
                 <circle cx="17" cy="20" r="1.4" />
               </svg>
             </Link>
-            <button
-              className="icon-btn theme-toggle"
-              aria-label={theme === 'dark' ? 'Passer au thème clair' : 'Passer au thème sombre'}
-              aria-pressed={theme === 'light'}
-              onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                {theme === 'light' ? MOON_PATH : SUN_PATH}
-              </svg>
-            </button>
+            {!isGateway && (
+              <button
+                className="icon-btn theme-toggle"
+                aria-label={theme === 'dark' ? 'Passer au thème clair' : 'Passer au thème sombre'}
+                aria-pressed={theme === 'light'}
+                onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  {theme === 'light' ? MOON_PATH : SUN_PATH}
+                </svg>
+              </button>
+            )}
             <button
               className={`hamburger${menuOpen ? ' open' : ''}`}
               aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
@@ -195,7 +201,7 @@ export default function Header() {
         </div>
       </header>
 
-      {!isProfessional && (
+      {!isGateway && !isProfessional && (
         <PresentationSwitch
           isProfessional={isProfessional}
           onToggle={handlePresentationToggle}
@@ -204,33 +210,54 @@ export default function Header() {
 
       <nav className={`nav-overlay${menuOpen ? ' open' : ''}`} ref={navRef} aria-hidden={!menuOpen}>
         <div className="nav-links">
-          {NAV_LINKS.map((link) => (
+          {isGateway ? (
+            <>
+              <Link to={SHOP_URL} onClick={() => setMenuOpen(false)}>
+                <span>Boutique</span>
+                <span className="idx">01</span>
+              </Link>
+              <Link to="/portfolio" onClick={() => setMenuOpen(false)}>
+                <span>Portfolio</span>
+                <span className="idx">02</span>
+              </Link>
+              <Link to="/smm" onClick={() => setMenuOpen(false)}>
+                <span>Panel social</span>
+                <span className="idx">03</span>
+              </Link>
+            </>
+          ) : (
+            <>
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  className={isHome && activeSection === link.href ? 'active' : ''}
+                  to={isHome ? link.href : `/portfolio/${link.href}`}
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <span>{link.label}</span>
+                  <span className="idx">{link.idx}</span>
+                </Link>
+              ))}
+              <Link to={SHOP_URL} onClick={() => setMenuOpen(false)}>
+                <span>Boutique</span>
+                <span className="idx">07</span>
+              </Link>
+            </>
+          )}
+        </div>
+        {!isGateway && (
+          <div className="nav-foot">
+            <span className="footer-note">Abomey, Bénin</span>
             <Link
-              key={link.href}
-              className={isHome && activeSection === link.href ? 'active' : ''}
-              to={isHome ? link.href : `/${link.href}`}
+              to={isHome ? '#contact' : '/portfolio/#contact'}
               onClick={() => setMenuOpen(false)}
+              className="btn btn-ghost"
+              style={{ maxWidth: 180, padding: '11px 16px', fontSize: 13 }}
             >
-              <span>{link.label}</span>
-              <span className="idx">{link.idx}</span>
+              Écrire
             </Link>
-          ))}
-          <Link to={SHOP_URL} onClick={() => setMenuOpen(false)}>
-            <span>Boutique</span>
-            <span className="idx">07</span>
-          </Link>
-        </div>
-        <div className="nav-foot">
-          <span className="footer-note">Abomey, Bénin</span>
-          <Link
-            to={isHome ? '#contact' : '/#contact'}
-            onClick={() => setMenuOpen(false)}
-            className="btn btn-ghost"
-            style={{ maxWidth: 180, padding: '11px 16px', fontSize: 13 }}
-          >
-            Écrire
-          </Link>
-        </div>
+          </div>
+        )}
       </nav>
     </>
   );

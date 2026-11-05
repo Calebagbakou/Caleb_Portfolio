@@ -5,7 +5,7 @@ export default function NotFound() {
     <main className="not-found-page">
       <h1>404</h1>
       <p>Cette page n'existe pas.</p>
-      <Link to="/">
+      <Link to="/portfolio">
         ← Retour à l'accueil
       </Link>
     </main>

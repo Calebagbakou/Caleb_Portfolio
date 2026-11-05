@@ -68,7 +68,7 @@ export default function ShopHeader({ showFullNav = true, showMobileButton = true
                 <Link to="/boutique/catalogue?cat=logiciels">Logiciels créatifs</Link>
               </>
             )}
-            <Link className="portfolio-menu-link" to="/">Voir le portfolio</Link>
+            <Link className="portfolio-menu-link" to="/portfolio">Voir le portfolio</Link>
           </nav>
 
           <div className="shop-actions">
@@ -138,7 +138,7 @@ export default function ShopHeader({ showFullNav = true, showMobileButton = true
           <Link to={user?.email_confirmed_at ? '/boutique/compte' : '/boutique/connexion?next=%2Fboutique%2Fcompte'} onClick={() => setMobileOpen(false)}>
             {user?.email_confirmed_at ? 'Mon compte' : 'Se connecter'}
           </Link>
-          <Link className="mobile-portfolio-link" to="/" onClick={() => setMobileOpen(false)}>
+          <Link className="mobile-portfolio-link" to="/portfolio" onClick={() => setMobileOpen(false)}>
             Voir le portfolio
           </Link>
         </div>

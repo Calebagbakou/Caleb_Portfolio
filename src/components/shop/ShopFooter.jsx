@@ -21,7 +21,7 @@ export default function ShopFooter() {
               <li><Link to="/boutique">Accueil</Link></li>
               <li><Link to="/boutique/catalogue">Catalogue</Link></li>
               <li><Link to="/boutique/compte">Mon compte</Link></li>
-              <li><Link to="/">Portfolio</Link></li>
+              <li><Link to="/portfolio">Portfolio</Link></li>
             </ul>
           </nav>
 

@@ -19,7 +19,7 @@ export default function Home() {
 
   return (
     <>
-      <Seo />
+      <Seo path="/portfolio" />
       {!isProfessional && <ParticleField />}
       <Hero />
       <Stats />
