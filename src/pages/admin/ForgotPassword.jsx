@@ -40,7 +40,7 @@ export default function ForgotPassword() {
         </div>
 
         <h1>Mot de passe oublié</h1>
-        <p>Entrez votre adresse e-mail pour recevoir le lien de réinitialisation.</p>
+        <p>Entrez votre adresse e-mail pour recevoir le lien de réinitialisation. Si cette adresse sert aussi à la boutique ou au panel social, le nouveau mot de passe s’y appliquera également.</p>
 
         {error && <div className="form-error show">{error}</div>}
         {success && <div>{success}</div>}

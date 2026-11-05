@@ -160,7 +160,7 @@ export default function SmmPanel() {
       } finally {
         if (!cancelled) {
           setWorking(false);
-          if (verified) navigate('/smm', { replace: true });
+          if (verified) navigate('/smm/panel', { replace: true });
         }
       }
     }
@@ -421,7 +421,7 @@ export default function SmmPanel() {
             </div>
           )}
         </section>
-        <p className="smm-footer-note">Un compte client avec adresse e-mail confirmée est requis. <Link to="/smm/connexion?next=%2Fsmm">Gérer mon accès au panel</Link></p>
+        <p className="smm-footer-note"><Link to="/smm">Découvrir le parcours SMM</Link> · Un compte client avec adresse e-mail confirmée est requis. <Link to="/smm/connexion?next=%2Fsmm%2Fpanel">Gérer mon accès au panel</Link></p>
       </section>
     </main>
   );
