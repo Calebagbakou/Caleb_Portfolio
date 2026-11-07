@@ -12,9 +12,19 @@ function errorText(value: unknown) {
   if (typeof value === 'string') return value;
   if (value && typeof value === 'object') {
     const record = value as Record<string, unknown>;
-    return String(record.message || record.error || record.detail || 'Réponse fournisseur invalide.');
+    const message = record.message || record.error || record.detail;
+    if (typeof message === 'string' && message.trim()) {
+      const code = typeof record.code === 'string' ? ` [${record.code}]` : '';
+      const details = typeof record.details === 'string' && record.details.trim()
+        ? ` — ${record.details}`
+        : '';
+      const hint = typeof record.hint === 'string' && record.hint.trim()
+        ? ` Indication : ${record.hint}`
+        : '';
+      return `${message}${code}${details}${hint}`;
+    }
   }
-  return 'Réponse fournisseur invalide.';
+  return value instanceof Error ? value.message : 'Erreur inconnue.';
 }
 
 function apiError(payload: Record<string, unknown>) {
@@ -81,6 +91,9 @@ Deno.serve(async (request) => {
   if (request.method !== 'POST') return jsonResponse({ error: 'Méthode non autorisée.' }, 405);
 
   let reservedOrderId: string | null = null;
+  let action = '';
+  let isAdmin = false;
+  let operationStage = 'authentification';
   try {
     const accessToken = request.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1];
     if (!accessToken) return jsonResponse({ error: 'Connectez-vous pour accéder au panel social.' }, 401);
@@ -92,14 +105,15 @@ Deno.serve(async (request) => {
     }
 
     const body = await request.json() as Record<string, unknown>;
-    const action = String(body.action || '');
+    action = String(body.action || '');
+    operationStage = `action ${action || 'inconnue'}`;
     const { data: admins, error: adminError } = await serviceClient
       .from('admins')
       .select('id')
       .eq('id', user.id)
       .maybeSingle();
     if (adminError) throw adminError;
-    const isAdmin = Boolean(admins);
+    isAdmin = Boolean(admins);
     if (action === 'catalog') {
       const { data, error } = await serviceClient
         .from('smm_services')
@@ -136,6 +150,7 @@ Deno.serve(async (request) => {
       if (!isAdmin) return jsonResponse({ error: 'Accès administrateur requis.' }, 403);
       const syncStartedAt = Date.now();
       console.info('Synchronisation SMMTurk démarrée.');
+      operationStage = 'appel à SMMTurk';
       const payload = await callProvider({ action: 'services' });
       if (apiError(payload)) return jsonResponse({ error: errorText(payload.error || payload.message) }, 502);
       const services = Array.isArray(payload.data) ? payload.data : Array.isArray(payload.services) ? payload.services : null;
@@ -144,6 +159,7 @@ Deno.serve(async (request) => {
       }
 
       console.info(`Synchronisation du catalogue SMMTurk reçue (${services.length} entrées).`);
+      operationStage = 'lecture des services existants';
       const currentServices = await loadCurrentServices(serviceClient);
       const existingById = new Map((currentServices || []).map((service) => [service.id, service]));
       const syncedIds = new Set<string>();
@@ -151,6 +167,7 @@ Deno.serve(async (request) => {
       const batchSize = 200;
       const syncedAt = new Date().toISOString();
       for (let offset = 0; offset < services.length; offset += batchSize) {
+        operationStage = `validation et enregistrement des services ${offset + 1} à ${Math.min(offset + batchSize, services.length)}`;
         const batch = new Map<string, Record<string, unknown>>();
         for (const item of services.slice(offset, offset + batchSize)) {
           if (!item || typeof item !== 'object') {
@@ -192,6 +209,7 @@ Deno.serve(async (request) => {
         .filter((service) => !syncedIds.has(service.id))
         .map((service) => service.id);
       for (let offset = 0; offset < staleIds.length; offset += 100) {
+        operationStage = 'désactivation des services retirés par SMMTurk';
         const staleBatch = staleIds.slice(offset, offset + 100);
         const { error: deactivateError } = await serviceClient
           .from('smm_services')
@@ -206,6 +224,7 @@ Deno.serve(async (request) => {
       });
     }
 
+    operationStage = `exécution de l’action ${action}`;
     if (action === 'set_active') {
       if (!isAdmin) return jsonResponse({ error: 'Accès administrateur requis.' }, 403);
       const serviceId = String(body.serviceId || '');
@@ -402,7 +421,11 @@ Deno.serve(async (request) => {
         console.error('Impossible de marquer la commande SMM comme à vérifier :', recoveryError);
       }
     }
-    console.error('Échec de l’opération du panel SMM :', error);
-    return jsonResponse({ error: error instanceof Error ? error.message : 'Opération du panel impossible.' }, 500);
+    const message = errorText(error);
+    console.error(`Échec de l’opération SMM (${operationStage}) :`, error);
+    if (action === 'sync' && isAdmin) {
+      return jsonResponse({ error: `Synchronisation interrompue pendant ${operationStage} : ${message}` }, 500);
+    }
+    return jsonResponse({ error: message }, 500);
   }
 });
