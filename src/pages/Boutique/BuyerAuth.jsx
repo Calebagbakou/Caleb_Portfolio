@@ -312,6 +312,10 @@ export default function BuyerAuth() {
       </nav>
       <section className="buyer-auth-card">
         <Link className="buyer-auth-back" to="/boutique/catalogue">Retour au catalogue</Link>
+        <nav className="buyer-auth-space-switch" aria-label="Choisir l’espace de connexion">
+          <span className="is-active" aria-current="page">Boutique</span>
+          <Link to="/smm/connexion">Panel social</Link>
+        </nav>
         <div className="eyebrow">COMPTE CLIENT</div>
         <h1>
           <svg className="buyer-auth-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -497,7 +501,7 @@ export default function BuyerAuth() {
           </form>
         )}
         {mode === 'signup' && !awaitingConfirmation && <LegalNotice variant="signup" />}
-        <p className="buyer-auth-footnote">Google et Facebook ne reçoivent jamais votre mot de passe de boutique.</p>
+        <p className="buyer-auth-footnote">Cet accès est réservé aux achats boutique. <Link to="/smm/connexion">Connexion dédiée au panel social</Link>. Le compte et le mot de passe restent partagés ; Google et Facebook ne reçoivent jamais votre mot de passe.</p>
       </section>
       <aside className="buyer-auth-aside">
         <h2>Votre compte, vos achats</h2>

@@ -61,6 +61,10 @@
 .smm-auth-back svg { width: 16px; height: 16px; }
 .smm-auth-back:hover { transform: translateX(-2px); border-color: #b6cde7; color: #1d5b9e; background: #f1f7fd; }
 .smm-auth-back:focus-visible { outline: 2px solid #1877f2; outline-offset: 3px; }
+.auth-space-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: -10px 0 21px; padding: 4px; border: 1px solid #e1eaf5; border-radius: 10px; background: #f4f7fb; }
+.auth-space-switch a, .auth-space-switch span { display: grid; min-height: 39px; align-content: center; justify-items: center; border-radius: 7px; color: #65768b; font-size: 11px; font-weight: 750; text-decoration: none; }
+.auth-space-switch a:hover { color: #1d5b9e; background: #eaf3fd; }
+.auth-space-switch .is-active { color: #1d5b9e; background: #fff; box-shadow: 0 2px 6px #17385d12; }
 .smm-auth-card > .smm-auth-kicker { margin: 0 0 7px; color: var(--auth-blue); }
 .smm-auth-card h2 { margin: 0; color: var(--auth-navy); font-family: 'Nunito', sans-serif; font-size: 30px; letter-spacing: -.045em; }
 .smm-auth-intro { margin: 9px 0 22px; color: var(--auth-muted); font-size: 13px; line-height: 1.65; }
@@ -95,6 +99,7 @@
 .smm-auth-privacy { margin: 13px 0 0; color: #a2adba; font-size: 9px; text-align: center; }
 .smm-auth-loading { padding: 24px; color: #64748b; }
 .smm-auth-page button:focus-visible, .smm-auth-page a:focus-visible, .smm-auth-page input:focus-visible { outline: 2px solid #1877f2; outline-offset: 3px; }
+.auth-space-switch a:focus-visible { outline: 2px solid #1877f2; outline-offset: 2px; }
 
 @media (max-width: 780px) {
   .smm-auth-page { min-height: calc(100svh - 54px); padding: 20px 14px; }

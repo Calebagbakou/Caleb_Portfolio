@@ -349,6 +349,10 @@ export default function SmmAuth() {
               </svg>
               <span>Retour à l’accueil principal</span>
             </Link>
+            <nav className="auth-space-switch" aria-label="Choisir l’espace de connexion">
+              <span className="is-active" aria-current="page">Panel social</span>
+              <Link to="/boutique/connexion">Boutique</Link>
+            </nav>
             <p className="smm-auth-kicker">PANEL SOCIAL</p>
             <h2>{title}</h2>
             <p className="smm-auth-intro">
@@ -476,7 +480,7 @@ export default function SmmAuth() {
               </form>
             )}
             <p className="smm-auth-shop-note">
-              Utilise le même compte que pour la boutique. Si tu y es déjà connecté, l’accès est automatique. <Link to="/boutique">Visiter la boutique</Link>
+              Le panel social et la boutique partagent ton compte. <Link to="/boutique/connexion">Connexion dédiée boutique</Link>
             </p>
             <p className="smm-auth-privacy">Ton mot de passe reste géré de manière sécurisée par Supabase.</p>
           </div>

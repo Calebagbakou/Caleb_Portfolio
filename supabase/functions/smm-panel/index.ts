@@ -59,6 +59,22 @@ function mapStatus(value: unknown) {
   return 'pending';
 }
 
+async function loadCurrentServices(serviceClient: ReturnType<typeof getServiceClient>) {
+  const pageSize = 500;
+  const services: Array<{ id: string; sell_rate_xof: number; active: boolean }> = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await serviceClient
+      .from('smm_services')
+      .select('id, sell_rate_xof, active')
+      .order('id')
+      .range(offset, offset + pageSize - 1);
+    if (error) throw error;
+    services.push(...(data || []));
+    if (!data || data.length < pageSize) break;
+  }
+  return services;
+}
+
 Deno.serve(async (request) => {
   const cors = jsonHeaders();
   if (request.method === 'OPTIONS') return new Response('ok', { headers: cors });
@@ -100,17 +116,26 @@ Deno.serve(async (request) => {
 
     if (action === 'admin_catalog') {
       if (!isAdmin) return jsonResponse({ error: 'Accès administrateur requis.' }, 403);
-      const { data, error } = await serviceClient
-        .from('smm_services')
-        .select('id, name, type, category, provider_rate, sell_rate_xof, min_quantity, max_quantity, refill, cancel, active')
-        .order('category')
-        .order('id');
-      if (error) throw error;
-      return jsonResponse({ services: data || [] });
+      const pageSize = 500;
+      const services: Array<Record<string, unknown>> = [];
+      for (let offset = 0; ; offset += pageSize) {
+        const { data, error } = await serviceClient
+          .from('smm_services')
+          .select('id, name, type, category, provider_rate, sell_rate_xof, min_quantity, max_quantity, refill, cancel, active')
+          .order('category')
+          .order('id')
+          .range(offset, offset + pageSize - 1);
+        if (error) throw error;
+        services.push(...(data || []));
+        if (!data || data.length < pageSize) break;
+      }
+      return jsonResponse({ services });
     }
 
     if (action === 'sync') {
       if (!isAdmin) return jsonResponse({ error: 'Accès administrateur requis.' }, 403);
+      const syncStartedAt = Date.now();
+      console.info('Synchronisation SMMTurk démarrée.');
       const payload = await callProvider({ action: 'services' });
       if (apiError(payload)) return jsonResponse({ error: errorText(payload.error || payload.message) }, 502);
       const services = Array.isArray(payload.data) ? payload.data : Array.isArray(payload.services) ? payload.services : null;
@@ -118,52 +143,66 @@ Deno.serve(async (request) => {
         return jsonResponse({ error: 'Le catalogue SMMTurk est vide ou a un format inattendu ; les services existants sont conservés.' }, 502);
       }
 
-      const { data: currentServices, error: currentServicesError } = await serviceClient
-        .from('smm_services')
-        .select('id, sell_rate_xof, active');
-      if (currentServicesError) throw currentServicesError;
+      console.info(`Synchronisation du catalogue SMMTurk reçue (${services.length} entrées).`);
+      const currentServices = await loadCurrentServices(serviceClient);
       const existingById = new Map((currentServices || []).map((service) => [service.id, service]));
-      const rows = services.map((item) => {
-        const service = item as Record<string, unknown>;
-        const id = String(service.service ?? service.id ?? '').trim();
-        const providerRate = Number(service.rate);
-        const min = Number(service.min);
-        const max = Number(service.max);
-        if (!/^\d+$/.test(id) || !Number.isFinite(providerRate) || providerRate < 0
-          || !Number.isSafeInteger(min) || !Number.isSafeInteger(max) || min < 1 || max < min) {
-          throw new Error('Une entrée du catalogue SMMTurk contient des données invalides.');
+      const syncedIds = new Set<string>();
+      let added = 0;
+      const batchSize = 200;
+      const syncedAt = new Date().toISOString();
+      for (let offset = 0; offset < services.length; offset += batchSize) {
+        const batch = new Map<string, Record<string, unknown>>();
+        for (const item of services.slice(offset, offset + batchSize)) {
+          if (!item || typeof item !== 'object') {
+            throw new Error('Une entrée du catalogue SMMTurk contient des données invalides.');
+          }
+          const service = item as Record<string, unknown>;
+          const id = String(service.service ?? service.id ?? '').trim();
+          const providerRate = Number(service.rate);
+          const min = Number(service.min);
+          const max = Number(service.max);
+          if (!/^\d+$/.test(id) || !Number.isFinite(providerRate) || providerRate < 0
+            || !Number.isSafeInteger(min) || !Number.isSafeInteger(max) || min < 1 || max < min) {
+            throw new Error('Une entrée du catalogue SMMTurk contient des données invalides.');
+          }
+          if (!existingById.has(id) && !syncedIds.has(id)) added += 1;
+          syncedIds.add(id);
+          batch.set(id, {
+            id,
+            name: String(service.name || `Service ${id}`).slice(0, 250),
+            type: String(service.type || '').slice(0, 100),
+            category: String(service.category || 'Autres').slice(0, 150),
+            provider_rate: providerRate,
+            sell_rate_xof: existingById.get(id)?.sell_rate_xof ?? Math.ceil(providerRate * 4000),
+            min_quantity: min,
+            max_quantity: max,
+            refill: service.refill === true || String(service.refill).toLowerCase() === 'true',
+            cancel: service.cancel === true || String(service.cancel).toLowerCase() === 'true',
+            active: existingById.get(id)?.active ?? false,
+            updated_at: syncedAt,
+          });
         }
-        return {
-          id,
-          name: String(service.name || `Service ${id}`).slice(0, 250),
-          type: String(service.type || '').slice(0, 100),
-          category: String(service.category || 'Autres').slice(0, 150),
-          provider_rate: providerRate,
-          sell_rate_xof: existingById.get(id)?.sell_rate_xof ?? Math.ceil(providerRate * 4000),
-          min_quantity: min,
-          max_quantity: max,
-          refill: service.refill === true || String(service.refill).toLowerCase() === 'true',
-          cancel: service.cancel === true || String(service.cancel).toLowerCase() === 'true',
-          active: existingById.get(id)?.active ?? false,
-          updated_at: new Date().toISOString(),
-        };
-      });
-      const { error: upsertError } = await serviceClient
-        .from('smm_services')
-        .upsert(rows, { onConflict: 'id', ignoreDuplicates: false });
-      if (upsertError) throw upsertError;
-      const activeIds = new Set(rows.map((row) => row.id));
-      const staleServices = (currentServices || []).filter((service) => !activeIds.has(service.id));
-      for (const service of staleServices) {
+        const { error: upsertError } = await serviceClient
+          .from('smm_services')
+          .upsert([...batch.values()], { onConflict: 'id', ignoreDuplicates: false });
+        if (upsertError) throw upsertError;
+      }
+
+      const staleIds = currentServices
+        .filter((service) => !syncedIds.has(service.id))
+        .map((service) => service.id);
+      for (let offset = 0; offset < staleIds.length; offset += 100) {
+        const staleBatch = staleIds.slice(offset, offset + 100);
         const { error: deactivateError } = await serviceClient
           .from('smm_services')
-          .update({ active: false, updated_at: new Date().toISOString() })
-          .eq('id', service.id);
+          .update({ active: false, updated_at: syncedAt })
+          .in('id', staleBatch);
         if (deactivateError) throw deactivateError;
       }
+      console.info(`Synchronisation SMMTurk terminée (${syncedIds.size} services, ${staleIds.length} retirés) en ${Date.now() - syncStartedAt} ms.`);
       return jsonResponse({
-        synced: rows.length,
-        added: rows.filter((service) => !existingById.has(service.id)).length,
+        synced: syncedIds.size,
+        added,
       });
     }
 
