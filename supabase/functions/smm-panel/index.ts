@@ -31,6 +31,30 @@ function apiError(payload: Record<string, unknown>) {
   return Boolean(payload.error) || String(payload.status || '').toLowerCase() === 'error';
 }
 
+function sanitizeProviderText(value: unknown, fallback: string, maxLength: number) {
+  const text = String(value || fallback);
+  let sanitized = '';
+  for (let index = 0; index < text.length; index += 1) {
+    const code = text.charCodeAt(index);
+    if (code === 0) {
+      sanitized += '\ufffd';
+    } else if (code >= 0xd800 && code <= 0xdbff) {
+      const next = text.charCodeAt(index + 1);
+      if (next >= 0xdc00 && next <= 0xdfff) {
+        sanitized += text[index] + text[index + 1];
+        index += 1;
+      } else {
+        sanitized += '\ufffd';
+      }
+    } else if (code >= 0xdc00 && code <= 0xdfff) {
+      sanitized += '\ufffd';
+    } else {
+      sanitized += text[index];
+    }
+  }
+  return sanitized.slice(0, maxLength);
+}
+
 function jsonHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
@@ -186,9 +210,9 @@ Deno.serve(async (request) => {
           syncedIds.add(id);
           batch.set(id, {
             id,
-            name: String(service.name || `Service ${id}`).slice(0, 250),
-            type: String(service.type || '').slice(0, 100),
-            category: String(service.category || 'Autres').slice(0, 150),
+            name: sanitizeProviderText(service.name, `Service ${id}`, 250),
+            type: sanitizeProviderText(service.type, '', 100),
+            category: sanitizeProviderText(service.category, 'Autres', 150),
             provider_rate: providerRate,
             sell_rate_xof: existingById.get(id)?.sell_rate_xof ?? Math.ceil(providerRate * 4000),
             min_quantity: min,
@@ -199,6 +223,7 @@ Deno.serve(async (request) => {
             updated_at: syncedAt,
           });
         }
+        operationStage = `enregistrement du lot de services ${offset + 1} à ${Math.min(offset + batchSize, services.length)}`;
         const { error: upsertError } = await serviceClient
           .from('smm_services')
           .upsert([...batch.values()], { onConflict: 'id', ignoreDuplicates: false });
