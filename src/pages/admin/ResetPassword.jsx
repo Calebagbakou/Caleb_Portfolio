@@ -58,7 +58,7 @@ export default function ResetPassword() {
         </div>
 
         <h1>Nouveau mot de passe</h1>
-        <p>Entrez votre nouveau mot de passe. Il sera commun aux espaces qui utilisent cette même adresse e-mail.</p>
+        <p>Entrez votre nouveau mot de passe.</p>
 
         {error && <div className="form-error show">{error}</div>}
         {success && <div>{success}</div>}

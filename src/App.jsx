@@ -38,7 +38,6 @@ const ProjectDetail = lazy(() => import('./pages/ProjectDetail'));
 const Legal = lazy(() => import('./pages/Legal'));
 const Gateway = lazy(() => import('./pages/Gateway'));
 const SmmPanel = lazy(() => import('./pages/SmmPanel'));
-const SmmLearning = lazy(() => import('./pages/SmmLearning'));
 const SmmAuth = lazy(() => import('./pages/SmmAuth'));
 const SmmServices = lazy(() => import('./pages/admin/SmmServices'));
 const SmmLayout = lazy(() => import('./layouts/SmmLayout'));
@@ -77,17 +76,11 @@ export default function App() {
         <Route path="/portfolio/confidentialite" element={<Legal pageKey="privacy" />} />
         <Route path="/portfolio/conditions" element={<Legal pageKey="terms" />} />
         <Route path="/portfolio/mentions-legales" element={<Legal pageKey="notices" />} />
-        <Route path="/smm" element={<SmmLearning />} />
-        <Route path="/smm/programmes" element={<SmmLearning />} />
-        <Route path="/smm/programmes/:slug" element={<SmmLearning />} />
-        <Route path="/smm/ressources" element={<SmmLearning />} />
-        <Route path="/smm/mon-espace" element={<BuyerAuthGate><SmmLearning /></BuyerAuthGate>} />
       </Route>
       <Route element={<SmmLayout />}>
         <Route path="/smm/connexion" element={<SmmAuth />} />
-        <Route path="/smm/panel" element={<BuyerAuthGate><SmmPanel /></BuyerAuthGate>} />
+        <Route path="/smm" element={<BuyerAuthGate><SmmPanel /></BuyerAuthGate>} />
       </Route>
-      <Route path="/compte" element={<Navigate to="/boutique/compte" replace />} />
       <Route path="/projet/:slug" element={<LegacyProjectRedirect />} />
       <Route path="/confidentialite" element={<Navigate to="/portfolio/confidentialite" replace />} />
       <Route path="/conditions" element={<Navigate to="/portfolio/conditions" replace />} />

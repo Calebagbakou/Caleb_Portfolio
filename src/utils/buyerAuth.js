@@ -10,13 +10,13 @@ export function getBuyerAuthRedirectUrl(nextPath) {
 }
 
 export function getBuyerNextPath(value) {
-  if (['/boutique/commande', '/boutique/compte', '/smm/panel', '/smm/mon-espace'].includes(value)) return value;
+  if (['/boutique/commande', '/boutique/compte', '/smm'].includes(value)) return value;
   if (typeof value === 'string') {
     try {
       const path = new URL(value, window.location.origin);
       const topupId = path.searchParams.get('topup_id');
-      if (path.pathname === '/smm/panel' && topupId && /^[0-9a-f-]{36}$/i.test(topupId)) {
-        return `/smm/panel?topup_id=${encodeURIComponent(topupId)}`;
+      if (path.pathname === '/smm' && topupId && /^[0-9a-f-]{36}$/i.test(topupId)) {
+        return `/smm?topup_id=${encodeURIComponent(topupId)}`;
       }
     } catch (error) {
       console.error('Chemin de retour client invalide :', error);

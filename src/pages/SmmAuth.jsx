@@ -37,7 +37,7 @@ export default function SmmAuth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const nextPath = getBuyerNextPath(searchParams.get('next') || '/smm/panel');
+  const nextPath = getBuyerNextPath(searchParams.get('next'));
   const [mode, setMode] = useState(searchParams.get('mode') === 'reset' ? 'reset' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -361,7 +361,7 @@ export default function SmmAuth() {
                       ? 'Choisis un nouveau mot de passe sécurisé.'
                       : resetStep === 'code'
                         ? `Saisis le code envoyé à ${email.trim()} pour continuer.`
-                        : 'Nous t’enverrons un code pour retrouver ton compte. Le nouveau mot de passe s’appliquera partout où cette adresse est utilisée, y compris à l’administration si le compte est partagé.'
+                        : 'Nous t’enverrons un code pour retrouver ton compte.'
                     : 'Connecte-toi pour retrouver ton portefeuille et tes commandes.'}
             </p>
 
