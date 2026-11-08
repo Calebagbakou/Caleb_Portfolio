@@ -2,91 +2,124 @@ import { Link } from 'react-router-dom';
 import Seo from '../components/site/Seo';
 import './Gateway.css';
 
-const destinations = [
-  {
-    number: '01',
-    eyebrow: 'Création visuelle',
-    title: 'Le portfolio',
-    description: 'Découvre mes projets, mes services et mon univers créatif.',
-    to: '/portfolio',
-    action: 'Explorer le portfolio',
-    className: 'gateway-card-portfolio',
-  },
-  {
-    number: '02',
-    eyebrow: 'Outils & abonnements',
-    title: 'La boutique',
-    description: 'Retrouve une sélection d’outils et d’abonnements numériques.',
-    to: '/boutique',
-    action: 'Visiter la boutique',
-    className: 'gateway-card-shop',
-  },
+const STATS = [
+  { value: '40+', label: 'projets réalisés' },
+  { value: '100%', label: 'clients satisfaits' },
+  { value: '50+', label: 'outils maîtrisés' },
 ];
+
+const SOCIAL_NETWORKS = ['IG', 'f', 'TK', 'YT', 'TG', 'X'];
+const SHOP_CHIPS = ['Gemini Pro', 'CapCut Pro', 'Canva Pro'];
+
+function Arrow() {
+  return (
+    <svg className="gw-arrow" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M7 17 17 7M8 7h9v9" />
+    </svg>
+  );
+}
 
 export default function Gateway() {
   return (
-    <main className="gateway-page">
+    <main className="gw">
       <Seo
         title="Caleb Creative — Création visuelle & services numériques"
         description="Bienvenue chez Caleb Creative : découvre mon portfolio, ma boutique et le panel social."
         path="/"
       />
-      <div className="gateway-glow gateway-glow-one" aria-hidden="true" />
-      <div className="gateway-glow gateway-glow-two" aria-hidden="true" />
 
-      <section className="gateway-main" aria-labelledby="gateway-title">
-        <p className="gateway-kicker"><span /> Bienvenue dans mon univers</p>
-        <h1 id="gateway-title">
-          La créativité
-          <span>prend plusieurs formes.</span>
-        </h1>
-        <p className="gateway-intro">
-          Explore mes créations visuelles, découvre la boutique et retrouve ici
-          les services Caleb Creative.
-        </p>
+      <div className="gw-bg" aria-hidden="true">
+        <span className="gw-orb gw-orb-a" />
+        <span className="gw-orb gw-orb-b" />
+        <span className="gw-grid-lines" />
+      </div>
 
-        <div className="gateway-grid" aria-label="Découvrir Caleb Creative">
-          {destinations.map((destination) => (
-            <Link
-              className={`gateway-card ${destination.className}`}
-              to={destination.to}
-              key={destination.number}
-            >
-              <span className="gateway-card-number">{destination.number}</span>
-              <span className="gateway-card-content">
-                <span className="gateway-card-eyebrow">{destination.eyebrow}</span>
-                <span className="gateway-card-title">{destination.title}</span>
-                <span className="gateway-card-description">{destination.description}</span>
-                <span className="gateway-card-action">
-                  {destination.action} <span aria-hidden="true">↗</span>
-                </span>
-              </span>
-              <span className="gateway-card-orbit" aria-hidden="true">
-                {destination.number === '01' ? '✳' : '＋'}
-              </span>
-            </Link>
-          ))}
-          <Link className="gateway-card gateway-card-social" to="/smm">
-            <span className="gateway-card-number">03</span>
-            <span className="gateway-card-content">
-              <span className="gateway-card-eyebrow">Nouveau service</span>
-              <span className="gateway-card-title">Panel social</span>
-              <span className="gateway-card-description">
-                Commande des services sociaux et suis tes demandes depuis ton espace client.
-              </span>
-              <span className="gateway-card-action">
-                Découvrir le panel <span aria-hidden="true">↗</span>
+      <div className="gw-shell">
+        <header className="gw-hero" aria-labelledby="gateway-title">
+          <p className="gw-kicker">
+            <span className="gw-pulse" aria-hidden="true" />
+            Caleb Creative · Abomey, Bénin
+          </p>
+          <h1 id="gateway-title" className="gw-title">
+            La créativité
+            <em>prend plusieurs formes.</em>
+          </h1>
+          <p className="gw-lead">
+            Créations visuelles, outils numériques et services sociaux :
+            choisis par où commencer.
+          </p>
+          <ul className="gw-stats" aria-label="Caleb Creative en chiffres">
+            {STATS.map((stat) => (
+              <li key={stat.label}>
+                <strong>{stat.value}</strong>
+                <span>{stat.label}</span>
+              </li>
+            ))}
+          </ul>
+        </header>
+
+        <nav className="gw-grid" aria-label="Découvrir Caleb Creative">
+          {/* 01 — Portfolio */}
+          <Link className="gw-card gw-card--portfolio" to="/portfolio">
+            <span className="gw-card-top">
+              <span className="gw-index">01</span>
+              <span className="gw-tag">Création visuelle</span>
+            </span>
+            <span className="gw-preview gw-preview--portfolio" aria-hidden="true">
+              <i /><i /><i />
+            </span>
+            <span className="gw-card-body">
+              <span className="gw-card-title">Le portfolio</span>
+              <span className="gw-card-desc">
+                Mes projets vidéo et design, mes services et mon univers créatif.
               </span>
             </span>
-            <span className="gateway-card-orbit" aria-hidden="true">✦</span>
+            <span className="gw-cta">Explorer le portfolio <Arrow /></span>
           </Link>
-        </div>
 
-        <p className="gateway-signoff">
-          <span>CALEB JESUGNON AGBAKOU</span>
+          {/* 02 — Boutique */}
+          <Link className="gw-card gw-card--shop" to="/boutique">
+            <span className="gw-card-top">
+              <span className="gw-index">02</span>
+              <span className="gw-tag">Outils & abonnements</span>
+            </span>
+            <span className="gw-preview gw-preview--shop" aria-hidden="true">
+              {SHOP_CHIPS.map((chip) => <b key={chip}>{chip}</b>)}
+            </span>
+            <span className="gw-card-body">
+              <span className="gw-card-title">La boutique</span>
+              <span className="gw-card-desc">
+                Une sélection d’outils et d’abonnements numériques, activés rapidement.
+              </span>
+            </span>
+            <span className="gw-cta">Visiter la boutique <Arrow /></span>
+          </Link>
+
+          {/* 03 — Panel social */}
+          <Link className="gw-card gw-card--social" to="/smm">
+            <span className="gw-card-top">
+              <span className="gw-index">03</span>
+              <span className="gw-tag">Services sociaux</span>
+              <span className="gw-new">Nouveau</span>
+            </span>
+            <span className="gw-preview gw-preview--social" aria-hidden="true">
+              {SOCIAL_NETWORKS.map((network) => <b key={network}>{network}</b>)}
+            </span>
+            <span className="gw-card-body">
+              <span className="gw-card-title">Panel social</span>
+              <span className="gw-card-desc">
+                Commande tes services et suis chaque demande depuis ton espace client.
+              </span>
+            </span>
+            <span className="gw-cta">Ouvrir le panel <Arrow /></span>
+          </Link>
+        </nav>
+
+        <p className="gw-signoff">
+          <span>Caleb Jesugnon Agbakou</span>
           <span>Créateur visuel · Abomey, Bénin</span>
         </p>
-      </section>
+      </div>
     </main>
   );
 }

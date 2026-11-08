@@ -315,7 +315,7 @@ Deno.serve(async (request) => {
 
     if (action === 'place_order') {
       if (Deno.env.get('SMMTurk_ADD_API_CONFIRMED') !== 'true') {
-        return jsonResponse({ error: 'Les commandes restent désactivées jusqu’à validation du format « Add order » par SMMTurk.' }, 503);
+        return jsonResponse({ error: 'Les commandes sont temporairement indisponibles pendant la finalisation de la configuration du service.' }, 503);
       }
       const serviceId = String(body.serviceId || '');
       const link = String(body.link || '').trim();
@@ -366,7 +366,7 @@ Deno.serve(async (request) => {
         });
         console.error('Réponse SMMTurk incertaine après réservation de commande.');
         return jsonResponse({
-          error: 'Le fournisseur ne répond pas. Le paiement reste réservé pendant la vérification de la commande.',
+          error: 'Le traitement de la commande est en cours de vérification. Le montant reste temporairement réservé.',
           orderId: reservedOrderId,
         }, 502);
       }
@@ -378,7 +378,8 @@ Deno.serve(async (request) => {
         });
         if (refundError) throw refundError;
         reservedOrderId = null;
-        return jsonResponse({ error: `SMMTurk a refusé la commande : ${providerMessage.slice(0, 180)}` }, 502);
+        console.error('Le service externe a refusé la commande :', providerMessage);
+        return jsonResponse({ error: 'Le service n’a pas pu accepter la commande. Si un montant a été prélevé, il sera remboursé automatiquement.' }, 502);
       }
       const nestedOrder = providerResponse.data && typeof providerResponse.data === 'object'
         ? (providerResponse.data as Record<string, unknown>).order
@@ -392,7 +393,7 @@ Deno.serve(async (request) => {
           p_error: 'Réponse de commande sans identifiant fournisseur.',
         });
         return jsonResponse({
-          error: 'Le fournisseur n’a pas confirmé le numéro de commande. Le montant reste réservé.',
+          error: 'La commande est en cours de vérification. Le montant reste temporairement réservé.',
           orderId: reservedOrderId,
         }, 502);
       }
@@ -420,7 +421,10 @@ Deno.serve(async (request) => {
       if (!order) return jsonResponse({ error: 'Commande introuvable.' }, 404);
       if (!order.provider_order_id) return jsonResponse({ order });
       const providerStatus = await callProvider({ action: 'status', order: order.provider_order_id });
-      if (apiError(providerStatus)) return jsonResponse({ error: errorText(providerStatus.error || providerStatus.message) }, 502);
+      if (apiError(providerStatus)) {
+        console.error('Impossible de récupérer le statut externe de la commande :', errorText(providerStatus.error || providerStatus.message));
+        return jsonResponse({ error: 'Le statut de cette commande ne peut pas être actualisé pour le moment. Réessayez plus tard.' }, 502);
+      }
       const status = mapStatus(providerStatus.status);
       const { error: updateError } = await serviceClient.rpc('smm_finish_order', {
         p_order_id: order.id,
@@ -451,6 +455,11 @@ Deno.serve(async (request) => {
     if (action === 'sync' && isAdmin) {
       return jsonResponse({ error: `Synchronisation interrompue pendant ${operationStage} : ${message}` }, 500);
     }
-    return jsonResponse({ error: message }, 500);
+    const publicMessage = action === 'place_order'
+      ? 'La commande n’a pas pu être traitée. Consultez vos commandes avant de réessayer.'
+      : action === 'refresh_order'
+        ? 'Le statut de cette commande ne peut pas être actualisé pour le moment.'
+        : 'Une erreur est survenue pendant le chargement du panel. Réessayez dans quelques instants.';
+    return jsonResponse({ error: publicMessage }, 500);
   }
 });

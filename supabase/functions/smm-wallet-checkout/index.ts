@@ -6,7 +6,7 @@ Deno.serve(async (request) => {
 
   try {
     if (Deno.env.get('SMMTurk_ADD_API_CONFIRMED') !== 'true') {
-      return jsonResponse({ error: 'Les recharges restent désactivées jusqu’à validation du format de commande SMMTurk.' }, 503);
+      return jsonResponse({ error: 'Les recharges sont temporairement indisponibles pendant la finalisation de la configuration du service.' }, 503);
     }
     const accessToken = request.headers.get('authorization')?.match(/^Bearer\s+(.+)$/i)?.[1];
     if (!accessToken) return jsonResponse({ error: 'Connectez-vous avant de recharger le portefeuille.' }, 401);
