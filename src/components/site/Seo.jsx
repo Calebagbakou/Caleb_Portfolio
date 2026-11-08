@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
 const SITE_URL = 'https://calebcreative.online';
-const SOCIAL_IMAGE = `${SITE_URL}/favicon.svg`;
+const SOCIAL_IMAGE = `${SITE_URL}/profile-caleb.webp`;
 
 function upsertMeta(attribute, value, content) {
   let element = document.head.querySelector(`meta[${attribute}="${value}"]`);
@@ -14,7 +14,7 @@ function upsertMeta(attribute, value, content) {
 }
 
 export default function Seo({
-  title = 'Caleb Creative | Créateur visuel au Bénin',
+  title = 'Caleb Jesugnon AGBAKOU | Créateur visuel au Bénin',
   description = 'Caleb Jesugnon Agbakou, créateur visuel au Bénin. Découvrez ses réalisations en vidéo, design graphique et montage.',
   path = '/',
   noIndex = false,
@@ -32,9 +32,12 @@ export default function Seo({
     upsertMeta('property', 'og:description', description);
     upsertMeta('property', 'og:url', canonicalUrl);
     upsertMeta('property', 'og:image', SOCIAL_IMAGE);
-    upsertMeta('property', 'og:image:alt', 'Logo Caleb Creative');
+    upsertMeta('property', 'og:image:width', '802');
+    upsertMeta('property', 'og:image:height', '900');
+    upsertMeta('property', 'og:image:alt', 'Photo de profil de Caleb Jesugnon AGBAKOU');
     upsertMeta('name', 'twitter:card', 'summary_large_image');
     upsertMeta('name', 'twitter:image', SOCIAL_IMAGE);
+    upsertMeta('name', 'twitter:image:alt', 'Photo de profil de Caleb Jesugnon AGBAKOU');
     upsertMeta('name', 'twitter:title', title);
     upsertMeta('name', 'twitter:description', description);
 
@@ -67,9 +70,16 @@ export default function Seo({
     } : {
       '@context': 'https://schema.org',
       '@type': 'Person',
+      '@id': `${SITE_URL}/portfolio#person`,
       name: 'Caleb Jesugnon Agbakou',
-      alternateName: 'Caleb Creative',
-      url: canonicalUrl,
+      alternateName: ['Jesugnon Caleb AGBAKOU', 'Caleb Creative'],
+      url: `${SITE_URL}/portfolio`,
+      image: {
+        '@type': 'ImageObject',
+        url: SOCIAL_IMAGE,
+        width: 802,
+        height: 900,
+      },
       jobTitle: 'Créateur visuel',
       description,
       address: { '@type': 'PostalAddress', addressCountry: 'BJ' },
