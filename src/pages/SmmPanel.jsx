@@ -11,7 +11,6 @@ import {
   SiYoutube,
 } from 'react-icons/si';
 import Seo from '../components/site/Seo';
-import SpaceLinks from '../components/site/SpaceLinks';
 import { supabase } from '../services/supabase';
 import { getSupabaseFunctionError } from '../utils/supabaseFunctionErrors';
 import './SmmPanel.css';
@@ -41,6 +40,7 @@ const PANEL_SCREENS = [
   { id: 'order', path: '/smm/commande', label: 'Commander', title: 'Nouvelle commande', description: 'Choisissez un service et vérifiez le montant avant de confirmer.', icon: 'plus' },
   { id: 'orders', path: '/smm/commandes', label: 'Commandes', title: 'Mes commandes', description: 'Consultez l’avancement et l’historique de vos demandes.', icon: 'orders' },
   { id: 'wallet', path: '/smm/portefeuille', label: 'Portefeuille', title: 'Mon portefeuille', description: 'Consultez votre solde et l’historique de vos opérations.', icon: 'wallet' },
+  { id: 'referral', path: '/smm/parrainage', label: 'Parrainage', title: 'Programme de parrainage', description: 'Invitez vos proches et suivez les récompenses gagnées.', icon: 'social' },
 ];
 
 function formatXof(value) {
@@ -97,30 +97,60 @@ function Icon({ name }) {
   );
 }
 
-function SmmNavigation({ activeScreen, moreMenuRef }) {
+function SmmNavigation({ activeScreen, moreMenuRef, balance, navigate }) {
+  const menuItems = [
+    { label: 'Accueil', to: '/smm', icon: 'home' },
+    { label: 'Commande', to: '/smm/commande', icon: 'plus' },
+    { label: 'Compte', to: '/boutique/compte', icon: 'social' },
+    { label: 'Nouvel ordre', to: '/smm/commande', icon: 'plus' },
+    { label: 'Commandes', to: '/smm/commandes', icon: 'orders' },
+    { label: 'Parrainage', to: '/smm/parrainage', icon: 'social' },
+    { label: 'Ajouter des fonds', to: '/smm/portefeuille', icon: 'wallet' },
+    { label: 'Contactez-nous', to: '/portfolio/#contact', icon: 'social' },
+  ];
+
   return (
     <nav className="smm-user-nav" aria-label="Navigation du panel social">
-      <div className="smm-user-nav-links">
-        {PANEL_SCREENS.map((item) => (
-          <Link
-            className={`smm-user-nav-link${activeScreen === item.id ? ' is-active' : ''}`}
-            to={item.path}
-            key={item.path}
-            aria-current={activeScreen === item.id ? 'page' : undefined}
-          >
-            <Icon name={item.icon} />
-            <span>{item.label}</span>
-          </Link>
-        ))}
-      </div>
       <details className="smm-user-more" ref={moreMenuRef}>
-        <summary><Icon name="more" /><span>Plus</span></summary>
+        <summary aria-label="Ouvrir le menu">
+          <span className="smm-hamburger" aria-hidden="true"><span /><span /><span /></span>
+          <span>Menu</span>
+        </summary>
         <div className="smm-user-more-menu">
-          <SpaceLinks className="space-links--smm" />
+          {menuItems.map((item) => (
+            <Link
+              to={item.to}
+              key={`${item.label}-${item.to}`}
+              aria-current={item.to === currentScreenPath(activeScreen) ? 'page' : undefined}
+              onClick={() => moreMenuRef.current?.removeAttribute('open')}
+            >
+              <Icon name={item.icon} />
+              <span>{item.label}</span>
+            </Link>
+          ))}
         </div>
       </details>
+      <div className="smm-wallet-toolbar">
+        <button
+          className="smm-add-funds-button"
+          type="button"
+          onClick={() => navigate('/smm/portefeuille')}
+          aria-label="Ajouter des fonds"
+          title="Ajouter des fonds"
+        >
+          +
+        </button>
+        <Link className="smm-wallet-toolbar-balance" to="/smm/portefeuille">
+          <span>Solde</span>
+          <strong>{formatXof(balance)}</strong>
+        </Link>
+      </div>
     </nav>
   );
+}
+
+function currentScreenPath(activeScreen) {
+  return PANEL_SCREENS.find((item) => item.id === activeScreen)?.path || '/smm';
 }
 
 async function invokePanel(action, payload = {}) {
@@ -364,7 +394,15 @@ export default function SmmPanel() {
       setNotice('Lien de parrainage copié. Vous recevrez 50 FCFA après le premier dépôt confirmé de votre filleul.');
     } catch (copyError) {
       console.error('Copie du lien de parrainage impossible :', copyError);
-      setError('Le lien n’a pas pu être copié. Vérifiez les autorisations du navigateur puis réessayez.');
+      const input = document.createElement('textarea');
+      input.value = referralUrl.href;
+      input.style.position = 'fixed';
+      input.style.opacity = '0';
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      input.remove();
+      setNotice('Lien de parrainage copié.');
     }
   }
 
@@ -390,7 +428,7 @@ export default function SmmPanel() {
     <main className="smm-page">
       <Seo title={`${currentScreen.title} — Caleb Creative`} description={currentScreen.description} path={currentScreen.path} />
       <section className="smm-shell">
-        <SmmNavigation activeScreen={currentScreen.id} moreMenuRef={moreMenuRef} />
+        <SmmNavigation activeScreen={currentScreen.id} moreMenuRef={moreMenuRef} balance={balance} navigate={navigate} />
 
         <header className="smm-hero">
           <div className="smm-hero-copy">
@@ -403,7 +441,6 @@ export default function SmmPanel() {
               <Icon name="refresh" />
               <span>{loading ? 'Actualisation…' : 'Actualiser'}</span>
             </button>
-            <Link className="smm-ghost-link" to="/boutique/compte">Mon compte →</Link>
           </div>
         </header>
 
@@ -617,27 +654,45 @@ export default function SmmPanel() {
           </aside>
         </div>}
 
-        {currentScreen.id === 'wallet' && <>
-          <div className="smm-wallet-current">
-            <span>Solde disponible</span>
-            <strong>{formatXof(balance)}</strong>
-            <small>Mis à jour avec les dernières opérations du compte.</small>
-          </div>
-          <section className="smm-card smm-referral-card" aria-labelledby="smm-referral-title">
+        {currentScreen.id === 'referral' && (
+          <section className="smm-card smm-referral-page" aria-labelledby="smm-referral-page-title">
             <div className="smm-card-heading">
-              <p className="smm-eyebrow">Programme de parrainage</p>
-              <h2 id="smm-referral-title">Invitez un ami, gagnez 50 FCFA</h2>
-              <p className="smm-muted">Votre portefeuille est crédité une seule fois, après le premier dépôt confirmé de chaque nouveau filleul.</p>
+              <p className="smm-eyebrow">Parrainage</p>
+              <h2 id="smm-referral-page-title">Invitez vos amis et gagnez 50 FCFA</h2>
+              <p className="smm-muted">Votre récompense est ajoutée une seule fois lorsque le filleul confirme son premier dépôt de 500 FCFA ou plus.</p>
             </div>
             <div className="smm-referral-stats">
               <div><strong>{referralSummary?.referrals ?? '—'}</strong><span>inscriptions</span></div>
               <div><strong>{referralSummary ? formatXof(referralSummary.earnedXof) : '—'}</strong><span>gagnés</span></div>
               <div><strong>{referralSummary?.pendingReferrals ?? '—'}</strong><span>en attente du premier dépôt</span></div>
             </div>
-            <button type="button" className="smm-secondary-button" onClick={copyReferralLink} disabled={!referralSummary?.code}>
-              Copier mon lien de parrainage
+            <label className="smm-referral-link-field">
+              <span className="smm-label">Votre lien personnel</span>
+              <input
+                readOnly
+                value={referralSummary?.code
+                  ? (() => {
+                      const referralUrl = new URL('/smm/connexion', window.location.origin);
+                      referralUrl.searchParams.set('mode', 'signup');
+                      referralUrl.searchParams.set('ref', referralSummary.code);
+                      return referralUrl.href;
+                    })()
+                  : 'Génération du lien…'}
+                onFocus={(event) => event.currentTarget.select()}
+              />
+            </label>
+            <button type="button" className="smm-primary-button" onClick={copyReferralLink} disabled={!referralSummary?.code}>
+              Copier mon lien
             </button>
           </section>
+        )}
+
+        {currentScreen.id === 'wallet' && <>
+          <div className="smm-wallet-current">
+            <span>Solde disponible</span>
+            <strong>{formatXof(balance)}</strong>
+            <small>Mis à jour avec les dernières opérations du compte.</small>
+          </div>
           <div className="smm-wallet-grid">
           <section className="smm-card" aria-labelledby="smm-wallet-title">
             <div className="smm-card-heading">

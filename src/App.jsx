@@ -83,6 +83,7 @@ export default function App() {
         <Route path="/smm/commande" element={<BuyerAuthGate><SmmPanel /></BuyerAuthGate>} />
         <Route path="/smm/commandes" element={<BuyerAuthGate><SmmPanel /></BuyerAuthGate>} />
         <Route path="/smm/portefeuille" element={<BuyerAuthGate><SmmPanel /></BuyerAuthGate>} />
+        <Route path="/smm/parrainage" element={<BuyerAuthGate><SmmPanel /></BuyerAuthGate>} />
       </Route>
       <Route path="/projet/:slug" element={<LegacyProjectRedirect />} />
       <Route path="/confidentialite" element={<Navigate to="/portfolio/confidentialite" replace />} />

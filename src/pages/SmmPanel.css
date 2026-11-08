@@ -55,6 +55,23 @@
   backdrop-filter: blur(16px) saturate(150%);
   -webkit-backdrop-filter: blur(16px) saturate(150%);
 }
+.smm-hamburger { display: grid; width: 18px; gap: 3px; }
+.smm-hamburger span { display: block; height: 2px; border-radius: 999px; background: currentColor; }
+.smm-wallet-toolbar { display: flex; align-items: center; gap: 8px; }
+.smm-add-funds-button {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--smm-accent);
+  color: #fff;
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+}
+.smm-wallet-toolbar-balance { display: grid; min-width: 112px; padding: 5px 12px; border-left: 1px solid var(--smm-line); color: var(--smm-ink); text-decoration: none; }
+.smm-wallet-toolbar-balance span { color: var(--smm-muted); font-size: 11px; }
+.smm-wallet-toolbar-balance strong { font-size: 15px; font-variant-numeric: tabular-nums; }
 .smm-user-nav-links { display: flex; align-items: center; gap: 4px; }
 .smm-user-nav-link,
 .smm-user-more summary {
@@ -80,7 +97,7 @@
 .smm-user-more-menu {
   position: absolute;
   top: calc(100% + 10px);
-  right: 0;
+  left: 0;
   display: grid;
   width: max-content;
   min-width: 215px;
@@ -91,7 +108,7 @@
   background: #fff;
   box-shadow: 0 20px 44px -16px rgba(23, 54, 95, .2);
 }
-.smm-user-more-menu a { padding: 11px 13px; border-radius: 9px; color: var(--smm-text); font-size: 13px; font-weight: 500; text-decoration: none; }
+.smm-user-more-menu a { display: flex; align-items: center; gap: 10px; padding: 11px 13px; border-radius: 9px; color: var(--smm-text); font-size: 13px; font-weight: 500; text-decoration: none; }
 .smm-user-more-menu a:hover { background: var(--smm-surface-alt); }
 .smm-user-more-menu .space-links { min-width: 215px; }
 .smm-user-more-menu .space-links-heading { color: var(--smm-faint); }
@@ -324,6 +341,9 @@
 /* ---------- portefeuille ---------- */
 .smm-wallet-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; margin-top: 18px; scroll-margin-top: calc(var(--smm-sticky) + 70px); }
 .smm-referral-card { display: grid; gap: 18px; margin-top: 18px; }
+.smm-referral-page { max-width: 760px; display: grid; gap: 18px; margin: 0 auto; }
+.smm-referral-link-field { display: grid; gap: 8px; }
+.smm-referral-link-field input { width: 100%; }
 .smm-referral-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .smm-referral-stats > div { display: grid; gap: 4px; padding: 14px; border: 1px solid var(--smm-line); border-radius: 12px; background: var(--smm-surface-alt); }
 .smm-referral-stats strong { color: var(--smm-ink); font-size: 19px; font-variant-numeric: tabular-nums; }
@@ -415,12 +435,11 @@
   .smm-page { --smm-sticky: 0px; padding: 14px 14px calc(104px + env(safe-area-inset-bottom)); }
 
   /* navigation basse façon application */
-  .smm-user-nav { position: fixed; z-index: 90; top: auto; right: 10px; bottom: calc(10px + env(safe-area-inset-bottom)); left: 10px; margin: 0; padding: 6px; border-radius: 20px; box-shadow: 0 14px 40px -10px rgba(23, 54, 95, .24); }
-  .smm-user-nav-links { flex: 1; justify-content: space-around; gap: 2px; }
-  .smm-user-nav-link, .smm-user-more summary { min-width: 0; min-height: 52px; flex: 1; flex-direction: column; gap: 3px; padding: 4px 2px; border-radius: 14px; font-size: 10px; }
+  .smm-user-nav { position: sticky; z-index: 90; top: 8px; right: auto; bottom: auto; left: auto; margin-bottom: 18px; padding: 6px; border-radius: 16px; box-shadow: 0 14px 40px -10px rgba(23, 54, 95, .24); }
+  .smm-user-nav-link { min-width: 0; min-height: 52px; flex: 1; flex-direction: column; gap: 3px; padding: 4px 2px; border-radius: 14px; font-size: 10px; }
   .smm-user-more { flex: none; }
-  .smm-user-more summary { min-width: 54px; }
-  .smm-user-more-menu { top: auto; right: 0; bottom: calc(100% + 10px); }
+  .smm-user-more summary { min-width: 54px; min-height: 42px; }
+  .smm-user-more-menu { top: calc(100% + 10px); left: 0; right: auto; bottom: auto; width: min(280px, calc(100vw - 28px)); }
 
   .smm-hero { align-items: flex-start; flex-direction: column; gap: 14px; scroll-margin-top: 16px; }
   .smm-hero-actions { width: 100%; justify-content: space-between; }
