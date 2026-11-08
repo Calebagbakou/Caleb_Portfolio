@@ -18,6 +18,7 @@ export default function SmmServices() {
   const [services, setServices] = useState([]);
   const [prices, setPrices] = useState({});
   const [search, setSearch] = useState('');
+  const [maxProviderRate, setMaxProviderRate] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(0);
@@ -116,7 +117,9 @@ export default function SmmServices() {
     const matchesCategory = !categoryFilter || (service.category || 'Autres') === categoryFilter;
     const matchesStatus = statusFilter === 'all'
       || (statusFilter === 'active' ? service.active : !service.active);
-    return matchesSearch && matchesCategory && matchesStatus;
+    const matchesMaxProviderRate = maxProviderRate === ''
+      || Number(service.provider_rate) < Number(maxProviderRate);
+    return matchesSearch && matchesCategory && matchesStatus && matchesMaxProviderRate;
   });
   const pageCount = Math.ceil(filteredServices.length / PAGE_SIZE);
   const pageServices = filteredServices.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
@@ -155,6 +158,17 @@ export default function SmmServices() {
                 <option value="">Toutes les catégories</option>
                 {categories.map((category) => <option value={category} key={category}>{category}</option>)}
               </select>
+            </label>
+            <label>
+              Tarif fournisseur inférieur à ($)
+              <input
+                type="number"
+                min="0"
+                step="any"
+                value={maxProviderRate}
+                onChange={(event) => { setMaxProviderRate(event.target.value); setPage(0); }}
+                placeholder="Ex. 1"
+              />
             </label>
             <label>
               Affichage

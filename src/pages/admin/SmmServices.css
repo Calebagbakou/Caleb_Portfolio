@@ -6,7 +6,7 @@
 .smm-admin-kicker { margin: 0 0 8px; color: #3974c6; font-size: 11px; font-weight: 800; letter-spacing: .14em; }
 .smm-admin-price { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
 .smm-admin-price input { width: 120px; min-height: 38px; padding: 6px 9px; border: 1px solid #d5deea; border-radius: 7px; }
-.smm-admin-toolbar { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(180px, .7fr) minmax(180px, .7fr) auto; align-items: end; gap: 12px; }
+.smm-admin-toolbar { display: grid; grid-template-columns: minmax(180px, 1fr) repeat(3, minmax(150px, .7fr)) auto; align-items: end; gap: 12px; }
 .smm-admin-toolbar label { display: grid; gap: 6px; color: #53647b; font-size: 12px; font-weight: 700; }
 .smm-admin-toolbar input, .smm-admin-toolbar select { min-width: 0; min-height: 40px; padding: 8px 10px; border: 1px solid #d5deea; border-radius: 7px; background: #fff; font: inherit; }
 .smm-admin-toolbar p { margin: 0 0 10px; color: #64748b; font-size: 12px; white-space: nowrap; }
