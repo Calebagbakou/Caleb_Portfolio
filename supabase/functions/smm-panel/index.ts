@@ -37,22 +37,27 @@ function sanitizeProviderText(value: unknown, fallback: string, maxLength: numbe
   for (let index = 0; index < text.length; index += 1) {
     const code = text.charCodeAt(index);
     if (code === 0) {
+      if (sanitized.length >= maxLength) break;
       sanitized += '\ufffd';
     } else if (code >= 0xd800 && code <= 0xdbff) {
       const next = text.charCodeAt(index + 1);
       if (next >= 0xdc00 && next <= 0xdfff) {
+        if (sanitized.length + 2 > maxLength) break;
         sanitized += text[index] + text[index + 1];
         index += 1;
       } else {
+        if (sanitized.length >= maxLength) break;
         sanitized += '\ufffd';
       }
     } else if (code >= 0xdc00 && code <= 0xdfff) {
+      if (sanitized.length >= maxLength) break;
       sanitized += '\ufffd';
     } else {
+      if (sanitized.length >= maxLength) break;
       sanitized += text[index];
     }
   }
-  return sanitized.slice(0, maxLength);
+  return sanitized;
 }
 
 function jsonHeaders() {
