@@ -175,6 +175,50 @@ Deno.serve(async (request) => {
       return jsonResponse({ services });
     }
 
+    if (action === 'admin_wallet_users') {
+      if (!isAdmin) return jsonResponse({ error: 'Accès administrateur requis.' }, 403);
+      const query = String(body.query || '').trim();
+      if (query.length < 2 || query.length > 120) {
+        return jsonResponse({ error: 'Saisissez au moins deux caractères pour rechercher un client.' }, 400);
+      }
+      const { data: users, error } = await serviceClient.rpc('smm_admin_search_wallet_users', {
+        p_query: query,
+        p_limit: 20,
+      });
+      if (error) throw error;
+      return jsonResponse({ users: users || [] });
+    }
+
+    if (action === 'admin_referral_summary') {
+      if (!isAdmin) return jsonResponse({ error: 'Accès administrateur requis.' }, 403);
+      const { data, error } = await serviceClient.rpc('smm_admin_referral_summary');
+      if (error) throw error;
+      return jsonResponse({ summary: data });
+    }
+
+    if (action === 'admin_credit_wallet') {
+      if (!isAdmin) return jsonResponse({ error: 'Accès administrateur requis.' }, 403);
+      const userId = String(body.userId || '');
+      const amountXof = Number(body.amountXof);
+      const description = String(body.description || '').trim();
+      const requestId = String(body.requestId || '');
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(userId)
+        || !Number.isSafeInteger(amountXof) || amountXof < 1 || amountXof > 1000000000
+        || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId)
+        || description.length < 3 || description.length > 200) {
+        return jsonResponse({ error: 'Le client, le montant ou le motif du crédit est invalide.' }, 400);
+      }
+      const { data: balanceXof, error } = await serviceClient.rpc('smm_admin_credit_wallet', {
+        p_user_id: userId,
+        p_admin_id: user.id,
+        p_amount_xof: amountXof,
+        p_reference: `SMM-ADMIN-${requestId.toUpperCase()}`,
+        p_description: description,
+      });
+      if (error) throw error;
+      return jsonResponse({ balanceXof });
+    }
+
     if (action === 'sync') {
       if (!isAdmin) return jsonResponse({ error: 'Accès administrateur requis.' }, 403);
       const syncStartedAt = Date.now();
@@ -299,12 +343,33 @@ Deno.serve(async (request) => {
       if (error) throw error;
       const { data: transactions, error: transactionError } = await serviceClient
         .from('smm_wallet_transactions')
-        .select('id, type, amount_xof, reference, created_at')
+        .select('id, type, amount_xof, reference, description, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(20);
       if (transactionError) throw transactionError;
       return jsonResponse({ balanceXof: wallet?.balance_xof || 0, transactions: transactions || [] });
+    }
+
+    if (action === 'referral_summary') {
+      const { data, error } = await serviceClient.rpc('smm_get_referral_summary', {
+        p_user_id: user.id,
+      });
+      if (error) throw error;
+      return jsonResponse({ summary: data });
+    }
+
+    if (action === 'claim_referral') {
+      const code = String(body.code || '').trim().toUpperCase();
+      if (!/^[A-F0-9]{10}$/.test(code)) {
+        return jsonResponse({ claimed: false });
+      }
+      const { data, error } = await serviceClient.rpc('smm_claim_referral', {
+        p_user_id: user.id,
+        p_code: code,
+      });
+      if (error) throw error;
+      return jsonResponse({ claimed: Boolean(data) });
     }
 
     if (action === 'orders') {

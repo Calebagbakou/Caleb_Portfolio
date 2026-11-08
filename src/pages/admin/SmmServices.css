@@ -3,6 +3,23 @@
 .smm-admin-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .smm-admin-header h2 { margin: 0 0 8px; }
 .smm-admin-header p:not(.smm-admin-kicker) { max-width: 700px; color: #64748b; }
+.smm-admin-tabs { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 12px; border-bottom: 1px solid #e6ebf2; }
+.smm-admin-tabs button { min-height: 40px; padding: 8px 14px; border: 1px solid #d5deea; border-radius: 8px; color: #53647b; background: #fff; cursor: pointer; font: inherit; font-weight: 700; }
+.smm-admin-tabs button[aria-selected="true"] { border-color: #2868b4; color: #fff; background: #2868b4; }
+.smm-admin-wallets { display: grid; gap: 18px; }
+.smm-admin-referral-stats, .smm-admin-wallet-search, .smm-admin-credit-form { display: grid; gap: 12px; padding: 18px; border: 1px solid #e2e8f0; border-radius: 11px; background: #fff; }
+.smm-admin-referral-stats h3, .smm-admin-wallet-search h3, .smm-admin-credit-form h3 { margin: 0; color: #17365f; font-size: 16px; }
+.smm-admin-referral-stats p, .smm-admin-credit-form p { margin: 0; color: #64748b; font-size: 13px; }
+.smm-admin-referral-stats > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.smm-admin-referral-stats > div span { display: grid; gap: 3px; padding: 12px; border-radius: 8px; color: #64748b; background: #f3f7fb; font-size: 12px; }
+.smm-admin-referral-stats > div strong { color: #17365f; font-size: 18px; }
+.smm-admin-wallet-form, .smm-admin-credit-fields { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px; }
+.smm-admin-wallet-form label, .smm-admin-credit-fields label { display: grid; gap: 6px; color: #53647b; font-size: 12px; font-weight: 700; }
+.smm-admin-wallet-form input, .smm-admin-credit-fields input { min-width: 0; min-height: 40px; padding: 8px 10px; border: 1px solid #d5deea; border-radius: 7px; background: #fff; font: inherit; }
+.smm-admin-wallet-form button, .smm-admin-credit-form > button { min-height: 40px; padding: 8px 14px; border: 0; border-radius: 7px; color: #fff; background: #2868b4; cursor: pointer; font: inherit; font-weight: 700; }
+.smm-admin-credit-form { max-width: 760px; }
+.smm-admin-credit-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.smm-admin-wallets button:disabled { opacity: .6; cursor: not-allowed; }
 .smm-admin-kicker { margin: 0 0 8px; color: #3974c6; font-size: 11px; font-weight: 800; letter-spacing: .14em; }
 .smm-admin-price { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
 .smm-admin-price input { width: 120px; min-height: 38px; padding: 6px 9px; border: 1px solid #d5deea; border-radius: 7px; }
@@ -32,4 +49,7 @@
   .smm-admin-header { align-items: flex-start; flex-direction: column; }
   .smm-admin-toolbar { grid-template-columns: 1fr; }
   .smm-admin-actions { align-items: flex-start; flex-direction: column; }
+  .smm-admin-referral-stats > div { grid-template-columns: 1fr 1fr; }
+  .smm-admin-credit-fields { grid-template-columns: 1fr; }
+  .smm-admin-wallet-form { grid-template-columns: 1fr; }
 }

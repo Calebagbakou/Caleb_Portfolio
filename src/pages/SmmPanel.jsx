@@ -140,6 +140,7 @@ export default function SmmPanel() {
   const [services, setServices] = useState([]);
   const [orders, setOrders] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [referralSummary, setReferralSummary] = useState(null);
   const [balance, setBalance] = useState(0);
   const [orderApiConfirmed, setOrderApiConfirmed] = useState(false);
   const [selectedNetwork, setSelectedNetwork] = useState('Tous');
@@ -203,15 +204,17 @@ export default function SmmPanel() {
   const loadData = useCallback(async () => {
     setError('');
     try {
-      const [catalog, wallet, orderResult] = await Promise.all([
+      const [catalog, wallet, orderResult, referralResult] = await Promise.all([
         invokePanel('catalog'),
         invokePanel('wallet'),
         invokePanel('orders'),
+        invokePanel('referral_summary'),
       ]);
       setServices(catalog.services || []);
       setOrderApiConfirmed(Boolean(catalog.orderApiConfirmed));
       setBalance(Number(wallet.balanceXof) || 0);
       setTransactions(wallet.transactions || []);
+      setReferralSummary(referralResult.summary || null);
       setOrders(orderResult.orders || []);
       setSelectedId((current) => current || catalog.services?.[0]?.id || '');
       if (catalog.services?.[0]) {
@@ -328,6 +331,10 @@ export default function SmmPanel() {
 
   async function submitTopup(event) {
     event.preventDefault();
+    if (!Number.isSafeInteger(Number(topupAmount)) || Number(topupAmount) < 500) {
+      setError('Le montant minimum de recharge est de 500 FCFA.');
+      return;
+    }
     setWorking(true);
     setError('');
     setNotice('');
@@ -343,6 +350,21 @@ export default function SmmPanel() {
       console.error('Impossible de créer la recharge du portefeuille :', checkoutError);
       setError(checkoutError.message || 'Le paiement ne peut pas être lancé.');
       setWorking(false);
+    }
+  }
+
+  async function copyReferralLink() {
+    if (!referralSummary?.code) return;
+    const referralUrl = new URL('/smm/connexion', window.location.origin);
+    referralUrl.searchParams.set('mode', 'signup');
+    referralUrl.searchParams.set('ref', referralSummary.code);
+    try {
+      await navigator.clipboard.writeText(referralUrl.href);
+      setError('');
+      setNotice('Lien de parrainage copié. Vous recevrez 50 FCFA après le premier dépôt confirmé de votre filleul.');
+    } catch (copyError) {
+      console.error('Copie du lien de parrainage impossible :', copyError);
+      setError('Le lien n’a pas pu être copié. Vérifiez les autorisations du navigateur puis réessayez.');
     }
   }
 
@@ -601,12 +623,27 @@ export default function SmmPanel() {
             <strong>{formatXof(balance)}</strong>
             <small>Mis à jour avec les dernières opérations du compte.</small>
           </div>
+          <section className="smm-card smm-referral-card" aria-labelledby="smm-referral-title">
+            <div className="smm-card-heading">
+              <p className="smm-eyebrow">Programme de parrainage</p>
+              <h2 id="smm-referral-title">Invitez un ami, gagnez 50 FCFA</h2>
+              <p className="smm-muted">Votre portefeuille est crédité une seule fois, après le premier dépôt confirmé de chaque nouveau filleul.</p>
+            </div>
+            <div className="smm-referral-stats">
+              <div><strong>{referralSummary?.referrals ?? '—'}</strong><span>inscriptions</span></div>
+              <div><strong>{referralSummary ? formatXof(referralSummary.earnedXof) : '—'}</strong><span>gagnés</span></div>
+              <div><strong>{referralSummary?.pendingReferrals ?? '—'}</strong><span>en attente du premier dépôt</span></div>
+            </div>
+            <button type="button" className="smm-secondary-button" onClick={copyReferralLink} disabled={!referralSummary?.code}>
+              Copier mon lien de parrainage
+            </button>
+          </section>
           <div className="smm-wallet-grid">
           <section className="smm-card" aria-labelledby="smm-wallet-title">
             <div className="smm-card-heading">
               <p className="smm-eyebrow">Portefeuille</p>
               <h2 id="smm-wallet-title">Ajouter des fonds</h2>
-              <p className="smm-muted">Rechargez le montant de votre choix via SasPay. Le solde est crédité après confirmation du paiement.</p>
+              <p className="smm-muted">Rechargez au minimum 500 FCFA via SasPay. Le solde est crédité après confirmation du paiement.</p>
             </div>
             <form className="smm-form" onSubmit={submitTopup}>
               <div className="smm-quick-amounts" role="group" aria-label="Montants rapides">
@@ -623,7 +660,7 @@ export default function SmmPanel() {
               </div>
               <label>
                 <span className="smm-label">Montant en FCFA</span>
-                <input value={topupAmount} onChange={(event) => setTopupAmount(event.target.value)} type="number" inputMode="numeric" min="1" step="1" required placeholder="Ex. 2 000" />
+                <input value={topupAmount} onChange={(event) => setTopupAmount(event.target.value)} type="number" inputMode="numeric" min="500" step="1" required placeholder="Ex. 2 000" />
               </label>
               <button className="smm-primary-button" disabled={working || !orderApiConfirmed}>
                 {orderApiConfirmed ? 'Recharger via SasPay' : 'Recharges bientôt disponibles'}
@@ -647,7 +684,8 @@ export default function SmmPanel() {
                   <div className="smm-ledger-row" key={item.id}>
                     <span className="smm-ledger-icon" aria-hidden="true">{Number(item.amount_xof) > 0 ? '↓' : '↑'}</span>
                     <span className="smm-ledger-label">
-                      {item.type === 'topup' ? 'Recharge' : item.type === 'refund' ? 'Remboursement' : 'Commande'}
+                      {item.type === 'topup' ? 'Recharge' : item.type === 'refund' ? 'Remboursement' : item.type === 'admin_credit' ? 'Crédit administrateur' : item.type === 'referral' ? 'Récompense parrainage' : 'Commande'}
+                      {item.description && <small>{item.description}</small>}
                       {formatDate(item.created_at) && <small>{formatDate(item.created_at)}</small>}
                     </span>
                     <strong className={Number(item.amount_xof) > 0 ? 'is-credit' : ''}>

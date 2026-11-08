@@ -3,15 +3,17 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabase';
 import { getBuyerNextPath } from '../utils/buyerAuth';
+import { getSupabaseFunctionError } from '../utils/supabaseFunctionErrors';
 import Seo from '../components/site/Seo';
 import SpaceLinks from '../components/site/SpaceLinks';
 import './SmmAuth.css';
 
 const CODE_LENGTH = 8;
 
-function getSmmAuthUrl(nextPath) {
+function getSmmAuthUrl(nextPath, referralCode = '') {
   const url = new URL('/smm/connexion', window.location.origin);
   url.searchParams.set('next', nextPath);
+  if (referralCode) url.searchParams.set('ref', referralCode);
   return url.href;
 }
 
@@ -39,7 +41,10 @@ export default function SmmAuth() {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const nextPath = getBuyerNextPath(searchParams.get('next'));
-  const [mode, setMode] = useState(searchParams.get('mode') === 'reset' ? 'reset' : 'login');
+  const referralCode = (searchParams.get('ref') || '').trim().toUpperCase();
+  const [mode, setMode] = useState(
+    searchParams.get('mode') === 'reset' ? 'reset' : searchParams.get('mode') === 'signup' ? 'signup' : 'login',
+  );
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
@@ -57,6 +62,26 @@ export default function SmmAuth() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const firstField = useRef(null);
+  const referralClaim = useRef(null);
+
+  async function claimReferral() {
+    if (!/^[A-F0-9]{10}$/.test(referralCode)) return;
+    if (!referralClaim.current) {
+      referralClaim.current = (async () => {
+        const { data, error: claimError } = await supabase.functions.invoke('smm-panel', {
+          body: { action: 'claim_referral', code: referralCode },
+        });
+        if (claimError) throw await getSupabaseFunctionError(claimError, 'Le rattachement du parrainage a échoué.');
+        if (data?.error) throw new Error(data.error);
+      })();
+    }
+    try {
+      await referralClaim.current;
+    } catch (claimError) {
+      referralClaim.current = null;
+      throw claimError;
+    }
+  }
 
   useEffect(() => {
     document.title = 'Connexion au panel social — Caleb Creative';
@@ -64,8 +89,20 @@ export default function SmmAuth() {
 
   useEffect(() => {
     if (!authLoading && !user?.email_confirmed_at) firstField.current?.focus();
-    if (!authLoading && user?.email_confirmed_at && mode !== 'reset' && !isRecoveryFlow) navigate(nextPath, { replace: true });
-  }, [authLoading, isRecoveryFlow, mode, navigate, nextPath, user]);
+    if (authLoading || !user?.email_confirmed_at || mode === 'reset' || isRecoveryFlow) return undefined;
+    let active = true;
+    async function finishAuthentication() {
+      try {
+        await claimReferral();
+        if (active) navigate(nextPath, { replace: true });
+      } catch (claimError) {
+        console.error('Rattachement du parrainage après authentification impossible :', claimError);
+        if (active) setError(claimError.message || 'Le parrainage n’a pas pu être enregistré.');
+      }
+    }
+    finishAuthentication();
+    return () => { active = false; };
+  }, [authLoading, isRecoveryFlow, mode, navigate, nextPath, referralCode, user]);
 
   useEffect(() => {
     if (resendSeconds <= 0) return undefined;
@@ -108,11 +145,14 @@ export default function SmmAuth() {
         const { data, error: signupError } = await supabase.auth.signUp({
           email: email.trim().toLowerCase(),
           password,
-          options: { emailRedirectTo: getSmmAuthUrl(nextPath) },
+          options: {
+            emailRedirectTo: getSmmAuthUrl(nextPath, referralCode),
+          },
         });
         if (signupError) throw signupError;
         if (data.session && !data.user?.email_confirmed_at) await supabase.auth.signOut();
         if (data.session && data.user?.email_confirmed_at) {
+          await claimReferral();
           navigate(nextPath, { replace: true });
           return;
         }
@@ -127,6 +167,7 @@ export default function SmmAuth() {
         });
         if (verifyError) throw verifyError;
         if (!data.user?.email_confirmed_at) throw new Error('L’adresse e-mail n’a pas été confirmée.');
+        await claimReferral();
         navigate(nextPath, { replace: true });
       } else {
         const { data, error: signinError } = await supabase.auth.signInWithPassword({
@@ -140,6 +181,7 @@ export default function SmmAuth() {
           setNotice('Confirme ton adresse e-mail avec le code reçu avant de continuer.');
           return;
         }
+        await claimReferral();
         navigate(nextPath, { replace: true });
       }
     } catch (authError) {
@@ -162,7 +204,7 @@ export default function SmmAuth() {
     try {
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: getSmmAuthUrl(nextPath) },
+        options: { redirectTo: getSmmAuthUrl(nextPath, referralCode) },
       });
       if (oauthError) throw oauthError;
     } catch (oauthError) {

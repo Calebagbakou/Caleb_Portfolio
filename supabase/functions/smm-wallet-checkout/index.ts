@@ -19,8 +19,8 @@ Deno.serve(async (request) => {
 
     const { amountXof } = await request.json();
     const amount = Number(amountXof);
-    if (!Number.isSafeInteger(amount) || amount < 1) {
-      return jsonResponse({ error: 'Saisissez un montant entier positif en FCFA.' }, 400);
+    if (!Number.isSafeInteger(amount) || amount < 500) {
+      return jsonResponse({ error: 'Le montant minimum de recharge est de 500 FCFA.' }, 400);
     }
 
     const reference = `SMM-${crypto.randomUUID().replaceAll('-', '').toUpperCase()}`;
