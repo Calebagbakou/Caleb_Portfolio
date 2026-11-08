@@ -247,13 +247,12 @@
   border: 1px solid var(--gw-line);
   border-radius: 13px;
   background: var(--gw-surface);
-  color: var(--gw-violet);
-  font-size: 12px;
-  font-weight: 800;
-  transition: transform .45s var(--gw-ease), background .3s ease, color .3s ease;
+  color: var(--social-color);
+  transition: transform .45s var(--gw-ease), box-shadow .3s ease;
 }
+.gw-preview--social b svg { width: 21px; height: 21px; }
 .gw-card--social:hover .gw-preview--social b { transform: translateY(-4px); }
-.gw-card--social:hover .gw-preview--social b:nth-child(even) { transform: translateY(4px); background: var(--gw-violet); color: #fff; }
+.gw-card--social:hover .gw-preview--social b:nth-child(even) { transform: translateY(4px); box-shadow: 0 5px 14px color-mix(in srgb, var(--social-color) 20%, transparent); }
 
 /* ---------- corps de carte ---------- */
 .gw-card-body { position: relative; display: grid; gap: 8px; }

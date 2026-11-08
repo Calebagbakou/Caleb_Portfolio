@@ -1,4 +1,12 @@
 import { Link } from 'react-router-dom';
+import {
+  SiFacebook,
+  SiInstagram,
+  SiTelegram,
+  SiTiktok,
+  SiX,
+  SiYoutube,
+} from 'react-icons/si';
 import Seo from '../components/site/Seo';
 import './Gateway.css';
 
@@ -8,7 +16,14 @@ const STATS = [
   { value: '50+', label: 'outils maîtrisés' },
 ];
 
-const SOCIAL_NETWORKS = ['IG', 'f', 'TK', 'YT', 'TG', 'X'];
+const SOCIAL_NETWORKS = [
+  { name: 'Instagram', icon: SiInstagram, color: '#E4405F' },
+  { name: 'Facebook', icon: SiFacebook, color: '#0866FF' },
+  { name: 'TikTok', icon: SiTiktok, color: '#111111' },
+  { name: 'YouTube', icon: SiYoutube, color: '#FF0000' },
+  { name: 'Telegram', icon: SiTelegram, color: '#24A1DE' },
+  { name: 'X', icon: SiX, color: '#111111' },
+];
 const SHOP_CHIPS = ['Gemini Pro', 'CapCut Pro', 'Canva Pro'];
 
 function Arrow() {
@@ -103,7 +118,11 @@ export default function Gateway() {
               <span className="gw-new">Nouveau</span>
             </span>
             <span className="gw-preview gw-preview--social" aria-hidden="true">
-              {SOCIAL_NETWORKS.map((network) => <b key={network}>{network}</b>)}
+              {SOCIAL_NETWORKS.map(({ name, icon: SocialIcon, color }) => (
+                <b key={name} style={{ '--social-color': color }}>
+                  <SocialIcon />
+                </b>
+              ))}
             </span>
             <span className="gw-card-body">
               <span className="gw-card-title">Panel social</span>
