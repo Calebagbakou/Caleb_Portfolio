@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import Seo from '../components/site/Seo';
 import { supabase } from '../services/supabase';
 import { getSupabaseFunctionError } from '../utils/supabaseFunctionErrors';
@@ -24,6 +24,12 @@ const ORDER_FILTERS = [
   { id: 'active', label: 'En cours' },
   { id: 'done', label: 'Terminées' },
   { id: 'issues', label: 'Problèmes' },
+];
+const PANEL_SCREENS = [
+  { id: 'home', path: '/smm', label: 'Accueil', title: 'Votre espace social', description: 'Un aperçu clair de votre portefeuille et de vos commandes.', icon: 'home' },
+  { id: 'order', path: '/smm/commande', label: 'Commander', title: 'Nouvelle commande', description: 'Choisissez un service et vérifiez le montant avant de confirmer.', icon: 'plus' },
+  { id: 'orders', path: '/smm/commandes', label: 'Commandes', title: 'Mes commandes', description: 'Consultez l’avancement et l’historique de vos demandes.', icon: 'orders' },
+  { id: 'wallet', path: '/smm/portefeuille', label: 'Portefeuille', title: 'Mon portefeuille', description: 'Consultez votre solde et l’historique de vos opérations.', icon: 'wallet' },
 ];
 
 function formatXof(value) {
@@ -81,31 +87,21 @@ function Icon({ name }) {
   );
 }
 
-function SmmNavigation({ activeSection, moreMenuRef }) {
-  const items = [
-    { href: '#smm-home', label: 'Accueil', icon: 'home' },
-    { href: '#smm-new-order', label: 'Commander', icon: 'plus' },
-    { href: '#smm-orders', label: 'Commandes', icon: 'orders' },
-    { href: '#smm-wallet', label: 'Portefeuille', icon: 'wallet' },
-  ];
-
+function SmmNavigation({ activeScreen, moreMenuRef }) {
   return (
     <nav className="smm-user-nav" aria-label="Navigation du panel social">
       <div className="smm-user-nav-links">
-        {items.map((item) => {
-          const sectionId = item.href.slice(1);
-          return (
-            <a
-              className={`smm-user-nav-link${activeSection === sectionId ? ' is-active' : ''}`}
-              href={item.href}
-              key={item.href}
-              aria-current={activeSection === sectionId ? 'location' : undefined}
-            >
-              <Icon name={item.icon} />
-              <span>{item.label}</span>
-            </a>
-          );
-        })}
+        {PANEL_SCREENS.map((item) => (
+          <Link
+            className={`smm-user-nav-link${activeScreen === item.id ? ' is-active' : ''}`}
+            to={item.path}
+            key={item.path}
+            aria-current={activeScreen === item.id ? 'page' : undefined}
+          >
+            <Icon name={item.icon} />
+            <span>{item.label}</span>
+          </Link>
+        ))}
       </div>
       <details className="smm-user-more" ref={moreMenuRef}>
         <summary><Icon name="more" /><span>Plus</span></summary>
@@ -129,9 +125,9 @@ async function invokePanel(action, payload = {}) {
 }
 
 export default function SmmPanel() {
+  const { pathname } = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [activeSection, setActiveSection] = useState('smm-home');
   const moreMenuRef = useRef(null);
   const [services, setServices] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -147,10 +143,12 @@ export default function SmmPanel() {
   const [orderFilter, setOrderFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [working, setWorking] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [paymentRetry, setPaymentRetry] = useState(0);
   const pendingTopupId = searchParams.get('topup_id');
+  const currentScreen = PANEL_SCREENS.find((screen) => screen.path === pathname) || PANEL_SCREENS[0];
 
   const networkServices = useMemo(() => {
     if (selectedNetwork === 'Tous') return services;
@@ -209,6 +207,7 @@ export default function SmmPanel() {
       if (catalog.services?.[0]) {
         setQuantity((current) => current || String(catalog.services[0].min_quantity));
       }
+      setLastUpdated(new Date().toISOString());
     } catch (loadError) {
       console.error('Impossible de charger le panel social :', loadError);
       setError(loadError.message || 'Le panel social ne peut pas être chargé pour le moment.');
@@ -220,20 +219,6 @@ export default function SmmPanel() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-
-  useEffect(() => {
-    const sectionIds = ['smm-home', 'smm-new-order', 'smm-orders', 'smm-wallet'];
-    const sections = sectionIds.map((id) => document.getElementById(id)).filter(Boolean);
-    if (!sections.length || !('IntersectionObserver' in window)) return undefined;
-    const observer = new IntersectionObserver((entries) => {
-      const visibleSections = entries
-        .filter((entry) => entry.isIntersecting)
-        .sort((left, right) => right.intersectionRatio - left.intersectionRatio);
-      if (visibleSections[0]) setActiveSection(visibleSections[0].target.id);
-    }, { rootMargin: '-20% 0px -60% 0px', threshold: [0, 0.2, 0.5] });
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
-  }, []);
 
   useEffect(() => {
     function closeMoreMenu(event) {
@@ -318,13 +303,14 @@ export default function SmmPanel() {
         link: link.trim(),
         quantity: Number(quantity),
       });
-      setNotice(`Commande enregistrée : ${result.orderId}`);
+      setNotice(`Commande enregistrée (${result.orderId}). Vous pouvez suivre son statut ici.`);
       setLink('');
       await loadData();
+      navigate('/smm/commandes');
     } catch (orderError) {
       console.error('Impossible de créer la commande sociale :', orderError);
-      setError(orderError.message || 'La commande n’a pas pu être créée.');
       await loadData();
+      setError(orderError.message || 'La commande n’a pas pu être créée.');
     } finally {
       setWorking(false);
     }
@@ -370,44 +356,71 @@ export default function SmmPanel() {
 
   return (
     <main className="smm-page">
-      <Seo title="Panel social — Caleb Creative" description="Choisissez un service social, rechargez votre portefeuille et suivez vos commandes." path="/smm" />
+      <Seo title={`${currentScreen.title} — Caleb Creative`} description={currentScreen.description} path={currentScreen.path} />
       <section className="smm-shell">
-        <SmmNavigation activeSection={activeSection} moreMenuRef={moreMenuRef} />
+        <SmmNavigation activeScreen={currentScreen.id} moreMenuRef={moreMenuRef} />
 
-        {/* ---------- En-tête + vue d'ensemble ---------- */}
-        <header className="smm-hero" id="smm-home">
+        <header className="smm-hero">
           <div className="smm-hero-copy">
             <p className="smm-eyebrow">Caleb Creative · Services sociaux</p>
-            <h1>Panel social</h1>
-            <p>Commandez vos services, rechargez votre portefeuille et suivez chaque commande au même endroit.</p>
+            <h1>{currentScreen.title}</h1>
+            <p>{currentScreen.description}</p>
           </div>
-          <Link className="smm-ghost-link" to="/boutique/compte">Mon compte →</Link>
+          <div className="smm-hero-actions">
+            <button type="button" className="smm-refresh" onClick={loadData} disabled={loading || working}>
+              <Icon name="refresh" />
+              <span>{loading ? 'Actualisation…' : 'Actualiser'}</span>
+            </button>
+            <Link className="smm-ghost-link" to="/boutique/compte">Mon compte →</Link>
+          </div>
         </header>
 
-        <div className="smm-overview">
-          <a className="smm-balance-card" href="#smm-wallet">
-            <span className="smm-balance-label">Solde disponible</span>
-            <strong className="smm-balance-value">{formatXof(balance)}</strong>
-            <span className="smm-balance-cta">Recharger mon portefeuille →</span>
-          </a>
-          <a className="smm-stat" href="#smm-new-order">
-            <span>Services</span>
-            <strong>{loading ? '—' : services.length}</strong>
-            <small>Choisir un service</small>
-          </a>
-          <a className="smm-stat" href="#smm-orders">
-            <span>En cours</span>
-            <strong>{loading ? '—' : activeOrdersCount}</strong>
-            <small>{orders.length} commande{orders.length > 1 ? 's' : ''} au total</small>
-          </a>
-          <button type="button" className="smm-refresh" onClick={loadData} disabled={loading || working} aria-label="Actualiser les données">
-            <Icon name="refresh" />
-            <span>{loading ? 'Actualisation…' : 'Actualiser'}</span>
-          </button>
-        </div>
+        {currentScreen.id === 'home' && (
+          <div className="smm-overview">
+            <Link className="smm-balance-card" to="/smm/portefeuille">
+              <span className="smm-balance-label">Solde disponible</span>
+              <strong className="smm-balance-value">{formatXof(balance)}</strong>
+              <span className="smm-balance-cta">Gérer mon portefeuille →</span>
+            </Link>
+            <Link className="smm-stat" to="/smm/commande">
+              <span>Services disponibles</span>
+              <strong>{loading ? '—' : services.length}</strong>
+              <small>Voir le catalogue</small>
+            </Link>
+            <Link className="smm-stat" to="/smm/commandes">
+              <span>Commandes en cours</span>
+              <strong>{loading ? '—' : activeOrdersCount}</strong>
+              <small>{orders.length} commande{orders.length > 1 ? 's' : ''} au total</small>
+            </Link>
+          </div>
+        )}
+        {currentScreen.id === 'home' && (
+          <div className="smm-home-actions">
+            <Link to="/smm/commande">
+              <span className="smm-home-action-icon"><Icon name="plus" /></span>
+              <span><strong>Passer une commande</strong><small>Choisissez un service et sa quantité</small></span>
+              <span className="smm-home-action-arrow" aria-hidden="true">→</span>
+            </Link>
+            <Link to="/smm/commandes">
+              <span className="smm-home-action-icon"><Icon name="orders" /></span>
+              <span><strong>Suivre mes commandes</strong><small>Consultez les statuts et l’historique</small></span>
+              <span className="smm-home-action-arrow" aria-hidden="true">→</span>
+            </Link>
+            <Link to="/smm/portefeuille">
+              <span className="smm-home-action-icon"><Icon name="wallet" /></span>
+              <span><strong>Gérer mon portefeuille</strong><small>Voir le solde et les opérations</small></span>
+              <span className="smm-home-action-arrow" aria-hidden="true">→</span>
+            </Link>
+          </div>
+        )}
 
         {error && <p className="smm-alert smm-alert-error" role="alert">{error}</p>}
         {notice && <p className="smm-alert smm-alert-success" role="status">{notice}</p>}
+        {lastUpdated && (
+          <p className="smm-data-updated">
+            Données actualisées : {formatDate(lastUpdated)}
+          </p>
+        )}
         {!orderApiConfirmed && !loading && (
           <p className="smm-alert smm-alert-pending">
             Le catalogue est prêt. Les commandes et recharges seront activées dès que la configuration du service sera finalisée.
@@ -419,12 +432,12 @@ export default function SmmPanel() {
           </button>
         )}
 
-        {/* ---------- Nouvelle commande ---------- */}
-        <div className="smm-columns" id="smm-new-order">
+        {currentScreen.id === 'order' && <div className="smm-columns">
           <section className="smm-card smm-order-card" aria-labelledby="smm-order-title">
             <div className="smm-card-heading">
               <p className="smm-eyebrow">Nouvelle commande</p>
               <h2 id="smm-order-title">Que souhaitez-vous booster ?</h2>
+              <p className="smm-trust-note">Aucun mot de passe de réseau social ne vous sera demandé. Un lien public suffit ; le prix total est affiché avant confirmation.</p>
             </div>
 
             {loading ? (
@@ -555,7 +568,7 @@ export default function SmmPanel() {
             </div>
             {insufficientBalance && (
               <p className="smm-warning">
-                Solde insuffisant. <a href="#smm-wallet">Recharger mon portefeuille</a>
+                Solde insuffisant. <Link to="/smm/portefeuille">Recharger mon portefeuille</Link>
               </p>
             )}
             <button
@@ -568,10 +581,15 @@ export default function SmmPanel() {
             </button>
             <p className="smm-fineprint">Le montant est calculé automatiquement et débité de votre portefeuille.</p>
           </aside>
-        </div>
+        </div>}
 
-        {/* ---------- Portefeuille ---------- */}
-        <div className="smm-wallet-grid" id="smm-wallet">
+        {currentScreen.id === 'wallet' && <>
+          <div className="smm-wallet-current">
+            <span>Solde disponible</span>
+            <strong>{formatXof(balance)}</strong>
+            <small>Mis à jour avec les dernières opérations du compte.</small>
+          </div>
+          <div className="smm-wallet-grid">
           <section className="smm-card" aria-labelledby="smm-wallet-title">
             <div className="smm-card-heading">
               <p className="smm-eyebrow">Portefeuille</p>
@@ -628,10 +646,10 @@ export default function SmmPanel() {
               </div>
             )}
           </section>
-        </div>
+          </div>
+        </>}
 
-        {/* ---------- Commandes ---------- */}
-        <section className="smm-card smm-orders" id="smm-orders" aria-labelledby="smm-orders-title">
+        {currentScreen.id === 'orders' && <section className="smm-card smm-orders" aria-labelledby="smm-orders-title">
           <div className="smm-card-heading smm-orders-heading">
             <div>
               <p className="smm-eyebrow">Suivi</p>
@@ -659,7 +677,7 @@ export default function SmmPanel() {
               <Icon name="inbox" />
               <strong>Aucune commande pour l’instant</strong>
               <p>Vos commandes apparaîtront ici dès que vous en passerez une.</p>
-              <a className="smm-secondary-button" href="#smm-new-order">Passer ma première commande</a>
+              <Link className="smm-secondary-button" to="/smm/commande">Passer ma première commande</Link>
             </div>
           ) : filteredOrders.length === 0 ? (
             <div className="smm-empty smm-empty-compact"><p>Aucune commande dans cette catégorie.</p></div>
@@ -686,7 +704,7 @@ export default function SmmPanel() {
               ))}
             </div>
           )}
-        </section>
+        </section>}
 
         <p className="smm-footer-note">Un compte client avec adresse e-mail confirmée est requis. <Link to="/smm/connexion?next=%2Fsmm">Gérer mon accès au panel</Link></p>
       </section>

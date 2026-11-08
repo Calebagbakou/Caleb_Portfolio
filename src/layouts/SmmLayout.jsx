@@ -16,7 +16,12 @@ export default function SmmLayout() {
 
   return (
     <>
-      <ShopHeader showFullNav showMobileButton />
+      <ShopHeader
+        showStoreNav={false}
+        brandTo="/smm"
+        brandSection="Panel social"
+        showMobileButton={false}
+      />
       <Outlet />
     </>
   );

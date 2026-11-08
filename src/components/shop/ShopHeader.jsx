@@ -4,7 +4,13 @@ import useSiteLogo from '../../hooks/useSiteLogo';
 import { useAuth } from '../../context/AuthContext';
 
 /** showFullNav controls whether category shortcuts are shown in the desktop navigation. */
-export default function ShopHeader({ showFullNav = true, showMobileButton = true }) {
+export default function ShopHeader({
+  showFullNav = true,
+  showMobileButton = true,
+  showStoreNav = true,
+  brandTo = '/boutique',
+  brandSection = 'Boutique',
+}) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [logoUrl, clearLogoUrl] = useSiteLogo();
@@ -48,28 +54,30 @@ export default function ShopHeader({ showFullNav = true, showMobileButton = true
     <>
       <header className="shop-header">
         <div className="shop-header-row">
-          <Link to="/boutique" className="shop-brand">
+          <Link to={brandTo} className="shop-brand">
             <span className={`shop-brand-mark${logoUrl ? ' has-logo' : ''}`}>
               {logoUrl ? <img src={logoUrl} alt="" onError={clearLogoUrl} /> : 'CA'}
             </span>
             <span className="shop-brand-text">
-              Caleb Creative<span>Boutique</span>
+              Caleb Creative<span>{brandSection}</span>
             </span>
           </Link>
 
-          <nav className="shop-nav">
-            <NavLink to="/boutique" end>
-              Accueil
-            </NavLink>
-            <NavLink to="/boutique/catalogue">Catalogue</NavLink>
-            {showFullNav && (
-              <>
-                <Link to="/boutique/catalogue?cat=ia">Intelligence artificielle</Link>
-                <Link to="/boutique/catalogue?cat=logiciels">Logiciels créatifs</Link>
-              </>
-            )}
-            <Link className="portfolio-menu-link" to="/portfolio">Voir le portfolio</Link>
-          </nav>
+          {showStoreNav && (
+            <nav className="shop-nav">
+              <NavLink to="/boutique" end>
+                Accueil
+              </NavLink>
+              <NavLink to="/boutique/catalogue">Catalogue</NavLink>
+              {showFullNav && (
+                <>
+                  <Link to="/boutique/catalogue?cat=ia">Intelligence artificielle</Link>
+                  <Link to="/boutique/catalogue?cat=logiciels">Logiciels créatifs</Link>
+                </>
+              )}
+              <Link className="portfolio-menu-link" to="/portfolio">Voir le portfolio</Link>
+            </nav>
+          )}
 
           <div className="shop-actions">
             {user?.email_confirmed_at ? (
@@ -115,12 +123,12 @@ export default function ShopHeader({ showFullNav = true, showMobileButton = true
       {showMobileButton && (
         <div className={`mobile-nav${mobileOpen ? ' open' : ''}`}>
           <div className="mobile-nav-top">
-            <Link to="/boutique" className="shop-brand" onClick={() => setMobileOpen(false)}>
+            <Link to={brandTo} className="shop-brand" onClick={() => setMobileOpen(false)}>
               <span className={`shop-brand-mark${logoUrl ? ' has-logo' : ''}`}>
                 {logoUrl ? <img src={logoUrl} alt="" onError={clearLogoUrl} /> : 'CA'}
               </span>
               <span className="shop-brand-text">
-                Caleb Creative<span>Boutique</span>
+                Caleb Creative<span>{brandSection}</span>
               </span>
             </Link>
             <button className="mobile-nav-close" aria-label="Fermer le menu" onClick={() => setMobileOpen(false)}>
