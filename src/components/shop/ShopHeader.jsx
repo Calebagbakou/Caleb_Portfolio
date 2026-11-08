@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import useSiteLogo from '../../hooks/useSiteLogo';
 import { useAuth } from '../../context/AuthContext';
+import SpaceLinks from '../site/SpaceLinks';
 
 /** showFullNav controls whether category shortcuts are shown in the desktop navigation. */
 export default function ShopHeader({
@@ -10,6 +11,8 @@ export default function ShopHeader({
   showStoreNav = true,
   brandTo = '/boutique',
   brandSection = 'Boutique',
+  accountLoginTo = '/boutique/connexion?next=%2Fboutique%2Fcompte',
+  accountLogoutTo = '/boutique',
 }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -43,7 +46,7 @@ export default function ShopHeader({
     try {
       await logout();
       setAccountMenuOpen(false);
-      navigate('/boutique', { replace: true });
+      navigate(accountLogoutTo, { replace: true });
     } catch (error) {
       console.error('Déconnexion du compte client impossible :', error);
       setAccountMenuError('La déconnexion a échoué. Réessayez.');
@@ -75,7 +78,10 @@ export default function ShopHeader({
                   <Link to="/boutique/catalogue?cat=logiciels">Logiciels créatifs</Link>
                 </>
               )}
-              <Link className="portfolio-menu-link" to="/portfolio">Voir le portfolio</Link>
+              <details className="shop-space-switch">
+                <summary>Nos espaces</summary>
+                <SpaceLinks className="space-links--popover" />
+              </details>
             </nav>
           )}
 
@@ -103,7 +109,7 @@ export default function ShopHeader({
                 )}
               </div>
             ) : (
-              <Link className="shop-account-link" to="/boutique/connexion?next=%2Fboutique%2Fcompte">Se connecter</Link>
+              <Link className="shop-account-link" to={accountLoginTo}>Se connecter</Link>
             )}
             {showMobileButton && (
               <button
@@ -146,9 +152,7 @@ export default function ShopHeader({
           <Link to={user?.email_confirmed_at ? '/boutique/compte' : '/boutique/connexion?next=%2Fboutique%2Fcompte'} onClick={() => setMobileOpen(false)}>
             {user?.email_confirmed_at ? 'Mon compte' : 'Se connecter'}
           </Link>
-          <Link className="mobile-portfolio-link" to="/portfolio" onClick={() => setMobileOpen(false)}>
-            Voir le portfolio
-          </Link>
+          <SpaceLinks className="space-links--mobile" onNavigate={() => setMobileOpen(false)} />
         </div>
       )}
     </>

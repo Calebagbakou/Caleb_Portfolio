@@ -21,6 +21,8 @@ export default function SmmLayout() {
         brandTo="/smm"
         brandSection="Panel social"
         showMobileButton={false}
+        accountLoginTo="/smm/connexion"
+        accountLogoutTo="/smm/connexion"
       />
       <Outlet />
     </>

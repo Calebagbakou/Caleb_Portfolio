@@ -1,0 +1,93 @@
+.space-links {
+  display: grid;
+  gap: 3px;
+}
+
+.space-links-heading {
+  padding: 8px 12px 5px;
+  color: var(--ink-faint, #768399);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.space-links a {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  padding: 9px 12px;
+  border-radius: 9px;
+  color: var(--ink-dim, #46556b);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background .2s ease, color .2s ease;
+}
+
+.space-links a:hover,
+.space-links a[aria-current="page"] {
+  background: var(--surface-alt, #f1f5fa);
+  color: var(--ink, #172033);
+}
+
+.space-links--overlay {
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid currentColor;
+  border-color: color-mix(in srgb, currentColor 18%, transparent);
+}
+
+.space-links--overlay a {
+  min-height: 48px;
+  padding-inline: 8px;
+  border-radius: 0;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  color: inherit;
+  font-size: clamp(18px, 2.2vw, 24px);
+  font-weight: 600;
+}
+
+.space-links--overlay a:hover,
+.space-links--overlay a[aria-current="page"] {
+  background: transparent;
+  color: var(--brand, #1877f2);
+}
+
+.space-links--popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 180;
+  width: 230px;
+  padding: 7px;
+  border: 1px solid var(--border, #e1e6ed);
+  border-radius: 14px;
+  background: var(--surface, #fff);
+  box-shadow: var(--shadow-md, 0 16px 40px rgba(20, 35, 60, .16));
+}
+
+.space-links--popover a {
+  min-height: 40px;
+  font-size: 13px;
+}
+
+.space-links--mobile {
+  margin-top: 18px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border-strong, #d7dee8);
+}
+
+.space-links--mobile a {
+  min-height: 44px;
+  padding-inline: 0;
+  border-bottom: 1px solid var(--border, #e1e6ed);
+  border-radius: 0;
+  color: var(--ink, #172033);
+}
+
+.space-links--mobile a:hover,
+.space-links--mobile a[aria-current="page"] {
+  background: transparent;
+  color: var(--accent, #1877f2);
+}

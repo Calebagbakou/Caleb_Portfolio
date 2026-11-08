@@ -93,6 +93,11 @@
 }
 .smm-user-more-menu a { padding: 11px 13px; border-radius: 9px; color: var(--smm-text); font-size: 13px; font-weight: 500; text-decoration: none; }
 .smm-user-more-menu a:hover { background: var(--smm-surface-alt); }
+.smm-user-more-menu .space-links { min-width: 215px; }
+.smm-user-more-menu .space-links-heading { color: var(--smm-faint); }
+.smm-user-more-menu .space-links a { min-height: 40px; color: var(--smm-text); font-size: 13px; }
+.smm-user-more-menu .space-links a:hover,
+.smm-user-more-menu .space-links a[aria-current="page"] { background: var(--smm-surface-alt); color: var(--smm-ink); }
 
 /* ---------- en-tête ---------- */
 .smm-hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 22px; scroll-margin-top: calc(var(--smm-sticky) + 70px); }
@@ -254,8 +259,9 @@
 }
 .smm-network-option:hover { border-color: var(--smm-line-strong); transform: translateY(-2px); }
 .smm-network-option.is-selected { border-color: var(--smm-accent); background: var(--smm-accent-soft); box-shadow: 0 0 0 1px var(--smm-accent) inset; }
-.smm-network-icon { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 11px; background: var(--smm-surface-alt); color: var(--smm-ink); font-size: 12px; font-weight: 800; transition: background .2s ease, color .2s ease; }
-.smm-network-option.is-selected .smm-network-icon { background: var(--smm-accent); color: #fff; }
+.smm-network-icon { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 11px; background: var(--smm-surface-alt); color: var(--network-color, var(--smm-ink)); font-size: 12px; font-weight: 800; transition: background .2s ease, color .2s ease; }
+.smm-network-icon svg { width: 21px; height: 21px; }
+.smm-network-option.is-selected .smm-network-icon { background: var(--smm-surface-alt); color: var(--network-color, var(--smm-ink)); }
 .smm-network-option small { color: var(--smm-faint); font-size: 11px; font-weight: 500; }
 
 /* fiche du service */
@@ -351,7 +357,8 @@
 .smm-orders-heading { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 14px; }
 .smm-order-list { display: grid; }
 .smm-order-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 16px; padding: 18px 0; border-top: 1px solid var(--smm-line); }
-.smm-order-network { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 13px; background: var(--smm-accent-soft); color: var(--smm-accent); font-size: 13px; font-weight: 800; }
+.smm-order-network { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 13px; background: var(--smm-accent-soft); color: var(--network-color, var(--smm-accent)); font-size: 13px; font-weight: 800; }
+.smm-order-network svg { width: 22px; height: 22px; }
 .smm-order-main { display: grid; min-width: 0; gap: 4px; }
 .smm-order-main strong { overflow: hidden; color: var(--smm-ink); font-size: 14px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .smm-order-main span { color: var(--smm-muted); font-size: 13px; }

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { usePresentation } from '../../context/PresentationContext';
 import useSiteLogo from '../../hooks/useSiteLogo';
+import SpaceLinks from './SpaceLinks';
 
 const SUN_PATH = (
   <>
@@ -209,24 +210,11 @@ export default function Header() {
       )}
 
       <nav className={`nav-overlay${menuOpen ? ' open' : ''}`} ref={navRef} aria-hidden={!menuOpen}>
-        <div className="nav-links">
-          {isGateway ? (
-            <>
-              <Link to={SHOP_URL} onClick={() => setMenuOpen(false)}>
-                <span>Boutique</span>
-                <span className="idx">01</span>
-              </Link>
-              <Link to="/portfolio" onClick={() => setMenuOpen(false)}>
-                <span>Portfolio</span>
-                <span className="idx">02</span>
-              </Link>
-              <Link to="/smm" onClick={() => setMenuOpen(false)}>
-                <span>Panel social</span>
-                <span className="idx">03</span>
-              </Link>
-            </>
-          ) : (
-            <>
+        {isGateway ? (
+          <SpaceLinks className="space-links--overlay" onNavigate={() => setMenuOpen(false)} />
+        ) : (
+          <>
+            <div className="nav-links">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
@@ -238,13 +226,10 @@ export default function Header() {
                   <span className="idx">{link.idx}</span>
                 </Link>
               ))}
-              <Link to={SHOP_URL} onClick={() => setMenuOpen(false)}>
-                <span>Boutique</span>
-                <span className="idx">07</span>
-              </Link>
-            </>
-          )}
-        </div>
+            </div>
+            <SpaceLinks className="space-links--overlay" onNavigate={() => setMenuOpen(false)} />
+          </>
+        )}
         {!isGateway && (
           <div className="nav-foot">
             <span className="footer-note">Abomey, Bénin</span>

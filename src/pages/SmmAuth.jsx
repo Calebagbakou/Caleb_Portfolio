@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabase';
 import { getBuyerNextPath } from '../utils/buyerAuth';
 import Seo from '../components/site/Seo';
+import SpaceLinks from '../components/site/SpaceLinks';
 import './SmmAuth.css';
 
 const CODE_LENGTH = 8;
@@ -349,10 +350,7 @@ export default function SmmAuth() {
               </svg>
               <span>Retour à l’accueil principal</span>
             </Link>
-            <nav className="auth-space-switch" aria-label="Choisir l’espace de connexion">
-              <span className="is-active" aria-current="page">Panel social</span>
-              <Link to="/boutique/connexion">Boutique</Link>
-            </nav>
+            <SpaceLinks className="space-links--auth" />
             <p className="smm-auth-kicker">PANEL SOCIAL</p>
             <h2>{title}</h2>
             <p className="smm-auth-intro">

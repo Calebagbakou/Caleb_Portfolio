@@ -1,20 +1,31 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  SiFacebook,
+  SiInstagram,
+  SiSpotify,
+  SiTelegram,
+  SiTiktok,
+  SiWhatsapp,
+  SiX,
+  SiYoutube,
+} from 'react-icons/si';
 import Seo from '../components/site/Seo';
+import SpaceLinks from '../components/site/SpaceLinks';
 import { supabase } from '../services/supabase';
 import { getSupabaseFunctionError } from '../utils/supabaseFunctionErrors';
 import './SmmPanel.css';
 
 const money = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 });
 const NETWORKS = [
-  { id: 'Instagram', short: 'IG' },
-  { id: 'Facebook', short: 'f' },
-  { id: 'TikTok', short: 'TK' },
-  { id: 'YouTube', short: 'YT' },
-  { id: 'Telegram', short: 'TG' },
-  { id: 'WhatsApp', short: 'WA' },
-  { id: 'Twitter', short: 'X' },
-  { id: 'Spotify', short: 'SP' },
+  { id: 'Instagram', match: ['instagram'], icon: SiInstagram, color: '#E4405F' },
+  { id: 'Facebook', match: ['facebook'], icon: SiFacebook, color: '#0866FF' },
+  { id: 'TikTok', match: ['tiktok'], icon: SiTiktok, color: '#111111' },
+  { id: 'YouTube', match: ['youtube'], icon: SiYoutube, color: '#FF0000' },
+  { id: 'Telegram', match: ['telegram'], icon: SiTelegram, color: '#24A1DE' },
+  { id: 'WhatsApp', match: ['whatsapp'], icon: SiWhatsapp, color: '#25D366' },
+  { id: 'Twitter', match: ['twitter', 'x (twitter)'], icon: SiX, color: '#111111' },
+  { id: 'Spotify', match: ['spotify'], icon: SiSpotify, color: '#1DB954' },
 ];
 const QUICK_AMOUNTS = [1000, 2000, 5000, 10000];
 const ACTIVE_STATUSES = ['submitting', 'submission_check', 'pending', 'processing'];
@@ -56,11 +67,9 @@ function matchesFilter(status, filter) {
   return !ACTIVE_STATUSES.includes(status) && !DONE_STATUSES.includes(status);
 }
 
-function networkShortOf(text = '') {
+function networkForText(text = '') {
   const value = text.toLowerCase();
-  if (value.includes('x (twitter)')) return 'X';
-  const match = NETWORKS.find((network) => value.includes(network.id.toLowerCase()));
-  return match ? match.short : '•';
+  return NETWORKS.find((network) => network.match.some((term) => value.includes(term))) || null;
 }
 
 function formatDate(value) {
@@ -79,6 +88,7 @@ function Icon({ name }) {
     more: <path d="M6 12h.01M12 12h.01M18 12h.01" />,
     refresh: <path d="M20 11a8 8 0 0 0-14.5-4M4 5v4h4M4 13a8 8 0 0 0 14.5 4M20 19v-4h-4" />,
     inbox: <path d="M4 13l2-7h12l2 7M4 13v5a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5M4 13h4l1 2h6l1-2h4" />,
+    social: <path d="M16 8a3 3 0 1 0-2.8-4M8 16a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm8-8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM10.6 16.8l4.8-7.5M10.8 7.2l4.4 1.6" />,
   };
   return (
     <svg className="smm-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -106,9 +116,7 @@ function SmmNavigation({ activeScreen, moreMenuRef }) {
       <details className="smm-user-more" ref={moreMenuRef}>
         <summary><Icon name="more" /><span>Plus</span></summary>
         <div className="smm-user-more-menu">
-          <Link to="/boutique/compte">Mon compte boutique</Link>
-          <Link to="/boutique">Visiter la boutique</Link>
-          <Link to="/">Accueil Caleb Creative</Link>
+          <SpaceLinks className="space-links--smm" />
         </div>
       </details>
     </nav>
@@ -178,7 +186,9 @@ export default function SmmPanel() {
   const availableNetworks = useMemo(() => NETWORKS.map((network) => ({
     ...network,
     count: services.filter((service) => (
-      `${service.category} ${service.name} ${service.type}`.toLowerCase().includes(network.id.toLowerCase())
+      network.match.some((term) => (
+        `${service.category} ${service.name} ${service.type}`.toLowerCase().includes(term)
+      ))
     )).length,
   })).filter((network) => network.count > 0), [services]);
   const activeOrdersCount = useMemo(
@@ -473,7 +483,9 @@ export default function SmmPanel() {
                         aria-pressed={selectedNetwork === network.id}
                         key={network.id}
                       >
-                        <span className="smm-network-icon">{network.short}</span>
+                        <span className="smm-network-icon" style={{ '--network-color': network.color }}>
+                          <network.icon aria-hidden="true" />
+                        </span>
                         <span>{network.id}</span>
                         <small>{network.count}</small>
                       </button>
@@ -683,25 +695,34 @@ export default function SmmPanel() {
             <div className="smm-empty smm-empty-compact"><p>Aucune commande dans cette catégorie.</p></div>
           ) : (
             <div className="smm-order-list">
-              {filteredOrders.map((order) => (
-                <article className="smm-order-row" key={order.id}>
-                  <span className="smm-order-network" aria-hidden="true">{networkShortOf(`${order.service_name} ${order.link}`)}</span>
-                  <div className="smm-order-main">
-                    <strong>#{order.service_id} · {order.service_name}</strong>
-                    <span>
-                      {money.format(order.quantity)} unités · {formatXof(order.charge_xof)}
-                      {formatDate(order.created_at) && ` · ${formatDate(order.created_at)}`}
+              {filteredOrders.map((order) => {
+                const network = networkForText(`${order.service_name} ${order.link}`);
+                return (
+                  <article className="smm-order-row" key={order.id}>
+                    <span
+                      className="smm-order-network"
+                      aria-label={network?.id || 'Réseau social'}
+                      style={network ? { '--network-color': network.color } : undefined}
+                    >
+                      {network ? <network.icon aria-hidden="true" /> : <Icon name="social" />}
                     </span>
-                    <a href={order.link} target="_blank" rel="noreferrer">{order.link}</a>
-                  </div>
-                  <div className="smm-order-status">
-                    <span className={`smm-status smm-status-${order.status}`}>{statusLabel(order.status)}</span>
-                    <button type="button" className="smm-text-button" onClick={() => refreshOrder(order.id)} disabled={working}>
-                      <Icon name="refresh" /> Actualiser le statut
-                    </button>
-                  </div>
-                </article>
-              ))}
+                    <div className="smm-order-main">
+                      <strong>#{order.service_id} · {order.service_name}</strong>
+                      <span>
+                        {money.format(order.quantity)} unités · {formatXof(order.charge_xof)}
+                        {formatDate(order.created_at) && ` · ${formatDate(order.created_at)}`}
+                      </span>
+                      <a href={order.link} target="_blank" rel="noreferrer">{order.link}</a>
+                    </div>
+                    <div className="smm-order-status">
+                      <span className={`smm-status smm-status-${order.status}`}>{statusLabel(order.status)}</span>
+                      <button type="button" className="smm-text-button" onClick={() => refreshOrder(order.id)} disabled={working}>
+                        <Icon name="refresh" /> Actualiser le statut
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           )}
         </section>}

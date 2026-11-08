@@ -129,6 +129,11 @@ body.shop-theme .brand-name{ font-family:'Inter', sans-serif; letter-spacing:-0.
   transition: background-color .2s ease, color .2s ease;
 }
 .shop-nav a:hover, .shop-nav a.active{ background:var(--surface-alt); color:var(--ink); }
+.shop-space-switch{ position:relative; }
+.shop-space-switch summary{ display:flex; align-items:center; min-height:40px; padding:9px 12px; border-radius:999px; color:var(--ink-dim); font-size:14px; font-weight:600; cursor:pointer; list-style:none; }
+.shop-space-switch summary::-webkit-details-marker{ display:none; }
+.shop-space-switch summary::after{ content:""; width:7px; height:7px; margin:0 0 3px 9px; border-right:1.5px solid currentColor; border-bottom:1.5px solid currentColor; transform:rotate(45deg); }
+.shop-space-switch[open] summary,.shop-space-switch summary:hover{ background:var(--surface-alt); color:var(--ink); }
 
 .shop-actions{ display:flex; align-items:center; gap:8px; }
 .shop-icon-btn{
@@ -139,7 +144,6 @@ body.shop-theme .brand-name{ font-family:'Inter', sans-serif; letter-spacing:-0.
 .shop-icon-btn:hover{ border-color:var(--border-strong); }
 .shop-icon-btn:active{ transform:scale(.94); }
 .shop-icon-btn svg{ width:18px; height:18px; }
-.shop-nav .portfolio-menu-link{ margin-left:6px; padding-left:18px; border-left:1px solid var(--border-strong); }
 .shop-account-link{
   display:inline-flex; align-items:center; min-height:44px; font-size:13px; font-weight:700; color:var(--ink-dim); padding:9px 12px;
   border:1px solid var(--border); border-radius:999px; white-space:nowrap;
@@ -172,6 +176,8 @@ body.shop-theme .brand-name{ font-family:'Inter', sans-serif; letter-spacing:-0.
 .mobile-nav-close{ width:44px;height:44px; border-radius:50%; border:1px solid var(--border); background:var(--surface); display:flex; align-items:center; justify-content:center; cursor:pointer; }
 .mobile-nav a{ display:flex; align-items:center; min-height:48px; font-family:'Inter', sans-serif; font-size:1.35rem; font-weight:700; letter-spacing:-.025em; line-height:1.2; padding:10px 0; border-bottom:1px solid var(--border); }
 .mobile-nav .mobile-portfolio-link{ margin-top:auto; border-top:1px solid var(--border-strong); border-bottom:0; padding-top:18px; font-family:'Inter',sans-serif; font-size:14px; font-weight:600; letter-spacing:0; }
+.mobile-nav .space-links a{ min-height:44px; padding:9px 0; border-bottom:1px solid var(--border); border-radius:0; font-size:14px; font-weight:600; letter-spacing:0; }
+.mobile-nav .space-links a[aria-current="page"]{ color:var(--accent); }
 
 /* ---------- BUTTONS ---------- */
 .btn{
