@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabase';
-import { getBuyerNextPath } from '../utils/buyerAuth';
 import { getSupabaseFunctionError } from '../utils/supabaseFunctionErrors';
 import Seo from '../components/site/Seo';
 import SpaceLinks from '../components/site/SpaceLinks';
@@ -40,7 +39,8 @@ export default function SmmAuth() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const nextPath = getBuyerNextPath(searchParams.get('next'));
+  const requestedNext = searchParams.get('next') || '/smm';
+  const nextPath = requestedNext.startsWith('/smm') ? requestedNext : '/smm';
   const referralCode = (searchParams.get('ref') || '').trim().toUpperCase();
   const [mode, setMode] = useState(
     searchParams.get('mode') === 'reset' ? 'reset' : searchParams.get('mode') === 'signup' ? 'signup' : 'login',

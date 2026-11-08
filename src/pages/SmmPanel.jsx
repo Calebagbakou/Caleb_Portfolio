@@ -388,6 +388,7 @@ export default function SmmPanel() {
     const referralUrl = new URL('/smm/connexion', window.location.origin);
     referralUrl.searchParams.set('mode', 'signup');
     referralUrl.searchParams.set('ref', referralSummary.code);
+    referralUrl.searchParams.set('next', '/smm');
     try {
       await navigator.clipboard.writeText(referralUrl.href);
       setError('');
@@ -428,7 +429,7 @@ export default function SmmPanel() {
     <main className="smm-page">
       <Seo title={`${currentScreen.title} — Caleb Creative`} description={currentScreen.description} path={currentScreen.path} />
       <section className="smm-shell">
-        <header className="smm-hero">
+        <header className={`smm-hero${currentScreen.id === 'home' ? ' smm-template-home-heading' : ''}`}>
           <div className="smm-hero-copy">
             <p className="smm-eyebrow">Caleb Creative · Services sociaux</p>
             <h1>{currentScreen.title}</h1>
@@ -442,6 +443,21 @@ export default function SmmPanel() {
           </div>
         </header>
 
+        {currentScreen.id === 'home' && (
+          <section className="smm-template-home-hero">
+            <span className="smm-template-status"><i aria-hidden="true" /> Services opérationnels</span>
+            <h1>Bonjour 👋</h1>
+            <p>Boostez votre présence sur les réseaux sociaux dès <strong>150 FCFA</strong> les 1000. Livraison rapide, paiement par Mobile Money.</p>
+            <div className="smm-template-home-buttons">
+              <Link className="smm-template-primary-action" to="/smm/commande">
+                Passer une commande <span aria-hidden="true">→</span>
+              </Link>
+              <Link className="smm-template-secondary-action" to="/smm/portefeuille">
+                Recharger mon compte
+              </Link>
+            </div>
+          </section>
+        )}
         {currentScreen.id === 'home' && (
           <div className="smm-overview">
             <Link className="smm-balance-card" to="/smm/portefeuille">
@@ -458,25 +474,6 @@ export default function SmmPanel() {
               <span>Commandes en cours</span>
               <strong>{loading ? '—' : activeOrdersCount}</strong>
               <small>{orders.length} commande{orders.length > 1 ? 's' : ''} au total</small>
-            </Link>
-          </div>
-        )}
-        {currentScreen.id === 'home' && (
-          <div className="smm-home-actions">
-            <Link to="/smm/commande">
-              <span className="smm-home-action-icon"><Icon name="plus" /></span>
-              <span><strong>Passer une commande</strong><small>Choisissez un service et sa quantité</small></span>
-              <span className="smm-home-action-arrow" aria-hidden="true">→</span>
-            </Link>
-            <Link to="/smm/commandes">
-              <span className="smm-home-action-icon"><Icon name="orders" /></span>
-              <span><strong>Suivre mes commandes</strong><small>Consultez les statuts et l’historique</small></span>
-              <span className="smm-home-action-arrow" aria-hidden="true">→</span>
-            </Link>
-            <Link to="/smm/portefeuille">
-              <span className="smm-home-action-icon"><Icon name="wallet" /></span>
-              <span><strong>Gérer mon portefeuille</strong><small>Voir le solde et les opérations</small></span>
-              <span className="smm-home-action-arrow" aria-hidden="true">→</span>
             </Link>
           </div>
         )}
@@ -673,6 +670,7 @@ export default function SmmPanel() {
                       const referralUrl = new URL('/smm/connexion', window.location.origin);
                       referralUrl.searchParams.set('mode', 'signup');
                       referralUrl.searchParams.set('ref', referralSummary.code);
+                      referralUrl.searchParams.set('next', '/smm');
                       return referralUrl.href;
                     })()
                   : 'Génération du lien…'}

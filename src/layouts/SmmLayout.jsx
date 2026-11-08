@@ -101,7 +101,11 @@ export default function SmmLayout() {
         aria-hidden="true"
       />
       <aside className={`smm-template-mobile-sidebar${mobileOpen ? ' is-open' : ''}`}>
-        <button className="smm-template-mobile-close" type="button" aria-label="Fermer le menu" onClick={() => setMobileOpen(false)}>×</button>
+        <button className="smm-template-mobile-close" type="button" aria-label="Fermer le menu" onClick={() => setMobileOpen(false)}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
         {sidebar(true)}
       </aside>
       <div className="smm-template-main">
@@ -112,10 +116,17 @@ export default function SmmLayout() {
           <strong className="smm-template-title">{currentTitle}</strong>
           <span className="smm-template-header-spacer" />
           <Link className="smm-template-wallet" to="/smm/portefeuille">
+            <span className="smm-template-wallet-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 7.5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-11a2 2 0 0 1 2-2h12v3M16 12h5v4h-5a2 2 0 0 1 0-4Z" /></svg>
+            </span>
             <span>Solde</span>
             <strong>{new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(balance)} FCFA</strong>
             <b aria-hidden="true">+</b>
           </Link>
+          <button className="smm-template-notification" type="button" aria-label="Notifications">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg>
+            <i />
+          </button>
           <div className="smm-template-account">
             <span>{initials}</span>
             <div><strong>{userName}</strong><small>Compte client</small></div>
