@@ -38,6 +38,8 @@
 .smm-icon { width: 20px; height: 20px; flex: none; }
 
 /* ---------- navigation ---------- */
+.smm-user-nav { display: none !important; }
+
 .smm-user-nav {
   position: sticky;
   z-index: 20;

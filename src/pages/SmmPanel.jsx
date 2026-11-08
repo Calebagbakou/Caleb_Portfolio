@@ -428,8 +428,6 @@ export default function SmmPanel() {
     <main className="smm-page">
       <Seo title={`${currentScreen.title} — Caleb Creative`} description={currentScreen.description} path={currentScreen.path} />
       <section className="smm-shell">
-        <SmmNavigation activeScreen={currentScreen.id} moreMenuRef={moreMenuRef} balance={balance} navigate={navigate} />
-
         <header className="smm-hero">
           <div className="smm-hero-copy">
             <p className="smm-eyebrow">Caleb Creative · Services sociaux</p>

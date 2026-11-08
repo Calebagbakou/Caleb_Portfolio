@@ -13,6 +13,7 @@ export default function ShopHeader({
   brandSection = 'Boutique',
   accountLoginTo = '/boutique/connexion?next=%2Fboutique%2Fcompte',
   accountLogoutTo = '/boutique',
+  headerTools = null,
 }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -86,6 +87,7 @@ export default function ShopHeader({
           )}
 
           <div className="shop-actions">
+            {headerTools}
             {user?.email_confirmed_at ? (
               <div className="shop-account-menu" ref={accountMenuRef}>
                 <button

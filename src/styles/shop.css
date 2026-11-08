@@ -136,6 +136,32 @@ body.shop-theme .brand-name{ font-family:'Inter', sans-serif; letter-spacing:-0.
 .shop-space-switch[open] summary,.shop-space-switch summary:hover{ background:var(--surface-alt); color:var(--ink); }
 
 .shop-actions{ display:flex; align-items:center; gap:8px; }
+.smm-header-tools{ display:flex; align-items:center; gap:7px; }
+.smm-header-menu{ position:relative; }
+.smm-header-menu summary{
+  display:grid; width:44px; height:44px; place-items:center; border:1px solid var(--border);
+  border-radius:50%; list-style:none; cursor:pointer; background:var(--surface);
+}
+.smm-header-menu summary::-webkit-details-marker{ display:none; }
+.smm-hamburger{ display:grid; width:18px; gap:3px; }
+.smm-hamburger span{ height:2px; border-radius:99px; background:currentColor; }
+.smm-header-menu-list{
+  position:absolute; top:calc(100% + 10px); right:0; display:grid; width:min(280px,calc(100vw - 24px));
+  gap:2px; padding:7px; border:1px solid var(--border); border-radius:14px;
+  background:var(--surface); box-shadow:0 18px 45px rgba(23,54,95,.18);
+}
+.smm-header-menu-list a{ padding:11px 12px; border-radius:9px; color:var(--ink); text-decoration:none; font-size:14px; font-weight:600; }
+.smm-header-menu-list a:hover{ background:var(--surface-alt); }
+.smm-header-balance{
+  display:grid; min-width:112px; padding:5px 10px; border-left:1px solid var(--border);
+  color:var(--ink); text-decoration:none;
+}
+.smm-header-balance span{ color:var(--muted,#667085); font-size:10px; }
+.smm-header-balance strong{ font-size:13px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.smm-header-add{
+  width:44px; height:44px; border:0; border-radius:50%; background:var(--accent,#286db3);
+  color:#fff; font-size:26px; line-height:1; cursor:pointer;
+}
 .shop-icon-btn{
   position:relative; width:44px;height:44px; border-radius:50%; border:1px solid var(--border);
   background:var(--surface); display:flex; align-items:center; justify-content:center; cursor:pointer;
@@ -676,6 +702,10 @@ body.shop-theme .legal-return-links a:hover{ color:var(--ink); }
   .shop-brand{ gap:7px; min-width:0; }
   .shop-brand-text{ font-size:clamp(11px,3.4vw,14px); }
   .shop-actions{ gap:6px; }
+  .smm-header-tools{ gap:4px; }
+  .smm-header-menu summary,.smm-header-add{ width:40px; height:40px; }
+  .smm-header-balance{ min-width:92px; padding-inline:7px; }
+  .smm-header-balance strong{ font-size:11px; }
   .checkout-layout,
   .checkout-layout>*,
   .form-card,
