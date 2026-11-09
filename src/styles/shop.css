@@ -230,7 +230,7 @@ body.shop-theme .brand-name{ font-family:'Inter', sans-serif; letter-spacing:-0.
 .smm-template-content .smm-primary-button,.smm-template-content button.smm-primary-button{ border:0; background:#4f46e5; box-shadow:0 10px 22px rgba(79,70,229,.18); }
 .smm-template-content .smm-primary-button:hover{ background:#4338ca; }
 .smm-template-content .smm-eyebrow{ color:#6366f1; }
-.smm-template-home-heading,.smm-template-content .smm-overview{ display:none; }
+.smm-template-content .smm-overview{ display:none; }
 .smm-template-home-hero{
   position:relative; overflow:hidden; min-height:430px; margin-bottom:24px; padding:28px 44px 34px;
   border-radius:32px; background:linear-gradient(135deg,#5146ee,#7f27f1 58%,#a22cf1);

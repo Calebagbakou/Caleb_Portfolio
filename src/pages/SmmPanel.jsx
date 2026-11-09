@@ -429,7 +429,7 @@ export default function SmmPanel() {
     <main className="smm-page">
       <Seo title={`${currentScreen.title} — Caleb Creative`} description={currentScreen.description} path={currentScreen.path} />
       <section className="smm-shell">
-        <header className={`smm-hero${currentScreen.id === 'home' ? ' smm-template-home-heading' : ''}`}>
+        {currentScreen.id !== 'home' && <header className="smm-hero">
           <div className="smm-hero-copy">
             <p className="smm-eyebrow">Caleb Creative · Services sociaux</p>
             <h1>{currentScreen.title}</h1>
@@ -441,7 +441,7 @@ export default function SmmPanel() {
               <span>{loading ? 'Actualisation…' : 'Actualiser'}</span>
             </button>
           </div>
-        </header>
+        </header>}
 
         {currentScreen.id === 'home' && (
           <section className="smm-template-home-hero">
