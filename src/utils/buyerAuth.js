@@ -24,3 +24,21 @@ export function getBuyerNextPath(value) {
   }
   return '/boutique/commande';
 }
+
+export function getSmmNextPath(value) {
+  const allowedPaths = ['/smm', '/smm/commande', '/smm/commandes', '/smm/portefeuille', '/smm/parrainage'];
+  if (typeof value !== 'string') return '/smm';
+
+  try {
+    const path = new URL(value, window.location.origin);
+    if (path.origin !== window.location.origin || !allowedPaths.includes(path.pathname)) return '/smm';
+    const topupId = path.searchParams.get('topup_id');
+    if (path.pathname === '/smm' && topupId && /^[0-9a-f-]{36}$/i.test(topupId)) {
+      return `/smm?topup_id=${encodeURIComponent(topupId)}`;
+    }
+    return path.pathname;
+  } catch (error) {
+    console.error('Chemin de retour SMM invalide :', error);
+    return '/smm';
+  }
+}
