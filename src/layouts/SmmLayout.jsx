@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabase';
 import { getSupabaseFunctionError } from '../utils/supabaseFunctionErrors';
@@ -7,7 +7,6 @@ import '../styles/shop.css';
 import '../styles/shop-trust.css';
 
 export default function SmmLayout() {
-  const navigate = useNavigate();
   const { pathname } = useLocation();
   const { user, loading: authLoading } = useAuth();
   const isAuthenticated = Boolean(user?.email_confirmed_at);
@@ -65,9 +64,7 @@ export default function SmmLayout() {
   }, [mobileOpen]);
 
   const menuItems = [
-    ['Tableau de bord', '/smm', 'home'],
     ['Nouvel ordre', '/smm/commande', 'plus'],
-    ['Services', '/smm/commande', 'services'],
     ['Mes commandes', '/smm/commandes', 'orders'],
     ['Ajouter des fonds', '/smm/portefeuille', 'wallet'],
     ['Parrainage', '/smm/parrainage', 'gift'],
@@ -80,9 +77,6 @@ export default function SmmLayout() {
         <span>Caleb<span>Creative</span><small>Panel SMM</small></span>
       </Link>
       {isAuthenticated && <>
-        <button className="smm-sidebar-new-order" type="button" onClick={() => { navigate('/smm/commande'); mobile && setMobileOpen(false); }}>
-          <span aria-hidden="true">+</span> Nouvelle commande
-        </button>
         <small className="smm-sidebar-caption">Menu</small>
         <nav className="smm-sidebar-nav" aria-label="Navigation du panel social">
           {menuItems.map(([label, to, icon]) => (

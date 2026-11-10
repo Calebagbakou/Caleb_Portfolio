@@ -339,7 +339,7 @@ export default function Account() {
                           {providerProduct.status === 'starting' && <span className="account-delivery-pending">Activation en cours</span>}
                           {providerProduct.status === 'not_started' && <span className="account-delivery-pending">Accès non initialisé</span>}
                           {providerProduct.error && (
-                            <span className="account-error">Le lien d’activation n’a pas pu être généré. Contactez le support avec votre référence de commande.</span>
+                            <span className="account-error">{providerProduct.error}</span>
                           )}
                         </section>
                       ))}

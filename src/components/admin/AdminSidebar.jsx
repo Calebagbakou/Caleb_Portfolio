@@ -34,6 +34,7 @@ const GROUPS = [
       { label: 'Contenu de la boutique', to: '/admin/shop/content' },
       { label: 'ProdSeller', to: '/admin/shop/prodseller' },
       { label: 'Z FOUR STORE', to: '/admin/shop/zfourstore' },
+      { label: 'AiHUB', to: '/admin/shop/aihub' },
       { label: 'Panel social', to: '/admin/smm' },
     ],
   },

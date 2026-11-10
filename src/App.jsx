@@ -47,6 +47,15 @@ function LegacyProjectRedirect() {
   return <Navigate to={`/portfolio/projet/${slug}`} replace />;
 }
 
+function SmmHomeRedirect() {
+  const { search } = useLocation();
+  return (
+    <BuyerAuthGate>
+      <Navigate to={`/smm/commande${search}`} replace />
+    </BuyerAuthGate>
+  );
+}
+
 export default function App() {
   useSiteFavicon();
   const { pathname } = useLocation();
@@ -79,7 +88,7 @@ export default function App() {
       </Route>
       <Route element={<SmmLayout />}>
         <Route path="/smm/connexion" element={<SmmAuth />} />
-        <Route path="/smm" element={<BuyerAuthGate><SmmPanel /></BuyerAuthGate>} />
+        <Route path="/smm" element={<SmmHomeRedirect />} />
         <Route path="/smm/commande" element={<BuyerAuthGate><SmmPanel /></BuyerAuthGate>} />
         <Route path="/smm/commandes" element={<BuyerAuthGate><SmmPanel /></BuyerAuthGate>} />
         <Route path="/smm/portefeuille" element={<BuyerAuthGate><SmmPanel /></BuyerAuthGate>} />
@@ -136,6 +145,7 @@ export default function App() {
         <Route path="shop/content" element={<Shop shopSection="content" />} />
         <Route path="shop/prodseller" element={<Shop shopSection="prodseller" />} />
         <Route path="shop/zfourstore" element={<Shop shopSection="zfourstore" />} />
+        <Route path="shop/aihub" element={<Shop shopSection="aihub" />} />
         <Route path="smm" element={<SmmServices />} />
         <Route path="orders" element={<Orders />} />
         <Route path="clients" element={<Clients />} />

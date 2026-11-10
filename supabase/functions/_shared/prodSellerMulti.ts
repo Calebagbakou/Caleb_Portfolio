@@ -2,6 +2,7 @@ import { getServiceClient, jsonResponse } from './shop.ts';
 import { getProdSellerTargetKey, isApiDelivery } from './delivery.ts';
 import { createProdSellerAdapter } from './providers/prodsellerAdapter.ts';
 import { createZFourStoreAdapter } from './providers/zfourstoreAdapter.ts';
+import { createAiHubAdapter } from './providers/aihubAdapter.ts';
 import type {
   ProviderAdapter,
   ProviderOrderState,
@@ -41,6 +42,12 @@ function getApiKey() {
   return apiKey;
 }
 
+function getAiHubApiKey() {
+  const apiKey = denoEnv.get('AIHUB_API_KEY');
+  if (!apiKey) throw new Error('La clé API AiHUB n’est pas configurée.');
+  return apiKey;
+}
+
 function getZFourStoreApiKey() {
   const apiKey = denoEnv.get('ZFOURSTORE_API_KEY');
   if (!apiKey) throw new Error('La clé API Z FOUR STORE n’est pas configurée.');
@@ -61,7 +68,9 @@ const LEGACY_ZFOURSTORE_PRODUCT_ID_SECRETS: Record<string, string> = {
 function getProductId(key: string, provider: ProviderAdapter['id'] = 'prodseller') {
   const secret = provider === 'zfourstore'
     ? LEGACY_ZFOURSTORE_PRODUCT_ID_SECRETS[key]
-    : LEGACY_PRODUCT_ID_SECRETS[key];
+    : provider === 'prodseller'
+      ? LEGACY_PRODUCT_ID_SECRETS[key]
+      : undefined;
   return secret ? denoEnv.get(secret)?.trim() || '' : '';
 }
 
@@ -73,13 +82,19 @@ function readProviderData(value: unknown): ProviderData {
   return readObject(value) as ProviderData;
 }
 
+function getProviderLabel(provider: ProviderAdapter['id']) {
+  if (provider === 'zfourstore') return 'Z FOUR STORE';
+  if (provider === 'aihub') return 'AiHUB';
+  return 'ProdSeller';
+}
+
 function getActivationProvider(items: Record<string, ProviderOrderState> = {}): ProviderAdapter['id'] {
   const providers = new Set<ProviderAdapter['id']>();
   for (const state of Object.values(items)) {
     const provider = state?.provider;
-    if (provider === 'prodseller' || provider === 'zfourstore') providers.add(provider);
+    if (provider === 'prodseller' || provider === 'zfourstore' || provider === 'aihub') providers.add(provider);
   }
-  return providers.has('zfourstore') ? 'zfourstore' : 'prodseller';
+  return providers.has('zfourstore') ? 'zfourstore' : providers.has('aihub') ? 'aihub' : 'prodseller';
 }
 
 function legacyActivationResponse(record: ActivationRecord, targets: ProviderTarget[]) {
@@ -129,13 +144,14 @@ function publicActivationResponse(
       name: target.name,
       quantity: target.quantity,
       status: normalized.status,
+      links: normalized.links,
       accessKeys: normalized.accessKeys,
       error: state.error || '',
     };
   });
   return {
     status: record ? getAggregateStatus(items, targets) : 'not_started',
-    links: [],
+    links: products.flatMap((product) => product.links),
     products,
     accessKeys: products.flatMap((product) => product.accessKeys),
   };
@@ -221,12 +237,12 @@ async function getPaidProviderOrder(
       zfourstore_product_id?: string | null;
       active_api_provider?: ProviderAdapter['id'] | null;
     };
-    const selectedProvider = plan?.active_api_provider === 'zfourstore'
-      ? 'zfourstore'
+    const selectedProvider = plan?.active_api_provider === 'zfourstore' || plan?.active_api_provider === 'aihub'
+      ? plan.active_api_provider
       : plan?.active_api_provider === 'prodseller'
         ? 'prodseller'
-        : productRecord.active_api_provider === 'zfourstore'
-          ? 'zfourstore'
+        : productRecord.active_api_provider === 'zfourstore' || productRecord.active_api_provider === 'aihub'
+          ? productRecord.active_api_provider
           : 'prodseller';
 
     const current = groups.get(key);
@@ -240,6 +256,7 @@ async function getPaidProviderOrder(
             || getProductId(key, 'prodseller'),
           zfourstore: (selectedProvider === 'zfourstore' ? plan?.provider_product_id : null)
             || getProductId(key, 'zfourstore'),
+          aihub: selectedProvider === 'aihub' ? plan?.provider_product_id || '' : '',
         },
         configuredProvider: selectedProvider,
         shopProductId: item.product_id,
@@ -306,7 +323,9 @@ async function getProductAvailability(client: ReturnType<typeof getServiceClient
   if (!plan) return jsonResponse({ error: 'Formule API indisponible.' }, 404);
   const key = getProdSellerTargetKey(product, plan.slug, plan.id);
   if (!key) return jsonResponse({ error: 'Produit API inconnu.' }, 400);
-  const provider = plan.active_api_provider === 'zfourstore' ? 'zfourstore' : 'prodseller';
+  const planProvider = plan.active_api_provider === 'zfourstore' || plan.active_api_provider === 'aihub'
+    ? plan.active_api_provider
+    : 'prodseller';
 
   const target: ProviderTarget = {
     key,
@@ -314,17 +333,19 @@ async function getProductAvailability(client: ReturnType<typeof getServiceClient
     providerProductIds: {
       prodseller: '',
       zfourstore: '',
+      aihub: '',
     },
-    configuredProvider: provider,
+    configuredProvider: planProvider,
     shopProductId: product.id,
     name: product.name,
     quantity: 1,
   };
   target.providerProductIds = {
-    prodseller: (provider === 'prodseller' ? plan.provider_product_id : null)
+    prodseller: (planProvider === 'prodseller' ? plan.provider_product_id : null)
       || getProductId(key, 'prodseller'),
-    zfourstore: (provider === 'zfourstore' ? plan.provider_product_id : null)
+    zfourstore: (planProvider === 'zfourstore' ? plan.provider_product_id : null)
       || getProductId(key, 'zfourstore'),
+    aihub: planProvider === 'aihub' ? plan.provider_product_id || '' : '',
   };
   const selectedProvider = await getConfiguredProvider(client, target);
   target.productId = getProviderProductId(selectedProvider, target);
@@ -342,8 +363,13 @@ async function getProductAvailability(client: ReturnType<typeof getServiceClient
     return jsonResponse({ error: 'La disponibilité est momentanément indisponible.' }, 502);
   }
 
-  if (!availability.available && (availability.stock === 0 || availability.stock === null)) {
+  if (!availability.available
+    && availability.balanceOk !== false
+    && (availability.stock === 0 || (selectedProvider !== 'aihub' && availability.stock === null))) {
     await recordProviderEvent(client, target, selectedProvider, 'out_of_stock');
+  }
+  if (availability.balanceOk === false) {
+    await recordProviderEvent(client, target, selectedProvider, 'insufficient_balance');
   }
   availabilityCache.set(cacheKey, { available: availability.available, expiresAt: Date.now() + AVAILABILITY_CACHE_TTL });
   return jsonResponse({ available: availability.available });
@@ -373,9 +399,20 @@ const zfourstoreAdapter = createZFourStoreAdapter({
   },
 });
 
+const aiHubAdapter = createAiHubAdapter({
+  getApiKey: getAiHubApiKey,
+  getProductId(target) {
+    return getProviderProductId('aihub', target);
+  },
+  isConfigured() {
+    return Boolean(denoEnv.get('AIHUB_API_KEY')?.trim());
+  },
+});
+
 const providerAdapters: Record<ProviderAdapter['id'], ProviderAdapter> = {
   prodseller: prodsellerAdapter,
   zfourstore: zfourstoreAdapter,
+  aihub: aiHubAdapter,
 };
 
 async function getConfiguredProvider(_client: ReturnType<typeof getServiceClient>, target: ProviderTarget) {
@@ -466,19 +503,26 @@ async function processTargets(
       ...(state || { status: 'not_started', attempt: 1 }),
       provider,
       status: 'retryable',
-      error: `La configuration ${provider === 'zfourstore' ? 'Z FOUR STORE' : 'ProdSeller'} est incomplète. Vérifiez les secrets Supabase.`,
+      error: `La configuration ${getProviderLabel(provider)} est incomplète. Vérifiez les secrets Supabase.`,
     };
     return false;
   });
 
   const loadedProducts = new Map<string, Record<string, unknown>>();
-  if (action !== 'status') {
+  const canResumeAiHubRequest = action === 'status' && targets.some((target) => {
+    const state = items[target.key];
+    return state?.provider === 'aihub' && state.status === 'starting' && !state.orderId && Boolean(state.idempotencyKey);
+  });
+  if (action !== 'status' || canResumeAiHubRequest) {
     const products = await Promise.all(needsCreate.map(async (target) => {
       const provider = items[target.key]?.provider || 'prodseller';
+      const state = items[target.key];
       return {
         target,
         provider,
-        product: await providerAdapters[provider].loadProduct(target),
+        product: state?.idempotencyKey
+          ? { id: target.productId }
+          : await providerAdapters[provider].loadProduct(target),
       };
     }));
     for (const entry of products) {
@@ -487,7 +531,7 @@ async function processTargets(
           ...(items[entry.target.key] || { status: 'not_started', attempt: 1 }),
           status: 'retryable',
           provider: entry.provider,
-          error: `Le produit configuré est introuvable chez ${entry.provider === 'zfourstore' ? 'Z FOUR STORE' : 'ProdSeller'}. Vérifiez son identifiant dans la fiche du produit; aucun achat n’a été lancé.`,
+          error: `Le produit configuré est introuvable chez ${getProviderLabel(entry.provider)}. Vérifiez son identifiant dans la fiche du produit; aucun achat n’a été lancé.`,
         };
       } else if (entry.provider === 'prodseller' && typeof entry.product.requiresEmailActivation !== 'boolean') {
         items[entry.target.key] = {
@@ -664,9 +708,10 @@ export async function handleProdSellerActivation(request: Request) {
       && !storedProviderData.provider
       && Object.keys(storedItems).length === 0,
     );
+    const supportedProviders = ['prodseller', 'zfourstore', 'aihub'];
     if (activation && !isNewUninitializedActivation
-      && activation.provider !== 'prodseller'
-      && storedProviderData.provider !== 'prodseller') {
+      && !supportedProviders.includes(activation.provider || '')
+      && !supportedProviders.includes(String(storedProviderData.provider || ''))) {
       if (activation.status === 'success') return jsonResponse(legacyActivationResponse(activation, targets));
       return jsonResponse({ status: 'failed', error: 'Une demande existe avec l’ancien service d’activation. Contactez l’assistance avant toute nouvelle tentative.' }, 409);
     }
@@ -690,14 +735,12 @@ export async function handleProdSellerActivation(request: Request) {
             : target.key === 'gemini_18m'
               ? 'Gemini Pro 18 mois'
               : target.name;
-        const message = provider === 'prodseller'
-          ? `L’identifiant ProdSeller du produit ${productLabel} n’est pas configuré.`
-          : `L’identifiant Z FOUR STORE du produit ${productLabel} n’est pas configuré.`;
+        const message = `L’identifiant ${getProviderLabel(provider)} du produit ${productLabel} n’est pas configuré.`;
         return jsonResponse({ error: message }, 503);
       }
       if (!providerAdapters[provider].isConfigured(target)) {
         return jsonResponse({
-          error: `La configuration ${provider === 'zfourstore' ? 'Z FOUR STORE' : 'ProdSeller'} du produit est incomplète.`,
+          error: `La configuration ${getProviderLabel(provider)} du produit est incomplète.`,
         }, 503);
       }
     }
@@ -727,6 +770,7 @@ export async function handleProdSellerActivation(request: Request) {
 
     if (targets.some((target) => resolvedProviders.get(target.key) === 'prodseller')) getApiKey();
     if (targets.some((target) => resolvedProviders.get(target.key) === 'zfourstore')) getZFourStoreApiKey();
+    if (targets.some((target) => resolvedProviders.get(target.key) === 'aihub')) getAiHubApiKey();
 
     const providerData = readProviderData(activation.provider_data);
     const existingItems = providerData.items as Record<string, ProviderOrderState> || {};

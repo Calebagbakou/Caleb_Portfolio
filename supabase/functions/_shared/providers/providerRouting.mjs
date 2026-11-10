@@ -1,4 +1,4 @@
-export const ACTIVATION_PROVIDERS = Object.freeze(['prodseller', 'zfourstore']);
+export const ACTIVATION_PROVIDERS = Object.freeze(['prodseller', 'zfourstore', 'aihub']);
 
 export function resolveProvider(targetKey, configuredProvider) {
   return ACTIVATION_PROVIDERS.includes(configuredProvider) ? configuredProvider : 'prodseller';
@@ -11,6 +11,15 @@ export function resolvePinnedProvider(targetKey, state, configuredProvider, allo
 }
 
 export function shouldCreateProviderOrder(state, action, stateWasMissing = false) {
+  if (
+    action === 'status'
+    && state?.provider === 'aihub'
+    && state.status === 'starting'
+    && !state.orderId
+    && state.idempotencyKey
+  ) {
+    return true;
+  }
   if (action === 'status' || state?.orderId || state?.status === 'success' || state?.status === 'failed') {
     return false;
   }

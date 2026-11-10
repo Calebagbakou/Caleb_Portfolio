@@ -36,8 +36,7 @@ const ORDER_FILTERS = [
   { id: 'issues', label: 'Problèmes' },
 ];
 const PANEL_SCREENS = [
-  { id: 'home', path: '/smm', label: 'Accueil', title: 'Votre espace social', description: 'Un aperçu clair de votre portefeuille et de vos commandes.', icon: 'home' },
-  { id: 'order', path: '/smm/commande', label: 'Commander', title: 'Nouvelle commande', description: 'Choisissez un service et vérifiez le montant avant de confirmer.', icon: 'plus' },
+  { id: 'order', path: '/smm/commande', label: 'Nouvel ordre', title: 'Nouvel ordre', description: 'Choisissez un réseau, un service et lancez votre commande.', icon: 'plus' },
   { id: 'orders', path: '/smm/commandes', label: 'Commandes', title: 'Mes commandes', description: 'Consultez l’avancement et l’historique de vos demandes.', icon: 'orders' },
   { id: 'wallet', path: '/smm/portefeuille', label: 'Portefeuille', title: 'Mon portefeuille', description: 'Consultez votre solde et l’historique de vos opérations.', icon: 'wallet' },
   { id: 'referral', path: '/smm/parrainage', label: 'Parrainage', title: 'Programme de parrainage', description: 'Invitez vos proches et suivez les récompenses gagnées.', icon: 'social' },
@@ -429,7 +428,7 @@ export default function SmmPanel() {
     <main className="smm-page">
       <Seo title={`${currentScreen.title} — Caleb Creative`} description={currentScreen.description} path={currentScreen.path} />
       <section className="smm-shell">
-        {currentScreen.id !== 'home' && <header className="smm-hero">
+        {!['home', 'order'].includes(currentScreen.id) && <header className="smm-hero">
           <div className="smm-hero-copy">
             <p className="smm-eyebrow">Caleb Creative · Services sociaux</p>
             <h1>{currentScreen.title}</h1>
@@ -443,60 +442,40 @@ export default function SmmPanel() {
           </div>
         </header>}
 
-        {currentScreen.id === 'home' && (
+        {currentScreen.id === 'order' && (
           <section className="smm-template-home-hero">
             <span className="smm-template-status"><i aria-hidden="true" /> Services opérationnels</span>
             <h1>Bonjour 👋</h1>
             <p>Boostez votre présence sur les réseaux sociaux dès <strong>150 FCFA</strong> les 1000. Livraison rapide, paiement par Mobile Money.</p>
             <div className="smm-template-home-buttons">
-              <Link className="smm-template-primary-action" to="/smm/commande">
+              <a className="smm-template-primary-action" href="#smm-order-section">
                 Passer une commande <span aria-hidden="true">→</span>
-              </Link>
+              </a>
               <Link className="smm-template-secondary-action" to="/smm/portefeuille">
                 Recharger mon compte
               </Link>
             </div>
           </section>
         )}
-        {currentScreen.id === 'home' && (
-          <div className="smm-overview">
-            <Link className="smm-balance-card" to="/smm/portefeuille">
-              <span className="smm-balance-label">Solde disponible</span>
-              <strong className="smm-balance-value">{formatXof(balance)}</strong>
-              <span className="smm-balance-cta">Gérer mon portefeuille →</span>
-            </Link>
-            <Link className="smm-stat" to="/smm/commande">
-              <span>Services disponibles</span>
-              <strong>{loading ? '—' : services.length}</strong>
-              <small>Voir le catalogue</small>
-            </Link>
-            <Link className="smm-stat" to="/smm/commandes">
-              <span>Commandes en cours</span>
-              <strong>{loading ? '—' : activeOrdersCount}</strong>
-              <small>{orders.length} commande{orders.length > 1 ? 's' : ''} au total</small>
-            </Link>
-          </div>
-        )}
-
-        {error && <p className="smm-alert smm-alert-error" role="alert">{error}</p>}
-        {notice && <p className="smm-alert smm-alert-success" role="status">{notice}</p>}
-        {lastUpdated && (
+        {currentScreen.id !== 'order' && error && <p className="smm-alert smm-alert-error" role="alert">{error}</p>}
+        {currentScreen.id !== 'order' && notice && <p className="smm-alert smm-alert-success" role="status">{notice}</p>}
+        {currentScreen.id !== 'order' && lastUpdated && (
           <p className="smm-data-updated">
             Données actualisées : {formatDate(lastUpdated)}
           </p>
         )}
-        {!orderApiConfirmed && !loading && (
+        {currentScreen.id !== 'order' && !orderApiConfirmed && !loading && (
           <p className="smm-alert smm-alert-pending">
             Le catalogue est prêt. Les commandes et recharges seront activées dès que la configuration du service sera finalisée.
           </p>
         )}
-        {pendingTopupId && !working && (
+        {currentScreen.id !== 'order' && pendingTopupId && !working && (
           <button type="button" className="smm-secondary-button smm-retry-payment" onClick={() => setPaymentRetry((attempt) => attempt + 1)}>
             Réessayer la vérification du paiement
           </button>
         )}
 
-        {currentScreen.id === 'order' && <div className="smm-columns">
+        {currentScreen.id === 'order' && <div id="smm-order-section" className="smm-columns smm-template-order-content">
           <section className="smm-card smm-order-card" aria-labelledby="smm-order-title">
             <div className="smm-card-heading">
               <p className="smm-eyebrow">Nouvelle commande</p>
@@ -648,6 +627,22 @@ export default function SmmPanel() {
             <p className="smm-fineprint">Le montant est calculé automatiquement et débité de votre portefeuille.</p>
           </aside>
         </div>}
+
+        {currentScreen.id === 'order' && error && <p className="smm-alert smm-alert-error" role="alert">{error}</p>}
+        {currentScreen.id === 'order' && notice && <p className="smm-alert smm-alert-success" role="status">{notice}</p>}
+        {currentScreen.id === 'order' && lastUpdated && (
+            <p className="smm-data-updated">Données actualisées : {formatDate(lastUpdated)}</p>
+        )}
+        {currentScreen.id === 'order' && !orderApiConfirmed && !loading && (
+            <p className="smm-alert smm-alert-pending">
+              Le catalogue est prêt. Les commandes et recharges seront activées dès que la configuration du service sera finalisée.
+            </p>
+        )}
+        {currentScreen.id === 'order' && pendingTopupId && !working && (
+            <button type="button" className="smm-secondary-button smm-retry-payment" onClick={() => setPaymentRetry((attempt) => attempt + 1)}>
+              Réessayer la vérification du paiement
+            </button>
+        )}
 
         {currentScreen.id === 'referral' && (
           <section className="smm-card smm-referral-page" aria-labelledby="smm-referral-page-title">
@@ -816,7 +811,7 @@ export default function SmmPanel() {
           )}
         </section>}
 
-        <p className="smm-footer-note">Un compte client avec adresse e-mail confirmée est requis. <Link to="/smm/connexion?next=%2Fsmm">Gérer mon accès au panel</Link></p>
+        <p className="smm-footer-note">Un compte client avec adresse e-mail confirmée est requis. <Link to="/smm/connexion?next=%2Fsmm%2Fcommande">Gérer mon accès au panel</Link></p>
       </section>
     </main>
   );

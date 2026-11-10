@@ -10,6 +10,7 @@ test('the global provider setting routes every API product and defaults invalid 
   assert.equal(resolveProvider('gemini_18m', 'zfourstore'), 'zfourstore');
   assert.equal(resolveProvider('canva_pro', 'zfourstore'), 'zfourstore');
   assert.equal(resolveProvider('duolingo_super_12m', 'zfourstore'), 'zfourstore');
+  assert.equal(resolveProvider('coursera_premium_12m', 'aihub'), 'aihub');
   assert.equal(resolveProvider('gemini_18m', null), 'prodseller');
   assert.equal(resolveProvider('gemini_18m', 'pixverify'), 'prodseller');
   assert.equal(resolveProvider('gemini_18m', 'unknown'), 'prodseller');
@@ -41,6 +42,7 @@ test('provider pinning preserves the supplier already assigned to an activation'
     'prodseller',
   );
   assert.equal(resolvePinnedProvider('gemini_18m', null, 'zfourstore'), 'prodseller');
+  assert.equal(resolvePinnedProvider('coursera_premium_12m', null, 'aihub', true), 'aihub');
 });
 
 test('an item with an existing provider order can never create a second order', () => {
@@ -55,4 +57,9 @@ test('an item with an existing provider order can never create a second order', 
   assert.equal(shouldCreateProviderOrder({ status: 'retryable' }, 'retry'), true);
   assert.equal(shouldCreateProviderOrder({ status: 'retryable' }, 'deliver'), false);
   assert.equal(shouldCreateProviderOrder(undefined, 'status', true), false);
+  assert.equal(shouldCreateProviderOrder({
+    status: 'starting',
+    provider: 'aihub',
+    idempotencyKey: 'caleb-stable-key',
+  }, 'status'), true);
 });

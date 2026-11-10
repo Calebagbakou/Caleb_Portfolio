@@ -1,4 +1,4 @@
-export type ProviderId = 'prodseller' | 'zfourstore';
+export type ProviderId = 'prodseller' | 'zfourstore' | 'aihub';
 
 export type ProviderTarget = {
   key: string;
@@ -18,6 +18,7 @@ export type ProviderOrderState = {
   idempotencyKey?: string;
   externalStatus?: string;
   keys?: string[];
+  links?: string[];
   error?: string;
 };
 

@@ -157,7 +157,9 @@ function productForm(product) {
           || (product.slug === 'duolingo-super' && plan.slug === '12mois')
           || product.plans.length === 1;
         const legacyProductId = isLegacyMappedPlan
-          ? provider === 'zfourstore' ? product.zfourstore_product_id : product.prodseller_product_id
+          ? provider === 'zfourstore'
+            ? product.zfourstore_product_id
+            : provider === 'prodseller' ? product.prodseller_product_id : ''
           : '';
         return {
           ...plan,
@@ -309,7 +311,7 @@ export default function Shop({ shopSection = 'products' }) {
       return;
     }
     if (form.delivery_type === 'api' && activePlans.some((plan) =>
-      !['prodseller', 'zfourstore'].includes(plan.active_api_provider)
+      !['prodseller', 'zfourstore', 'aihub'].includes(plan.active_api_provider)
       || !plan.provider_product_id?.trim())) {
       setError('Choisis un fournisseur et renseigne son ID pour chaque formule API active.');
       return;
@@ -444,7 +446,7 @@ export default function Shop({ shopSection = 'products' }) {
     setProviderCatalogLoading(true);
     setProviderCatalogError('');
     try {
-      const { data, error: invokeError } = provider === 'zfourstore'
+      const { data, error: invokeError } = provider !== 'prodseller'
         ? await supabase.functions.invoke('shop-provider-admin', {
           body: { action: 'catalog', provider },
         })
@@ -621,8 +623,8 @@ export default function Shop({ shopSection = 'products' }) {
       {error && <div className="shop-admin-alert error" role="alert">{error}</div>}
       {notice && <div className="shop-admin-alert success" role="status">{notice}</div>}
 
-      {(shopSection === 'prodseller' || shopSection === 'zfourstore') && <section className="panel">
-        <h2>Catalogue {shopSection === 'zfourstore' ? 'Z FOUR STORE' : 'ProdSeller'}</h2>
+      {(shopSection === 'prodseller' || shopSection === 'zfourstore' || shopSection === 'aihub') && <section className="panel">
+        <h2>Catalogue {shopSection === 'zfourstore' ? 'Z FOUR STORE' : shopSection === 'aihub' ? 'AiHUB' : 'ProdSeller'}</h2>
         <p>
           Consulte les produits disponibles et leurs identifiants, prix et stocks.
           Cette action est en lecture seule et ne lance aucun achat.
@@ -647,9 +649,10 @@ export default function Shop({ shopSection = 'products' }) {
                   {product.description && (
                     <small>{hideActivationProvider(product.description)}</small>
                   )}
-                  {product.price !== undefined && <div>Prix fournisseur : {product.price}</div>}
+                  {product.price !== undefined && <div>Prix fournisseur : {product.price} {product.currency || ''}</div>}
                   {product.stock !== undefined && <div>Stock : {product.stock ?? 'non communiqué'}</div>}
                   <div>Stock disponible : {product.inStock === true ? 'Oui' : product.inStock === false ? 'Non' : 'Non communiqué'}</div>
+                  {product.inputRequired && <div>Donnée client requise : {product.inputRequired} (non prise en charge lors de la commande)</div>}
                   {product.requiresEmailActivation !== undefined && (
                     <div>Activation par e-mail : {product.requiresEmailActivation ? 'Oui' : 'Non'}</div>
                   )}
@@ -977,7 +980,8 @@ export default function Shop({ shopSection = 'products' }) {
                 <small className="project-form-hint">
                   Choisis le fournisseur et son ID dans chaque formule ci-dessous.
                   API ProdSeller {apiProviders?.prodseller ? 'configurée' : 'non configurée'} ·
-                  Z FOUR STORE {apiProviders?.zfourstore ? 'configurée' : 'non configurée'}.
+                  Z FOUR STORE {apiProviders?.zfourstore ? 'configurée' : 'non configurée'} ·
+                  AiHUB {apiProviders?.aihub ? 'configurée' : 'non configurée'}.
                 </small>
               </div>
             )}
@@ -1084,6 +1088,7 @@ export default function Shop({ shopSection = 'products' }) {
                       >
                         <option value="prodseller">ProdSeller</option>
                         <option value="zfourstore">Z FOUR STORE</option>
+                        <option value="aihub">AiHUB</option>
                       </select>
                     </div>
                     <div className="form-group">

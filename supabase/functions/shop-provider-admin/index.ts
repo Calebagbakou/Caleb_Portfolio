@@ -1,6 +1,7 @@
 import { getServiceClient, jsonResponse } from '../_shared/shop.ts';
 import { createProdSellerAdapter } from '../_shared/providers/prodsellerAdapter.ts';
 import { createZFourStoreAdapter } from '../_shared/providers/zfourstoreAdapter.ts';
+import { createAiHubAdapter } from '../_shared/providers/aihubAdapter.ts';
 import type { ProviderAdapter, ProviderTarget } from '../_shared/providers/providerTypes.ts';
 
 type CatalogProvider = ProviderAdapter & {
@@ -26,11 +27,12 @@ const ZFOURSTORE_PRODUCT_ID_SECRETS: Record<string, string> = {
   canva_pro: 'ZFOURSTORE_CANVA_PRODUCT_ID',
   duolingo_super_12m: 'ZFOURSTORE_DUOLINGO_SUPER_12M_PRODUCT_ID',
 };
-
 function getProviderProductId(provider: ProviderAdapter['id'], key: ProviderTarget['key']) {
   const secret = provider === 'zfourstore'
     ? ZFOURSTORE_PRODUCT_ID_SECRETS[key]
-    : PRODUCT_ID_SECRETS[key];
+    : provider === 'prodseller'
+      ? PRODUCT_ID_SECRETS[key]
+      : undefined;
   return secret ? denoEnv.get(secret)?.trim() || '' : '';
 }
 
@@ -38,6 +40,7 @@ function getProviderConfiguration() {
   return {
     prodseller: Boolean(denoEnv.get('PRODSELLER_API_KEY')?.trim()),
     zfourstore: Boolean(denoEnv.get('ZFOURSTORE_API_KEY')?.trim()),
+    aihub: Boolean(denoEnv.get('AIHUB_API_KEY')?.trim()),
   };
 }
 
@@ -76,6 +79,17 @@ const providers: Record<ProviderAdapter['id'], CatalogProvider> = {
       return Boolean(denoEnv.get('ZFOURSTORE_API_KEY')?.trim());
     },
   }),
+  aihub: createAiHubAdapter({
+    getApiKey() {
+      return denoEnv.get('AIHUB_API_KEY')?.trim() || '';
+    },
+    getProductId(target) {
+      return getProviderProductId('aihub', target.key);
+    },
+    isConfigured() {
+      return Boolean(denoEnv.get('AIHUB_API_KEY')?.trim());
+    },
+  }),
 };
 
 async function requireAdmin(request: Request, client: ReturnType<typeof getServiceClient>) {
@@ -98,6 +112,7 @@ async function syncRuntimeConfiguration(client: ReturnType<typeof getServiceClie
   const { error } = await client.from('shop_provider_runtime').upsert([
     { provider: 'prodseller', is_configured: configuration.prodseller },
     { provider: 'zfourstore', is_configured: configuration.zfourstore },
+    { provider: 'aihub', is_configured: configuration.aihub },
   ], { onConflict: 'provider' });
   if (error) throw error;
   return configuration;
@@ -134,6 +149,9 @@ async function getOverview(client: ReturnType<typeof getServiceClient>) {
       plans: plansByProduct.get(product.id) || [],
       prodseller_mapping_saved: Boolean(product.prodseller_product_id?.trim()),
       zfourstore_mapping_saved: Boolean(product.zfourstore_product_id?.trim()),
+      aihub_mapping_saved: (plansByProduct.get(product.id) || []).some((plan) =>
+        plan.active_api_provider === 'aihub' && Boolean(String(plan.provider_product_id || '').trim()),
+      ),
       prodseller_product_id: getProductProviderIds(product).prodseller,
       zfourstore_product_id: getProductProviderIds(product).zfourstore,
       active_api_provider: product.active_api_provider || 'prodseller',
@@ -155,10 +173,23 @@ async function checkAvailability(client: ReturnType<typeof getServiceClient>, pr
     .maybeSingle();
   if (productError) throw productError;
   if (!product) return jsonResponse({ error: 'Produit API introuvable.' }, 404);
-  const ids = getProductProviderIds(product);
+  const { data: plans, error: plansError } = await client
+    .from('product_plans')
+    .select('active_api_provider, provider_product_id')
+    .eq('product_id', product.id)
+    .eq('active', true)
+    .order('sort_order', { ascending: true });
+  if (plansError) throw plansError;
+  const aiHubPlan = (plans || []).find((plan) =>
+    plan.active_api_provider === 'aihub' && typeof plan.provider_product_id === 'string',
+  );
+  const ids = {
+    ...getProductProviderIds(product),
+    aihub: aiHubPlan?.provider_product_id?.trim() || '',
+  };
   const key = LEGACY_TARGET_KEYS[product.slug] || product.id;
   const providerResults = await Promise.all(
-    (['prodseller', 'zfourstore'] as const).map(async (provider) => {
+    (['prodseller', 'zfourstore', 'aihub'] as const).map(async (provider) => {
       const target: ProviderTarget = {
         key,
         productId: ids[provider],
@@ -175,11 +206,22 @@ async function checkAvailability(client: ReturnType<typeof getServiceClient>, pr
         return [provider, { available: false, message: 'Clé API fournisseur non configurée.' }] as const;
       }
       const availability = await providers[provider].checkAvailability(target);
-      if (!availability.available && (availability.stock === 0 || availability.stock === null) && !availability.message) {
+      if (!availability.available
+        && availability.balanceOk !== false
+        && (availability.stock === 0 || (provider !== 'aihub' && availability.stock === null))
+        && !availability.message) {
         const { error } = await client.from('shop_provider_events').insert({
           target_key: target.key,
           provider,
           event_type: 'out_of_stock',
+        });
+        if (error) throw error;
+      }
+      if (availability.balanceOk === false) {
+        const { error } = await client.from('shop_provider_events').insert({
+          target_key: target.key,
+          provider,
+          event_type: 'insufficient_balance',
         });
         if (error) throw error;
       }
@@ -209,13 +251,15 @@ Deno.serve(async (request) => {
     }
     if (action === 'catalog') {
       const providerId = body?.provider;
-      if (providerId !== 'zfourstore') {
+      if (providerId !== 'zfourstore' && providerId !== 'aihub') {
         return jsonResponse({ error: 'Fournisseur de catalogue invalide.' }, 400);
       }
-      if (!getProviderConfiguration().zfourstore) {
-        return jsonResponse({ error: 'Configuration manquante : ajoutez le secret ZFOURSTORE_API_KEY dans Supabase.' }, 503);
+      const configuration = getProviderConfiguration();
+      if (!configuration[providerId]) {
+        const secret = providerId === 'aihub' ? 'AIHUB_API_KEY' : 'ZFOURSTORE_API_KEY';
+        return jsonResponse({ error: `Configuration manquante : ajoutez le secret ${secret} dans Supabase.` }, 503);
       }
-      const catalog = await providers.zfourstore.listProducts();
+      const catalog = await providers[providerId].listProducts();
       return jsonResponse(catalog.body, catalog.status);
     }
     if (action === 'availability') return await checkAvailability(client, body?.productId);

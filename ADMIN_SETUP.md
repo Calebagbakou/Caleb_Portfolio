@@ -179,13 +179,16 @@ déjà commencées restent épinglées à leur fournisseur d’origine.
   fournisseur à chaque formule. Elle reprend les anciens IDs fournisseur dans
   les formules existantes et retire les anciens prix globaux du produit. La
   034 harmonise la promesse de livraison immédiate et le délai de résolution
-  des problèmes d’accès sous 24 h.
+  des problèmes d’accès sous 24 h. Après les migrations boutique déjà
+  appliquées, exécute aussi
+  [`supabase/migrations/040_shop_aihub_provider.sql`](./supabase/migrations/040_shop_aihub_provider.sql)
+  pour autoriser AiHUB dans les formules et la configuration serveur.
 2. Configure les secrets Supabase `PRODSELLER_API_KEY` et
-  `ZFOURSTORE_API_KEY`. Les clés ne vont jamais dans le code du site, les
-  variables `VITE_*` ou Git.
+  `ZFOURSTORE_API_KEY`, ainsi que `AIHUB_API_KEY` si AiHUB est utilisé. Les
+  clés ne vont jamais dans le code du site, les variables `VITE_*` ou Git.
 3. Dans `/admin/shop`, règle le mode de livraison sur **Activation par API**,
-  puis, dans chaque formule, choisis **ProdSeller** ou **Z FOUR STORE** et saisis
-  l’ID retourné par le catalogue correspondant (`GET /products`). L’ID est
+  puis, dans chaque formule, choisis **ProdSeller**, **Z FOUR STORE** ou
+  **AiHUB** et saisis l’ID retourné par le catalogue correspondant. L’ID est
   stocké sur la formule; il n’est pas nécessaire de créer un secret Supabase
   par produit. Vérifie les IDs repris automatiquement par la migration 033 et
   remplace-les si les formules ont des IDs fournisseur différents. L’API Z FOUR
@@ -194,13 +197,20 @@ déjà commencées restent épinglées à leur fournisseur d’origine.
   <https://zfourstore.up.railway.app/api-docs>). Les produits peuvent être
   disponibles chez un seul fournisseur; choisis alors celui-ci pour la formule.
   Les catalogues sont accessibles dans `/admin/shop/prodseller` et
-  `/admin/shop/zfourstore`; les pages sont en lecture seule et affichent les
-  IDs, prix et stocks fournisseur. **Admin → Fournisseurs** affiche les
-  affectations existantes; son contrôle de stock conserve la compatibilité avec
-  les anciens IDs au niveau produit.
+  `/admin/shop/zfourstore` et `/admin/shop/aihub`; les pages sont en lecture
+  seule et affichent les IDs, prix et stocks fournisseur. AiHUB facture en USD.
+  Les commandes réutilisent une clé d’idempotence stable de 64 caractères au
+  maximum et leur statut est vérifié par interrogation de l’API. Ne sélectionne
+  pas les produits AiHUB avec `input_required` (`email` ou `orgid`) : le
+  formulaire ne collecte pas encore cette donnée et l’achat sera bloqué avant
+  tout débit. Les fichiers AiHUB restent livrés par Telegram et ne sont pas
+  présentés comme des téléchargements dans la boutique. **Admin → Fournisseurs**
+  affiche les affectations et les contrôles de disponibilité.
 4. Déploie `shop-provider-admin`, `gemini-prodseller-activate`,
   `gemini-pro-activate`, `shop-account` et `shop-order-delivery`. Vérifie les
-  produits et leurs prix dans les catalogues fournisseur avant le premier achat.
+  produits et leurs prix dans les catalogues fournisseur avant le premier
+  achat. AiHUB ne documente pas de sandbox; configure la clé privée dans
+  Supabase et ne teste pas le flux en déclenchant un achat réel non désiré.
 5. Effectue le premier achat uniquement avec une commande payée et confirmée
   dont tu acceptes le débit réel. La documentation ProdSeller consultée ne
   décrit pas de sandbox. Z FOUR STORE ne documente pas de clé d’idempotence :

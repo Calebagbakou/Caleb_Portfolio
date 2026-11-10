@@ -5,6 +5,7 @@ import { supabase } from '../../services/supabase';
 const PROVIDER_LABELS = {
   prodseller: 'ProdSeller',
   zfourstore: 'Z FOUR STORE',
+  aihub: 'AiHUB',
   pixverify: 'Ancien fournisseur (historique)',
 };
 
@@ -122,6 +123,7 @@ export default function Providers() {
               {overview?.products?.map((product) => {
                 const prodSellerAvailable = Boolean(overview.providers?.prodseller && product.prodseller_mapping_saved);
                 const zFourStoreAvailable = Boolean(overview.providers?.zfourstore && product.zfourstore_mapping_saved);
+                const aiHubAvailable = Boolean(overview.providers?.aihub && product.aihub_mapping_saved);
                 const productAvailability = availabilityProductId === product.id ? availability?.providers : null;
                 return (
                   <article className="provider-admin-product" key={product.id}>
@@ -141,15 +143,18 @@ export default function Providers() {
                       disabled={checking || loading || !(
                         (overview.providers?.prodseller && product.prodseller_product_id)
                         || (overview.providers?.zfourstore && product.zfourstore_product_id)
+                        || aiHubAvailable
                       )}
                     >
-                      {checking && availabilityProductId === product.id ? 'Vérification…' : 'Vérifier les anciens IDs produit'}
+                      {checking && availabilityProductId === product.id ? 'Vérification…' : 'Vérifier la disponibilité fournisseur'}
                     </button>
                     {productAvailability && (
                       <div className="provider-admin-check-results" role="status">
-                        {['prodseller', 'zfourstore'].map((provider) => {
+                        {['prodseller', 'zfourstore', 'aihub'].map((provider) => {
                           const result = productAvailability[provider];
-                          const configured = provider === 'prodseller' ? prodSellerAvailable : zFourStoreAvailable;
+                          const configured = provider === 'prodseller'
+                            ? prodSellerAvailable
+                            : provider === 'zfourstore' ? zFourStoreAvailable : aiHubAvailable;
                           return (
                             <div
                               className={`provider-admin-availability${result?.available ? ' is-available' : ' is-unavailable'}`}
@@ -158,7 +163,7 @@ export default function Providers() {
                               <strong>{PROVIDER_LABELS[provider]} · {result?.available ? 'En stock' : 'Non confirmé'}</strong>
                               <span>Prix fournisseur : {formatSupplierPrice(result)}</span>
                               {result?.stock !== null && result?.stock !== undefined && <span>Stock : {result.stock}</span>}
-                              {provider === 'zfourstore' && (
+                              {(provider === 'zfourstore' || provider === 'aihub') && (
                                 <span>
                                   Solde : {result?.balanceOk === null || result?.balanceOk === undefined
                                     ? 'non vérifié'
@@ -187,13 +192,16 @@ export default function Providers() {
             <h2>Configuration des fournisseurs</h2>
             <p>
               ProdSeller : {overview?.providers?.prodseller ? 'API configurée' : 'clé API manquante'} ·{' '}
-              Z FOUR STORE : {overview?.providers?.zfourstore ? 'API configurée' : 'clé API manquante'}.
+              Z FOUR STORE : {overview?.providers?.zfourstore ? 'API configurée' : 'clé API manquante'} ·{' '}
+              AiHUB : {overview?.providers?.aihub ? 'API configurée' : 'clé API manquante'}.
               {' '}Les IDs produit se consultent dans les catalogues fournisseurs.
             </p>
             <p>
               <Link to="/admin/shop/prodseller">Catalogue ProdSeller</Link>
               {' · '}
               <Link to="/admin/shop/zfourstore">Catalogue Z FOUR STORE</Link>
+              {' · '}
+              <Link to="/admin/shop/aihub">Catalogue AiHUB</Link>
             </p>
           </div>
         </div>

@@ -568,7 +568,7 @@ export default function Confirmation() {
                   <p>Activation en cours</p>
                 )}
                 {product.error && (
-                  <ShopAlert message="Le lien d’activation n’a pas pu être généré. Contactez le support avec votre référence de commande." />
+                  <ShopAlert message={product.error} />
                 )}
               </section>
             ))}
